@@ -10,15 +10,22 @@ const DashboardLayout = ({ role }: { role: string }) => {
     navigate("/login");
   };
 
-  // Uproszczone menu w zależności od roli
   const basePath = `/${role.toLowerCase()}`;
+
+  // Resolve sidebar title based on role
+  const roleLabel =
+    role === "Student"
+      ? "Studenta"
+      : role === "Organizer"
+        ? "Organizatora"
+        : "Administratora";
 
   return (
     <div className="flex min-h-screen flex-col bg-bg-primary md:flex-row">
-      {/* Pasek nawigacji */}
+      {/* Sidebar navigation */}
       <aside className="flex w-full flex-col border-b border-border-light bg-surface-raised p-4 md:w-64 md:border-b-0 md:border-r">
         <div className="mb-6 text-xl font-bold text-text-primary">
-          Panel {role === "Student" ? "Studenta" : "Organizatora"}
+          Panel {roleLabel}
         </div>
 
         <nav className="flex gap-4 overflow-x-auto md:flex-col">
@@ -28,6 +35,7 @@ const DashboardLayout = ({ role }: { role: string }) => {
           >
             Panel główny
           </Link>
+
           {role === "Organizer" && (
             <Link
               to={`${basePath}/events`}
@@ -36,17 +44,43 @@ const DashboardLayout = ({ role }: { role: string }) => {
               Moje wydarzenia
             </Link>
           )}
+
           {role === "Student" && (
-            <Link
-              to={`${basePath}/tickets`}
-              className="font-medium text-text-secondary hover:underline"
-            >
-              Moje bilety
-            </Link>
+            <>
+              <Link
+                to={`${basePath}/events`}
+                className="font-medium text-text-secondary hover:underline"
+              >
+                Przeglądaj wydarzenia
+              </Link>
+              <Link
+                to={`${basePath}/tickets`}
+                className="font-medium text-text-secondary hover:underline"
+              >
+                Moje bilety
+              </Link>
+            </>
+          )}
+
+          {role === "Admin" && (
+            <>
+              <Link
+                to={`${basePath}/users`}
+                className="font-medium text-text-secondary hover:underline"
+              >
+                Użytkownicy
+              </Link>
+              <Link
+                to={`${basePath}/logs`}
+                className="font-medium text-text-secondary hover:underline"
+              >
+                Logi systemowe
+              </Link>
+            </>
           )}
         </nav>
 
-        {/* Przycisk wylogowania (na dole paska na desktopie) */}
+        {/* Logout button visible on desktop at sidebar bottom */}
         <div className="mt-auto hidden pt-6 md:block border-t border-border-light">
           <button
             onClick={handleLogout}
@@ -57,12 +91,12 @@ const DashboardLayout = ({ role }: { role: string }) => {
         </div>
       </aside>
 
-      {/* Główna treść */}
+      {/* Main content area */}
       <main className="flex-1 overflow-y-auto p-4 md:p-8">
         <Outlet />
       </main>
 
-      {/* Przycisk wylogowania dla urządzeń mobilnych */}
+      {/* Mobile logout button */}
       <div className="border-t border-border-light bg-surface-raised p-4 md:hidden">
         <button
           onClick={handleLogout}

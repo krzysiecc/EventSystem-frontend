@@ -1,23 +1,16 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useAuthStore } from "@/store/useAuthStore";
 import { apiClient } from "@/lib/apiClient";
 import { useToastStore } from "@/store/useToastStore";
 
-/**
- * @description Login component with form validation using Zod and react-hook-form. Handles authentication and redirects based on user role or intended destination.
- *
- * @param {string} email      user's email address, must be a valid email format
- * @param {string} password   user's password, must be at least 6 characters long
- * @returns {JSX.Element}     login form with validation and error handling
- */
 const loginSchema = z.object({
-  email: z.string().email({ message: "Invalid email address" }),
+  email: z.string().email({ message: "Niepoprawny adres e-mail" }),
   password: z
     .string()
-    .min(6, { message: "Password must be at least 6 characters" }),
+    .min(6, { message: "Hasło musi mieć co najmniej 6 znaków" }),
 });
 
 type LoginFormInputs = z.infer<typeof loginSchema>;
@@ -28,7 +21,8 @@ const Login = () => {
   const login = useAuthStore((state) => state.login);
   const addToast = useToastStore((state) => state.addToast);
 
-  const from = location.state?.from?.pathname || "/";
+  // Redirect to intended page or role-based default after login
+  const from = location.state?.from?.pathname || null;
 
   const {
     register,
@@ -56,14 +50,19 @@ const Login = () => {
 
       addToast("Zalogowano pomyślnie!", "success");
 
-      setTimeout(() => {
+      // If we have a stored intended path use it, otherwise go to role dashboard
+      if (from) {
         navigate(from, { replace: true });
-      }, 0);
+      } else {
+        const user = useAuthStore.getState().user;
+        const rolePath = `/${user?.role.toLowerCase() ?? ""}`;
+        navigate(rolePath, { replace: true });
+      }
     } catch {
       addToast("Nie udało się zalogować. Sprawdź dane.", "error");
       setError("root", {
         type: "manual",
-        message: "Invalid credentials or server error",
+        message: "Nieprawidłowe dane logowania lub błąd serwera.",
       });
     }
   };
@@ -76,7 +75,7 @@ const Login = () => {
         </h2>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          {/* email field */}
+          {/* Email field */}
           <div>
             <label className="block text-sm font-medium text-text-secondary mb-1">
               Adres e-mail
@@ -87,7 +86,7 @@ const Login = () => {
               className={`w-full rounded-md border p-2 bg-bg-tertiary text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-primary ${
                 errors.email ? "border-status-error" : "border-border-medium"
               }`}
-              placeholder="student@domain.edu"
+              placeholder="student@uczelnia.edu.pl"
             />
             {errors.email && (
               <p className="mt-1 text-sm text-status-error">
@@ -96,7 +95,7 @@ const Login = () => {
             )}
           </div>
 
-          {/* password field */}
+          {/* Password field */}
           <div>
             <label className="block text-sm font-medium text-text-secondary mb-1">
               Hasło
@@ -116,14 +115,13 @@ const Login = () => {
             )}
           </div>
 
-          {/* api error display */}
+          {/* API-level error display */}
           {errors.root && (
             <div className="rounded-md bg-status-error-bg p-3">
               <p className="text-sm text-status-error">{errors.root.message}</p>
             </div>
           )}
 
-          {/* submit button */}
           <button
             type="submit"
             disabled={isSubmitting}
@@ -132,6 +130,26 @@ const Login = () => {
             {isSubmitting ? "Logowanie..." : "Zaloguj się"}
           </button>
         </form>
+
+        <div className="mt-6 text-center text-sm space-y-2">
+          <div>
+            <span className="text-text-secondary">Nie masz konta? </span>
+            <Link
+              to="/register"
+              className="font-medium text-accent-primary hover:underline"
+            >
+              Zarejestruj się jako student
+            </Link>
+          </div>
+          <div>
+            <Link
+              to="/register-organizer"
+              className="text-sm text-text-muted hover:underline"
+            >
+              Rejestracja organizatora
+            </Link>
+          </div>
+        </div>
       </div>
     </div>
   );

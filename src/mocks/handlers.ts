@@ -3,18 +3,18 @@ import { http, HttpResponse, delay } from "msw";
 const API_BASE_URL =
   import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
-// ======================================================
-// 1. SZTUCZNA BAZA DANYCH (W pamięci RAM przeglądarki)
-// ======================================================
+// ============================================================
+// MOCK DATABASE (browser RAM - resets on page reload)
+// ============================================================
 
 const mockEvents = [
   {
     id: "evt-101",
-    title: "Wielkie Juwenalia Studenckie",
+    title: "Wielkie Juwenalia Studenckie 2025",
     date: new Date(Date.now() + 86400000 * 10).toISOString(),
-    location: "Kampus Główny Politechniki",
+    location: "Kampus Główny Politechniki, Plac Grunwaldzki",
     description:
-      "<p>Największa impreza w roku! Zapraszamy wszystkich studentów na darmowe koncerty i grille.</p>",
+      "<p>Największa impreza roku akademickiego! Zapraszamy wszystkich studentów na darmowe koncerty, grille i zabawy integracyjne. W programie: 3 sceny muzyczne, strefa food truck, konkursy z nagrodami.</p>",
     ticketsSold: 450,
     capacity: 500,
     status: "published",
@@ -23,22 +23,56 @@ const mockEvents = [
     id: "evt-102",
     title: "Warsztaty: Wstęp do React i Vite",
     date: new Date(Date.now() + 86400000 * 2).toISOString(),
-    location: "Sala Laboratoryjna C-4",
+    location: "Sala Laboratoryjna C-4, Wydział Informatyki",
     description:
-      "<strong>Przynieś własnego laptopa!</strong> Nauczymy się budować szybkie aplikacje.",
+      "<p><strong>Przynieś własnego laptopa!</strong> Nauczymy się budować szybkie aplikacje webowe od zera. Poznasz Vite, React Hooks oraz TanStack Query. Poziom: początkujący/średniozaawansowany.</p>",
     ticketsSold: 25,
     capacity: 30,
     status: "published",
   },
   {
     id: "evt-103",
-    title: "Turniej Szachowy (Faza Grupowa)",
+    title: "Turniej Szachowy – Faza Grupowa",
     date: new Date(Date.now() + 86400000 * 20).toISOString(),
-    location: "Klub Studencki",
-    description: "Zapisy trwają. Główna nagroda to 1000 PLN.",
+    location: "Klub Studencki 'Kwadrant'",
+    description:
+      "<p>Zapisy trwają! Turniej rozegrany w systemie szwajcarskim. Główna nagroda to 1000 PLN i puchar rektora. Wpisowe 0 zł dla studentów z ważną legitymacją.</p>",
     ticketsSold: 12,
     capacity: 64,
     status: "draft",
+  },
+  {
+    id: "evt-104",
+    title: "Noc Filmowa: Klasyki Sci-Fi",
+    date: new Date(Date.now() + 86400000 * 5).toISOString(),
+    location: "Aula Główna, Budynek Rektoratu",
+    description:
+      "<p>Maraton filmowy od 20:00 do świtu! W repertuarze: Blade Runner 2049, Interstellar, Dune. Wstęp wolny, popcorn w cenie biletu. Poduszki i śpiwory mile widziane.</p>",
+    ticketsSold: 88,
+    capacity: 120,
+    status: "published",
+  },
+  {
+    id: "evt-105",
+    title: "Hackathon: AI dla Dobra Społecznego",
+    date: new Date(Date.now() + 86400000 * 30).toISOString(),
+    location: "Centrum Innowacji i Transferu Technologii",
+    description:
+      "<p>48-godzinny hackathon poświęcony zastosowaniom sztucznej inteligencji w sektorze NGO i pomocy społecznej. Nagrody: 5000, 3000, 1500 PLN. Rejestracja drużynowa (2–5 osób).</p>",
+    ticketsSold: 0,
+    capacity: 200,
+    status: "published",
+  },
+  {
+    id: "evt-106",
+    title: "Spotkanie Koła Naukowego: Robotyka",
+    date: new Date(Date.now() + 86400000 * 7).toISOString(),
+    location: "Sala 3.14, Wydział Mechatroniki",
+    description:
+      "<p>Prezentacja projektów realizowanych przez członków Koła Naukowego Robotyki. Gość specjalny: dr inż. Marek Kowalski z demonstracją robota mobilnego. Wstęp wolny.</p>",
+    ticketsSold: 40,
+    capacity: 50,
+    status: "published",
   },
 ];
 
@@ -46,17 +80,25 @@ const mockTickets = [
   {
     id: "ticket-guid-111",
     eventId: "evt-101",
-    eventTitle: "Wielkie Juwenalia Studenckie",
+    eventTitle: "Wielkie Juwenalia Studenckie 2025",
     eventDate: new Date(Date.now() + 86400000 * 10).toISOString(),
-    eventLocation: "Kampus Główny Politechniki",
+    eventLocation: "Kampus Główny Politechniki, Plac Grunwaldzki",
+    isUsed: false,
+  },
+  {
+    id: "ticket-guid-444",
+    eventId: "evt-104",
+    eventTitle: "Noc Filmowa: Klasyki Sci-Fi",
+    eventDate: new Date(Date.now() + 86400000 * 5).toISOString(),
+    eventLocation: "Aula Główna, Budynek Rektoratu",
     isUsed: false,
   },
   {
     id: "ticket-guid-222",
     eventId: "evt-999",
-    eventTitle: "Stare wydarzenie",
+    eventTitle: "Warsztaty Git dla Początkujących (zakończone)",
     eventDate: new Date(Date.now() - 86400000 * 5).toISOString(),
-    eventLocation: "Klub",
+    eventLocation: "Sala 101, Biblioteka Główna",
     isUsed: true,
   },
 ];
@@ -64,48 +106,159 @@ const mockTickets = [
 const mockAttendees = [
   {
     id: "ticket-guid-111",
-    studentEmail: "jan@student.edu.pl",
-    registrationDate: new Date().toISOString(),
+    studentEmail: "jan.kowalski@student.edu.pl",
+    registrationDate: new Date(Date.now() - 86400000 * 2).toISOString(),
     isUsed: false,
   },
   {
     id: "ticket-guid-333",
-    studentEmail: "anna@student.edu.pl",
-    registrationDate: new Date().toISOString(),
+    studentEmail: "anna.nowak@student.edu.pl",
+    registrationDate: new Date(Date.now() - 86400000 * 1).toISOString(),
     isUsed: true,
+  },
+  {
+    id: "ticket-guid-555",
+    studentEmail: "piotr.wisniewski@student.edu.pl",
+    registrationDate: new Date(Date.now() - 3600000 * 5).toISOString(),
+    isUsed: false,
+  },
+  {
+    id: "ticket-guid-666",
+    studentEmail: "marta.zielinska@student.edu.pl",
+    registrationDate: new Date(Date.now() - 3600000 * 2).toISOString(),
+    isUsed: false,
   },
 ];
 
+const mockUsers = [
+  {
+    id: "u1",
+    email: "admin@platforma.edu.pl",
+    role: "Admin",
+    isActive: true,
+    createdAt: "2023-01-10T12:00:00Z",
+  },
+  {
+    id: "u2",
+    email: "org@platforma.edu.pl",
+    role: "Organizer",
+    isActive: true,
+    createdAt: "2023-02-15T09:30:00Z",
+  },
+  {
+    id: "u3",
+    email: "org2@platforma.edu.pl",
+    role: "Organizer",
+    isActive: true,
+    createdAt: "2023-06-01T11:00:00Z",
+  },
+  {
+    id: "u4",
+    email: "student@uczelnia.edu.pl",
+    role: "Student",
+    isActive: true,
+    createdAt: "2024-05-12T14:20:00Z",
+  },
+  {
+    id: "u5",
+    email: "jan.kowalski@student.edu.pl",
+    role: "Student",
+    isActive: true,
+    createdAt: "2024-05-13T10:00:00Z",
+  },
+  {
+    id: "u6",
+    email: "anna.nowak@student.edu.pl",
+    role: "Student",
+    isActive: true,
+    createdAt: "2024-06-01T08:00:00Z",
+  },
+  {
+    id: "u7",
+    email: "bad.actor@student.edu.pl",
+    role: "Student",
+    isActive: false,
+    createdAt: "2024-07-20T16:45:00Z",
+  },
+];
+
+const mockLogs = [
+  {
+    id: "l1",
+    timestamp: new Date().toISOString(),
+    level: "Info",
+    source: "AuthService",
+    message: "User student@uczelnia.edu.pl logged in successfully.",
+  },
+  {
+    id: "l2",
+    timestamp: new Date(Date.now() - 1800000).toISOString(),
+    level: "Info",
+    source: "TicketService",
+    message:
+      "Ticket ticket-guid-444 issued to student@uczelnia.edu.pl for event evt-104.",
+  },
+  {
+    id: "l3",
+    timestamp: new Date(Date.now() - 3600000).toISOString(),
+    level: "Warning",
+    source: "TicketScanner",
+    message: "Repeated scan attempt for already-used ticket ticket-guid-333.",
+  },
+  {
+    id: "l4",
+    timestamp: new Date(Date.now() - 7200000).toISOString(),
+    level: "Error",
+    source: "Database",
+    message: "Connection timeout while saving new event evt-105.",
+  },
+  {
+    id: "l5",
+    timestamp: new Date(Date.now() - 10800000).toISOString(),
+    level: "Warning",
+    source: "AuthService",
+    message:
+      "Failed login attempt for unknown@hacker.com (3rd attempt in 5 min).",
+  },
+  {
+    id: "l6",
+    timestamp: new Date(Date.now() - 86400000).toISOString(),
+    level: "Info",
+    source: "AdminService",
+    message:
+      "User bad.actor@student.edu.pl deactivated by admin@platforma.edu.pl.",
+  },
+];
+
+// ============================================================
+// MSW HANDLERS
+// ============================================================
 export const handlers = [
-  // ==========================================
-  // 2. AUTH & REFRESH TOKEN
-  // ==========================================
+  // ----------------------------------------------------------
+  // AUTH
+  // ----------------------------------------------------------
+
   http.post(`${API_BASE_URL}/auth/login`, async ({ request }) => {
     await delay(800);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const body = (await request.json()) as any;
+    const body = (await request.json()) as { email: string; password: string };
 
     if (body.email && body.password === "password123") {
-      // Zwracamy zmockowane tokeny
-      // W prawdziwej apce tu by był zdekodowany header z rolą, dla testów frontend wystarczy że token nie jest pusty
-      // Backend jwt-decode na froncie wyciąga rolę z tokena.
-      // Skoro nasz useAuthStore w Fazie 2 dekoduje JWT, musimy tu zwrócić PRAWIDŁOWY format tokena JWT z odpowiednią rolą!
-      // (Dla uproszczenia mockowania - załóżmy, że front przyjmuje rolę z localStorage lub sam token ma stałą strukturę w Mocku)
+      // Build a fake but structurally valid JWT so jwtDecode works on the frontend
+      const role = body.email.includes("org")
+        ? "Organizer"
+        : body.email.includes("admin")
+          ? "Admin"
+          : "Student";
 
-      // Tworzymy fejkowe JWT (Header.Payload.Signature)
-      const mockPayload = btoa(
+      const payload = btoa(
         JSON.stringify({
-          sub: "user-123",
+          sub: `user-${Date.now()}`,
           email: body.email,
-          role: body.email.includes("org")
-            ? "Organizer"
-            : body.email.includes("admin")
-              ? "Admin"
-              : "Student",
+          role,
           exp: Math.floor(Date.now() / 1000) + 60 * 60,
         }),
       );
-      const fakeJwt = `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.${mockPayload}.signature`;
+      const fakeJwt = `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.${payload}.mock-signature`;
 
       return HttpResponse.json({
         accessToken: fakeJwt,
@@ -114,7 +267,7 @@ export const handlers = [
     }
 
     return new HttpResponse(
-      JSON.stringify({ message: "Nieprawidłowy e-mail lub hasło" }),
+      JSON.stringify({ message: "Nieprawidłowy e-mail lub hasło." }),
       { status: 401 },
     );
   }),
@@ -126,11 +279,11 @@ export const handlers = [
 
   http.post(`${API_BASE_URL}/auth/register-organizer`, async ({ request }) => {
     await delay(1000);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const body = (await request.json()) as any;
+    const body = (await request.json()) as { organizationToken?: string };
+
     if (body.organizationToken !== "SECRET-ORG-TOKEN") {
       return new HttpResponse(
-        JSON.stringify({ message: "Invalid Organization Token." }),
+        JSON.stringify({ message: "Nieprawidłowy token organizacyjny." }),
         { status: 400 },
       );
     }
@@ -139,65 +292,24 @@ export const handlers = [
 
   http.post(`${API_BASE_URL}/auth/refresh`, async () => {
     await delay(500);
-    // Zwracamy nowy zestaw (dla testów wygaśnięcia sesji w custom fetch)
-    const mockPayload = btoa(
+    const payload = btoa(
       JSON.stringify({
         sub: "user-123",
-        email: "student@test.com",
+        email: "student@uczelnia.edu.pl",
         role: "Student",
         exp: Math.floor(Date.now() / 1000) + 60 * 60,
       }),
     );
     return HttpResponse.json({
-      accessToken: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.${mockPayload}.sig`,
-      refreshToken: "new-refresh-token",
+      accessToken: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.${payload}.mock-signature`,
+      refreshToken: "new-mocked-refresh-token",
     });
   }),
 
-  // ==========================================
-  // 4. ORGANIZER ENDPOINTS
-  // ==========================================
-  http.get(`${API_BASE_URL}/events/my-events`, async () => {
-    await delay(800);
-    return HttpResponse.json(mockEvents);
-  }),
+  // ----------------------------------------------------------
+  // STUDENT – public events
+  // ----------------------------------------------------------
 
-  http.get(`${API_BASE_URL}/events/my-events/:id`, async ({ params }) => {
-    await delay(500);
-    const event = mockEvents.find((e) => e.id === params.id);
-    return event
-      ? HttpResponse.json(event)
-      : new HttpResponse(null, { status: 404 });
-  }),
-
-  http.post(`${API_BASE_URL}/events`, async ({ request }) => {
-    await delay(1000);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const body = (await request.json()) as any;
-
-    const newEvent = {
-      id: `evt-${Date.now()}`,
-      title: body.title,
-      date: body.date,
-      location: body.location,
-      description: body.description,
-      capacity: Number(body.capacity),
-      ticketsSold: 0,
-      status: "draft",
-    };
-
-    mockEvents.push(newEvent);
-    return HttpResponse.json(newEvent, { status: 201 });
-  }),
-
-  http.get(`${API_BASE_URL}/events/:id/attendees`, async () => {
-    await delay(600);
-    return HttpResponse.json(mockAttendees);
-  }),
-
-  // ==========================================
-  // 3. STUDENT ENDPOINTS
-  // ==========================================
   http.get(`${API_BASE_URL}/events/published`, async () => {
     await delay(600);
     return HttpResponse.json(
@@ -212,6 +324,10 @@ export const handlers = [
     return HttpResponse.json(event);
   }),
 
+  // ----------------------------------------------------------
+  // STUDENT – tickets
+  // ----------------------------------------------------------
+
   http.get(`${API_BASE_URL}/tickets/my-tickets`, async () => {
     await delay(600);
     return HttpResponse.json(mockTickets);
@@ -220,118 +336,190 @@ export const handlers = [
   http.post(`${API_BASE_URL}/events/:id/register`, async ({ params }) => {
     await delay(1000);
     const event = mockEvents.find((e) => e.id === params.id);
-    if (!event || event.ticketsSold >= event.capacity) {
+
+    if (!event) {
       return new HttpResponse(
-        JSON.stringify({ message: "Brak miejsc lub wydarzenie nie istnieje" }),
+        JSON.stringify({ message: "Wydarzenie nie istnieje." }),
+        { status: 404 },
+      );
+    }
+
+    if (event.ticketsSold >= event.capacity) {
+      return new HttpResponse(
+        JSON.stringify({ message: "Brak wolnych miejsc na to wydarzenie." }),
         { status: 400 },
       );
     }
 
-    // Zwiększamy liczbę sprzedanych biletów w naszej sztucznej bazie
+    // Update ticket count in mock DB
     event.ticketsSold += 1;
 
-    // Dodajemy bilet dla studenta
-    mockTickets.push({
-      id: `new-ticket-${Date.now()}`,
+    // Create and persist a new ticket entry
+    const newTicket = {
+      id: `ticket-${crypto.randomUUID()}`,
       eventId: event.id,
       eventTitle: event.title,
       eventDate: event.date,
       eventLocation: event.location,
       isUsed: false,
-    });
+    };
+    mockTickets.push(newTicket);
 
-    return HttpResponse.json({ message: "Zapisano pomyślnie" });
+    return HttpResponse.json({ message: "Zapisano pomyślnie." });
   }),
 
-  // ==========================================
-  // 5. SCANNER / TICKET VERIFICATION
-  // ==========================================
+  // ----------------------------------------------------------
+  // ORGANIZER – event management
+  // ----------------------------------------------------------
+
+  http.get(`${API_BASE_URL}/events/my-events`, async () => {
+    await delay(800);
+    return HttpResponse.json(mockEvents);
+  }),
+
+  http.get(`${API_BASE_URL}/events/my-events/:id`, async ({ params }) => {
+    await delay(500);
+    const event = mockEvents.find((e) => e.id === params.id);
+    if (!event) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(event);
+  }),
+
+  http.post(`${API_BASE_URL}/events`, async ({ request }) => {
+    await delay(1000);
+    const body = (await request.json()) as {
+      title: string;
+      date: string;
+      location: string;
+      description: string;
+      capacity: number;
+    };
+
+    const newEvent = {
+      id: `evt-${Date.now()}`,
+      title: body.title,
+      date: body.date,
+      location: body.location,
+      description: body.description,
+      capacity: Number(body.capacity),
+      ticketsSold: 0,
+      status: "draft" as const,
+    };
+
+    mockEvents.push(newEvent);
+    return HttpResponse.json(newEvent, { status: 201 });
+  }),
+
+  // Update an existing event (e.g. publish draft or edit details)
+  http.put(`${API_BASE_URL}/events/:id`, async ({ params, request }) => {
+    await delay(800);
+    const index = mockEvents.findIndex((e) => e.id === params.id);
+    if (index === -1) return new HttpResponse(null, { status: 404 });
+
+    const body = (await request.json()) as Partial<(typeof mockEvents)[0]>;
+    mockEvents[index] = { ...mockEvents[index], ...body };
+
+    return HttpResponse.json(mockEvents[index]);
+  }),
+
+  // Delete an event (organizer only)
+  http.delete(`${API_BASE_URL}/events/:id`, async ({ params }) => {
+    await delay(700);
+    const index = mockEvents.findIndex((e) => e.id === params.id);
+    if (index === -1) return new HttpResponse(null, { status: 404 });
+
+    mockEvents.splice(index, 1);
+    return new HttpResponse(null, { status: 204 });
+  }),
+
+  // ----------------------------------------------------------
+  // ORGANIZER – attendees & check-in
+  // ----------------------------------------------------------
+
+  http.get(`${API_BASE_URL}/events/:id/attendees`, async () => {
+    await delay(600);
+    return HttpResponse.json(mockAttendees);
+  }),
+
+  // ----------------------------------------------------------
+  // SCANNER / TICKET VERIFICATION (used by both QRScanner and manual check-in)
+  // ----------------------------------------------------------
+
   http.post(`${API_BASE_URL}/tickets/verify`, async ({ request }) => {
     await delay(600);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const body = (await request.json()) as any;
+    const body = (await request.json()) as {
+      ticketId: string;
+      eventId?: string;
+    };
 
-    if (body.ticketId === "ticket-guid-333" || body.ticketId === "12345") {
-      return new HttpResponse(
-        JSON.stringify({ message: "Bilet został już wykorzystany!" }),
-        { status: 400 },
-      );
-    }
     if (!body.ticketId || body.ticketId.length < 5) {
       return new HttpResponse(
-        JSON.stringify({ message: "Nieprawidłowy kod QR." }),
+        JSON.stringify({ message: "Nieprawidłowy identyfikator biletu." }),
         { status: 400 },
       );
     }
 
-    // Aktualizacja w bazie (manual check-in lub skaner)
+    // Check against attendees list first
     const attendee = mockAttendees.find((a) => a.id === body.ticketId);
-    if (attendee) attendee.isUsed = true;
+    if (attendee) {
+      if (attendee.isUsed) {
+        return new HttpResponse(
+          JSON.stringify({ message: "Bilet został już wykorzystany!" }),
+          { status: 400 },
+        );
+      }
+      // Mark as used
+      attendee.isUsed = true;
+      return HttpResponse.json({
+        status: "success",
+        message: "Bilet ważny. Wejście zatwierdzone.",
+      });
+    }
 
-    return HttpResponse.json({ status: "success", message: "Bilet ważny." });
+    // Also check mockTickets (for tickets not yet in attendees list)
+    const ticket = mockTickets.find((t) => t.id === body.ticketId);
+    if (ticket) {
+      if (ticket.isUsed) {
+        return new HttpResponse(
+          JSON.stringify({ message: "Bilet został już wykorzystany!" }),
+          { status: 400 },
+        );
+      }
+      ticket.isUsed = true;
+      return HttpResponse.json({
+        status: "success",
+        message: "Bilet ważny. Wejście zatwierdzone.",
+      });
+    }
+
+    return new HttpResponse(
+      JSON.stringify({ message: "Nie znaleziono biletu w systemie." }),
+      { status: 404 },
+    );
   }),
 
-  // ==========================================
-  // 6. ADMIN ENDPOINTS
-  // ==========================================
+  // ----------------------------------------------------------
+  // ADMIN
+  // ----------------------------------------------------------
+
   http.get(`${API_BASE_URL}/admin/users`, async () => {
     await delay(800);
-    return HttpResponse.json([
-      {
-        id: "u1",
-        email: "admin@platform.edu",
-        role: "Admin",
-        isActive: true,
-        createdAt: "2023-01-10T12:00:00Z",
-      },
-      {
-        id: "u2",
-        email: "org@platform.edu",
-        role: "Organizer",
-        isActive: true,
-        createdAt: "2023-02-15T09:30:00Z",
-      },
-      {
-        id: "u3",
-        email: "student@domain.com",
-        role: "Student",
-        isActive: true,
-        createdAt: "2024-05-12T14:20:00Z",
-      },
-      {
-        id: "u4",
-        email: "bad.student@domain.com",
-        role: "Student",
-        isActive: false,
-        createdAt: "2024-05-13T10:00:00Z",
-      },
-    ]);
+    return HttpResponse.json(mockUsers);
+  }),
+
+  // Toggle user active status (block/unblock)
+  http.patch(`${API_BASE_URL}/admin/users/:id`, async ({ params, request }) => {
+    await delay(600);
+    const index = mockUsers.findIndex((u) => u.id === params.id);
+    if (index === -1) return new HttpResponse(null, { status: 404 });
+
+    const body = (await request.json()) as Partial<(typeof mockUsers)[0]>;
+    mockUsers[index] = { ...mockUsers[index], ...body };
+
+    return HttpResponse.json(mockUsers[index]);
   }),
 
   http.get(`${API_BASE_URL}/admin/logs`, async () => {
     await delay(600);
-    return HttpResponse.json([
-      {
-        id: "l1",
-        timestamp: new Date().toISOString(),
-        level: "Info",
-        source: "AuthService",
-        message: "User student@domain.com logged in successfully.",
-      },
-      {
-        id: "l2",
-        timestamp: new Date(Date.now() - 3600000).toISOString(),
-        level: "Warning",
-        source: "TicketScanner",
-        message: "Repeated scan attempts for used ticket ticket-guid-333.",
-      },
-      {
-        id: "l3",
-        timestamp: new Date(Date.now() - 7200000).toISOString(),
-        level: "Error",
-        source: "Database",
-        message: "Connection timeout while saving new event.",
-      },
-    ]);
+    return HttpResponse.json(mockLogs);
   }),
 ];
