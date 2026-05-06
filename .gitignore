@@ -79,6 +79,7 @@ coverage/
 test-results/
 playwright-report/
 playwright/.cache/
+scripts/
 
 # ===================================
 # EDITOR & IDE

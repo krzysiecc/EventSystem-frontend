@@ -4,6 +4,7 @@ import { z } from "zod";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "@/store/useAuthStore";
 import { apiClient } from "@/lib/apiClient";
+import { useToastStore } from "@/store/useToastStore";
 
 /**
  * @description Login component with form validation using Zod and react-hook-form. Handles authentication and redirects based on user role or intended destination.
@@ -25,6 +26,7 @@ const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const login = useAuthStore((state) => state.login);
+  const addToast = useToastStore((state) => state.addToast);
 
   const from = location.state?.from?.pathname || "/";
 
@@ -51,8 +53,10 @@ const Login = () => {
         localStorage.setItem("refreshToken", result.refreshToken);
       }
 
+      addToast("Zalogowano pomyślnie!", "success");
       navigate(from, { replace: true });
     } catch {
+      addToast("Nie udało się zalogować. Sprawdź dane.", "error");
       setError("root", {
         type: "manual",
         message: "Invalid credentials or server error",
@@ -107,7 +111,7 @@ const Login = () => {
               </p>
             )}
           </div>
-          
+
           {/* api error display */}
           {errors.root && (
             <div className="rounded-md bg-status-error-bg p-3">
