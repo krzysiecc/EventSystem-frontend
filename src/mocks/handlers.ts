@@ -307,68 +307,6 @@ export const handlers = [
   }),
 
   // ----------------------------------------------------------
-  // STUDENT – public events
-  // ----------------------------------------------------------
-
-  http.get(`${API_BASE_URL}/events/published`, async () => {
-    await delay(600);
-    return HttpResponse.json(
-      mockEvents.filter((e) => e.status === "published"),
-    );
-  }),
-
-  http.get(`${API_BASE_URL}/events/:id`, async ({ params }) => {
-    await delay(500);
-    const event = mockEvents.find((e) => e.id === params.id);
-    if (!event) return new HttpResponse(null, { status: 404 });
-    return HttpResponse.json(event);
-  }),
-
-  // ----------------------------------------------------------
-  // STUDENT – tickets
-  // ----------------------------------------------------------
-
-  http.get(`${API_BASE_URL}/tickets/my-tickets`, async () => {
-    await delay(600);
-    return HttpResponse.json(mockTickets);
-  }),
-
-  http.post(`${API_BASE_URL}/events/:id/register`, async ({ params }) => {
-    await delay(1000);
-    const event = mockEvents.find((e) => e.id === params.id);
-
-    if (!event) {
-      return new HttpResponse(
-        JSON.stringify({ message: "Wydarzenie nie istnieje." }),
-        { status: 404 },
-      );
-    }
-
-    if (event.ticketsSold >= event.capacity) {
-      return new HttpResponse(
-        JSON.stringify({ message: "Brak wolnych miejsc na to wydarzenie." }),
-        { status: 400 },
-      );
-    }
-
-    // Update ticket count in mock DB
-    event.ticketsSold += 1;
-
-    // Create and persist a new ticket entry
-    const newTicket = {
-      id: `ticket-${crypto.randomUUID()}`,
-      eventId: event.id,
-      eventTitle: event.title,
-      eventDate: event.date,
-      eventLocation: event.location,
-      isUsed: false,
-    };
-    mockTickets.push(newTicket);
-
-    return HttpResponse.json({ message: "Zapisano pomyślnie." });
-  }),
-
-  // ----------------------------------------------------------
   // ORGANIZER – event management
   // ----------------------------------------------------------
 
@@ -438,6 +376,68 @@ export const handlers = [
   http.get(`${API_BASE_URL}/events/:id/attendees`, async () => {
     await delay(600);
     return HttpResponse.json(mockAttendees);
+  }),
+
+  // ----------------------------------------------------------
+  // STUDENT – public events
+  // ----------------------------------------------------------
+
+  http.get(`${API_BASE_URL}/events/published`, async () => {
+    await delay(600);
+    return HttpResponse.json(
+      mockEvents.filter((e) => e.status === "published"),
+    );
+  }),
+
+  http.get(`${API_BASE_URL}/events/:id`, async ({ params }) => {
+    await delay(500);
+    const event = mockEvents.find((e) => e.id === params.id);
+    if (!event) return new HttpResponse(null, { status: 404 });
+    return HttpResponse.json(event);
+  }),
+
+  // ----------------------------------------------------------
+  // STUDENT – tickets
+  // ----------------------------------------------------------
+
+  http.get(`${API_BASE_URL}/tickets/my-tickets`, async () => {
+    await delay(600);
+    return HttpResponse.json(mockTickets);
+  }),
+
+  http.post(`${API_BASE_URL}/events/:id/register`, async ({ params }) => {
+    await delay(1000);
+    const event = mockEvents.find((e) => e.id === params.id);
+
+    if (!event) {
+      return new HttpResponse(
+        JSON.stringify({ message: "Wydarzenie nie istnieje." }),
+        { status: 404 },
+      );
+    }
+
+    if (event.ticketsSold >= event.capacity) {
+      return new HttpResponse(
+        JSON.stringify({ message: "Brak wolnych miejsc na to wydarzenie." }),
+        { status: 400 },
+      );
+    }
+
+    // Update ticket count in mock DB
+    event.ticketsSold += 1;
+
+    // Create and persist a new ticket entry
+    const newTicket = {
+      id: `ticket-${crypto.randomUUID()}`,
+      eventId: event.id,
+      eventTitle: event.title,
+      eventDate: event.date,
+      eventLocation: event.location,
+      isUsed: false,
+    };
+    mockTickets.push(newTicket);
+
+    return HttpResponse.json({ message: "Zapisano pomyślnie." });
   }),
 
   // ----------------------------------------------------------
