@@ -12,7 +12,7 @@ import LoadingSpinner from "../components/ui/LoadingSpinner";
 import ErrorBoundary from "../components/ui/ErrorBoundary";
 
 // Ochrona tras (przygotowane pod Phase 2)
-import ProtectedRoute from "./ProtectedRoute";
+import ProtectedRoute from "@/routes/ProtectedRoute";
 
 // --- LAZY LOADED VIEWS ---
 // Public & Auth
