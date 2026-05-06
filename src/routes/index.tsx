@@ -2,58 +2,59 @@ import { createBrowserRouter, RouterProvider, Outlet } from "react-router-dom";
 import { Suspense, lazy } from "react";
 
 // --- LAYOUTS ---
-import RootLayout from "../layouts/RootLayout";
-import AuthLayout from "../layouts/AuthLayout";
-import DashboardLayout from "../layouts/DashboardLayout";
-import MobileScannerLayout from "../layouts/MobileScannerLayout"; // Specjalny layout bez nawigacji, full screen
+// import RootLayout from "@/layouts/RootLayout";
+// import AuthLayout from "@/layouts/AuthLayout";
+// import DashboardLayout from "@/layouts/DashboardLayout";
+// import MobileScannerLayout from "@/layouts/MobileScannerLayout";
 
 // --- COMPONENTS ---
-import LoadingSpinner from "../components/ui/LoadingSpinner";
-import ErrorBoundary from "../components/ui/ErrorBoundary";
+// import LoadingSpinner from "@/components/ui/LoadingSpinner";
+// import ErrorBoundary from "@/components/ui/ErrorBoundary";
 
 // Ochrona tras (przygotowane pod Phase 2)
 import ProtectedRoute from "@/routes/ProtectedRoute";
+import RegisterOrganizer from "@/features/auth/RegisterOrganizer";
 
 // --- LAZY LOADED VIEWS ---
 // Public & Auth
-const Home = lazy(() => import("../features/public/Home"));
-const Login = lazy(() => import("../features/auth/Login"));
-const RegisterStudent = lazy(() => import("../features/auth/RegisterStudent"));
-const RegisterOrganizer = lazy(
-  () => import("../features/auth/RegisterOrganizer"),
-);
-const Unauthorized = lazy(() => import("../features/public/Unauthorized"));
+// const Home = lazy(() => import("@/features/public/Home"));
+const Login = lazy(() => import("@/features/auth/Login"));
+// const RegisterStudent = lazy(() => import("@/features/auth/RegisterStudent"));
+// const RegisterOrganizer = lazy(
+//   () => import("@/features/auth/RegisterOrganizer"),
+// );
+// const Unauthorized = lazy(() => import("@/features/public/Unauthorized"));
 
 // Student
-const StudentDashboard = lazy(() => import("../features/student/Dashboard"));
-const EventBrowser = lazy(() => import("../features/student/EventBrowser"));
-const EventDetailsStudent = lazy(
-  () => import("../features/student/EventDetails"),
-);
-const MyTickets = lazy(() => import("../features/student/MyTickets"));
-const TicketQRView = lazy(() => import("../features/student/TicketQRView")); // Bilet na cały ekran
+// const StudentDashboard = lazy(() => import("@/features/student/Dashboard"));
+// const EventBrowser = lazy(() => import("@/features/student/EventBrowser"));
+// const EventDetailsStudent = lazy(
+//   () => import("@/features/student/EventDetails"),
+// );
+// const MyTickets = lazy(() => import("@/features/student/MyTickets"));
+// const TicketQRView = lazy(() => import("@/features/student/TicketQRView"));
 
 // Organizer
 const OrganizerDashboard = lazy(
-  () => import("../features/organizer/Dashboard"),
+  () => import("@/features/organizer/Dashboard"),
 );
-const ManageEvents = lazy(() => import("../features/organizer/ManageEvents"));
-const CreateEvent = lazy(() => import("../features/organizer/CreateEvent"));
-const EventDetailsOrg = lazy(
-  () => import("../features/organizer/EventDetails"),
-);
-const AttendeeList = lazy(() => import("../features/organizer/AttendeeList"));
-const QRScanner = lazy(() => import("../features/organizer/QRScanner")); // Moduł WebRTC
+// const ManageEvents = lazy(() => import("@/features/organizer/ManageEvents"));
+// const CreateEvent = lazy(() => import("@/features/organizer/CreateEvent"));
+// const EventDetailsOrg = lazy(
+//   () => import("@/features/organizer/EventDetails"),
+// );
+// const AttendeeList = lazy(() => import("@/features/organizer/AttendeeList"));
+// const QRScanner = lazy(() => import("@/features/organizer/QRScanner"));
 
 // Admin
-const AdminDashboard = lazy(() => import("../features/admin/Dashboard"));
-const ManageUsers = lazy(() => import("../features/admin/ManageUsers"));
-const SystemLogs = lazy(() => import("../features/admin/SystemLogs"));
+// const AdminDashboard = lazy(() => import("@/features/admin/Dashboard"));
+// const ManageUsers = lazy(() => import("@/features/admin/ManageUsers"));
+// const SystemLogs = lazy(() => import("@/features/admin/SystemLogs"));
 
 // --- ROUTER CONFIG ---
 export const router = createBrowserRouter([
   {
-    element: <RootLayout />, // Główny kontener (np. trzymający Toasty i Context)
+    element: <RootLayout />,
     errorElement: <ErrorBoundary />,
     children: [
       // PUBLICZNE TRASY
@@ -66,7 +67,7 @@ export const router = createBrowserRouter([
         children: [
           { path: "login", element: <Login /> },
           { path: "register", element: <RegisterStudent /> },
-          { path: "register-organizer", element: <RegisterOrganizer /> }, // Tu wejdzie Organization Token
+          { path: "register-organizer", element: <RegisterOrganizer /> }, 
         ],
       },
 
