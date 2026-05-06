@@ -14,7 +14,7 @@ const createEventSchema = z.object({
     .min(3, "Tytuł musi mieć min. 3 znaki")
     .max(100, "Tytuł jest za długi"),
   date: z.string().min(1, "Data jest wymagana"),
-  location: z.string().min(3, "Lokalizacja jest wymagana"),
+  location: z.string().min(2, "Lokalizacja musi mieć min. 2 znaki"),
   capacity: z.coerce.number().min(1, "Pojemność musi wynosić minimum 1"),
   description: z.string().min(10, "Opis musi mieć min. 10 znaków"),
 });

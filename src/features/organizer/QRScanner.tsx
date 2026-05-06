@@ -9,7 +9,6 @@ const QRScanner = () => {
   const { eventId } = useParams<{ eventId: string }>();
   const addToast = useToastStore((state) => state.addToast);
 
-  const scannerRef = useRef<Html5Qrcode | null>(null);
   const isScanningRef = useRef<boolean>(false);
 
   const [cameraError, setCameraError] = useState<string | null>(null);
@@ -47,14 +46,13 @@ const QRScanner = () => {
 
   useEffect(() => {
     const html5QrCode = new Html5Qrcode("qr-reader");
-    scannerRef.current = html5QrCode;
+    let isMounted = true;
 
     const onScanSuccess = (decodedText: string) => {
       if (isScanningRef.current || decodedText === lastScanned) return;
 
       isScanningRef.current = true;
       setLastScanned(decodedText);
-
       verifyMutation.mutate(decodedText);
     };
 
@@ -62,29 +60,43 @@ const QRScanner = () => {
       .start(
         { facingMode: "environment" },
         {
-          fps: 20,
+          fps: 10,
           qrbox: { width: 250, height: 250 },
           aspectRatio: 1.0,
         },
         onScanSuccess,
         () => {},
       )
+      .then(() => {
+        if (!isMounted) {
+          html5QrCode
+            .stop()
+            .then(() => html5QrCode.clear())
+            .catch(console.error);
+        }
+      })
       .catch((err) => {
-        console.error("Camera start error: ", err);
-        setCameraError(
-          "Brak dostępu do kamery. Upewnij się, że nadałeś uprawnienia w przeglądarce.",
-        );
+        console.error("Camera start error:", err);
+        if (isMounted)
+          setCameraError(
+            "Brak dostępu do kamery. Upewnij się, że nadałeś uprawnienia w przeglądarce.",
+          );
       });
 
     return () => {
-      if (scannerRef.current) {
-        scannerRef.current
-          .stop()
-          .catch((err) => console.error("Error stopping scanner:", err));
-      }
-      scannerRef.current?.clear();
-    };
+      isMounted = false;
 
+      try {
+        if (html5QrCode.getState() === 2) {
+          html5QrCode
+            .stop()
+            .then(() => html5QrCode.clear())
+            .catch(console.error);
+        }
+      } catch (error) {
+        console.error("Błąd podczas czyszczenia skanera:", error);
+      }
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventId]);
 

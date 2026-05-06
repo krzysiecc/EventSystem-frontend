@@ -1,18 +1,22 @@
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
+import { useAuthStore } from "@/store/useAuthStore";
 
-/**
- * @description Landing page for the application. Provides quick access to login and registration.
- */
 const Home = () => {
+  const { isAuthenticated, user } = useAuthStore();
+
+  if (isAuthenticated && user) {
+    return <Navigate to={`/${user.role.toLowerCase()}`} replace />;
+  }
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-bg-primary p-6 text-center">
       <div className="max-w-3xl space-y-8">
         <h1 className="text-5xl font-extrabold tracking-tight text-text-primary sm:text-6xl">
-          System Zarządzania <span className="text-accent-primary">Wydarzeniami Studenckimi</span>
+          Student Event <span className="text-accent-primary">Manager</span>
         </h1>
         <p className="text-lg leading-relaxed text-text-secondary sm:text-xl">
-          Odkryj wszystkie wydarzenia studenckie, bezproblemowo zarządzaj swoimi biletami i
-          organizuj niezapomniane doświadczenia na kampusie.
+          Odkrywaj wydarzenia na kampusie, zarządzaj biletami i organizuj
+          niezapomniane imprezy.
         </p>
 
         <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
@@ -26,7 +30,7 @@ const Home = () => {
             to="/register"
             className="w-full rounded-lg bg-surface-raised px-8 py-3 text-lg font-semibold text-accent-primary border border-border-medium transition-colors hover:bg-accent-subtle sm:w-auto shadow-sm"
           >
-            Jestem Studentem
+            Jestem studentem
           </Link>
         </div>
 
@@ -37,7 +41,7 @@ const Home = () => {
               to="/register-organizer"
               className="font-medium text-accent-primary hover:underline"
             >
-              Utwórz konto organizatora
+              Załóż konto organizatora
             </Link>
           </p>
         </div>

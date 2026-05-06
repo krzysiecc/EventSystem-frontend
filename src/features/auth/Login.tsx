@@ -47,6 +47,7 @@ const Login = () => {
       });
 
       const result = await response.json();
+
       login(result.accessToken);
 
       if (result.refreshToken) {
@@ -54,7 +55,10 @@ const Login = () => {
       }
 
       addToast("Zalogowano pomyślnie!", "success");
-      navigate(from, { replace: true });
+
+      setTimeout(() => {
+        navigate(from, { replace: true });
+      }, 0);
     } catch {
       addToast("Nie udało się zalogować. Sprawdź dane.", "error");
       setError("root", {
@@ -68,14 +72,14 @@ const Login = () => {
     <div className="flex min-h-screen items-center justify-center p-4">
       <div className="w-full max-w-md rounded-xl bg-surface-raised p-8 shadow-lg border border-border-light">
         <h2 className="mb-6 text-2xl font-bold text-text-primary text-center">
-          Sign in to your account
+          Zaloguj się do swojego konta
         </h2>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {/* email field */}
           <div>
             <label className="block text-sm font-medium text-text-secondary mb-1">
-              Email Address
+              Adres e-mail
             </label>
             <input
               type="email"
@@ -95,7 +99,7 @@ const Login = () => {
           {/* password field */}
           <div>
             <label className="block text-sm font-medium text-text-secondary mb-1">
-              Password
+              Hasło
             </label>
             <input
               type="password"
@@ -125,7 +129,7 @@ const Login = () => {
             disabled={isSubmitting}
             className="w-full rounded-md bg-accent-primary py-2 text-text-on-accent transition-colors hover:bg-accent-hover disabled:opacity-50"
           >
-            {isSubmitting ? "Signing in..." : "Sign In"}
+            {isSubmitting ? "Logowanie..." : "Zaloguj się"}
           </button>
         </form>
       </div>
