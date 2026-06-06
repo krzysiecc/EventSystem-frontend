@@ -69,7 +69,7 @@ const OrganizerDashboard = () => {
                 <p>📅 {new Date(event.date).toLocaleDateString()}</p>
                 <p>📍 {event.location}</p>
                 <p>
-                  🎟️ {event.ticketsSold} / {event.capacity} zarejestrowanych
+                  🎟️ {event.ticketsSold} / {event.maxCapacity} zarejestrowanych
                 </p>
               </div>
 

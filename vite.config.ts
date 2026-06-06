@@ -16,12 +16,11 @@ export default defineConfig({
         name: "Student Event Manager",
         short_name: "EventMgr",
         description: "System zarządzania wydarzeniami i biletami studenckimi",
-        theme_color: "#f1dac4", // --bg-primary light mode
-        background_color: "#0d0c1d", // --bg-primary dark mode
+        theme_color: "#f1dac4",
+        background_color: "#0d0c1d",
         display: "standalone",
         orientation: "portrait",
         icons: [
-          // TODO: add to public/ 2 images with following names and dimensions
           {
             src: "/icon-192x192.png",
             sizes: "192x192",
@@ -37,12 +36,17 @@ export default defineConfig({
       },
     }),
   ],
+  // --- DODAJ TĘ SEKCJĘ PONIŻEJ ---
+  server: {
+    port: 3000,
+    strictPort: true,
+  },
+  // ------------------------------
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
     },
   },
-
   test: {
     globals: true,
     environment: "jsdom",

@@ -7,8 +7,10 @@ const MyTickets = () => {
   if (isLoading)
     return <div className="p-6 text-text-muted">Ładowanie biletów...</div>;
 
-  const activeTickets = tickets?.filter((t) => !t.isUsed) || [];
-  const pastTickets = tickets?.filter((t) => t.isUsed) || [];
+  // Zabezpieczenie przed mapowaniem błędnych danych
+  const safeTickets = Array.isArray(tickets) ? tickets : [];
+  const activeTickets = safeTickets.filter((t) => !t.isUsed);
+  const pastTickets = safeTickets.filter((t) => t.isUsed);
 
   return (
     <div className="layout-container py-6">
@@ -22,23 +24,29 @@ const MyTickets = () => {
           <p className="text-text-muted">Brak aktywnych biletów.</p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {activeTickets.map((ticket) => (
-              <Link
-                key={ticket.id}
-                to={`/student/tickets/${ticket.id}`}
-                className="block bg-surface-raised border-l-4 border-l-accent-primary p-5 rounded-r-xl shadow-sm hover:shadow-md transition-shadow"
-              >
-                <h3 className="font-bold text-text-primary">
-                  {ticket.eventTitle}
-                </h3>
-                <p className="text-sm text-text-secondary mt-1">
-                  📅 {new Date(ticket.eventDate).toLocaleDateString()}
-                </p>
-                <div className="mt-3 text-sm font-medium text-accent-primary">
-                  Pokaż kod QR →
-                </div>
-              </Link>
-            ))}
+            {activeTickets.map((ticket) => {
+               // Bezpieczny render tekstów
+               const title = typeof ticket.eventTitle === 'string' ? ticket.eventTitle : "Wydarzenie";
+               const dateText = ticket.eventDate ? new Date(ticket.eventDate).toLocaleDateString() : "Brak daty";
+
+               return (
+                <Link
+                  key={String(ticket.id)} // Bezpieczny klucz
+                  to={`/student/tickets/${ticket.id}`}
+                  className="block bg-surface-raised border-l-4 border-l-accent-primary p-5 rounded-r-xl shadow-sm hover:shadow-md transition-shadow"
+                >
+                  <h3 className="font-bold text-text-primary">
+                    {title}
+                  </h3>
+                  <p className="text-sm text-text-secondary mt-1">
+                    📅 {dateText}
+                  </p>
+                  <div className="mt-3 text-sm font-medium text-accent-primary">
+                    Pokaż kod QR →
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         )}
       </section>
@@ -51,22 +59,27 @@ const MyTickets = () => {
           <p className="text-text-muted">Brak zużytych biletów.</p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 opacity-75">
-            {pastTickets.map((ticket) => (
-              <div
-                key={ticket.id}
-                className="bg-surface-sunken border border-border-medium p-5 rounded-xl"
-              >
-                <h3 className="font-bold text-text-primary line-through">
-                  {ticket.eventTitle}
-                </h3>
-                <p className="text-sm text-text-secondary mt-1">
-                  📅 {new Date(ticket.eventDate).toLocaleDateString()}
-                </p>
-                <span className="inline-block mt-3 bg-status-error-bg text-status-error text-xs px-2 py-1 rounded">
-                  ZUŻYTY
-                </span>
-              </div>
-            ))}
+            {pastTickets.map((ticket) => {
+                const title = typeof ticket.eventTitle === 'string' ? ticket.eventTitle : "Wydarzenie";
+                const dateText = ticket.eventDate ? new Date(ticket.eventDate).toLocaleDateString() : "Brak daty";
+
+                return (
+                  <div
+                    key={String(ticket.id)}
+                    className="bg-surface-sunken border border-border-medium p-5 rounded-xl"
+                  >
+                    <h3 className="font-bold text-text-primary line-through">
+                      {title}
+                    </h3>
+                    <p className="text-sm text-text-secondary mt-1">
+                      📅 {dateText}
+                    </p>
+                    <span className="inline-block mt-3 bg-status-error-bg text-status-error text-xs px-2 py-1 rounded">
+                      ZUŻYTY
+                    </span>
+                  </div>
+              );
+            })}
           </div>
         )}
       </section>

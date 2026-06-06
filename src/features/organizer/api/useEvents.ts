@@ -1,54 +1,47 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-// TODO: need mapping for .NET event entity
 export interface OrganizerEvent {
-  id: string;
+  id: number;
   title: string;
+  description: string;
   date: string;
   location: string;
-  ticketsSold: number;
-  capacity: number;
-  status: "draft" | "published" | "completed";
+  maxCapacity: number;
+  enrolledCount: number; // Musi być tak jak w Swaggerze (zamiast ticketsSold)
 }
 
 export interface Attendee {
-  id: string; // ticket ID
+  id: number;
   studentEmail: string;
   registrationDate: string;
   isUsed: boolean;
 }
 
 /**
- * @description Custom hook to fetch events created by the logged-in organizer. 
- * 
- * @param none
- * @returns {OrganizerEvent[]}      list of events with basic info for dashboard display
+ * @description Pobiera listę wszystkich wydarzeń organizatora
  */
 export const useOrganizerEvents = () => {
   return useQuery({
     queryKey: ["organizer", "events"],
     queryFn: async (): Promise<OrganizerEvent[]> => {
-      const response = await apiClient("/events/my-events");
+      const response = await apiClient("/api/Events");
+      if (!response.ok) throw new Error("Nie udało się pobrać listy wydarzeń");
       return response.json();
     },
   });
 };
 
 /**
- * @description Custom hook to fetch detailed information about a specific event created by the organizer. 
- *              This is used in the event details page where more in-depth info is required.
- * 
- * @param {string | undefined} eventId  the ID of the event to fetch details for
- * @returns {OrganizerEvent}            detailed information about the event
+ * @description Pobiera szczegóły jednego konkretnego wydarzenia
  */
-export const useOrganizerEventDetails = (eventId: string | undefined) => {
+export const useOrganizerEventDetails = (eventId: string | number | undefined) => {
   return useQuery({
     queryKey: ["organizer", "events", eventId],
     queryFn: async (): Promise<OrganizerEvent> => {
       if (!eventId) throw new Error("Brak ID");
-      const response = await apiClient(`/events/my-events/${eventId}`);
+      const response = await apiClient(`/api/Events/${eventId}`);
+      if (!response.ok) throw new Error("Błąd serwera: " + response.status);
       return response.json();
     },
     enabled: !!eventId,
@@ -56,17 +49,15 @@ export const useOrganizerEventDetails = (eventId: string | undefined) => {
 };
 
 /**
- * @description Custom hook to fetch the list of attendees for a specific event.
- * 
- * @param {string | undefined} eventId  the ID of the event to fetch attendees for
- * @returns {Attendee[]}                list of attendees for the event
+ * @description Pobiera listę uczestników zapisaną na wydarzenie
  */
-export const useEventAttendees = (eventId: string | undefined) => {
+export const useEventAttendees = (eventId: string | number | undefined) => {
   return useQuery({
     queryKey: ["organizer", "events", eventId, "attendees"],
     queryFn: async (): Promise<Attendee[]> => {
       if (!eventId) throw new Error("Brak ID");
-      const response = await apiClient(`/events/${eventId}/attendees`);
+      const response = await apiClient(`/api/Events/${eventId}/attendees`);
+      if (!response.ok) throw new Error("Błąd pobierania uczestników");
       return response.json();
     },
     enabled: !!eventId,
@@ -74,24 +65,20 @@ export const useEventAttendees = (eventId: string | undefined) => {
 };
 
 /**
- * @description Custom hook to perform manual check-in of an attendee by ticket ID.
- *              This is used in the attendee list where the organizer can mark a ticket as used.
- * 
- * @param eventId   the ID of the event for which the check-in is being performed
- * @returns         mutation object with a function to trigger the check-in and handles cache invalidation on success
+ * @description Manualne i QR oznaczanie obecności
  */
-export const useManualCheckIn = (eventId: string | undefined) => {
+export const useManualCheckIn = (eventId: string | number | undefined) => {
   const queryClient = useQueryClient();
-  
   return useMutation({
-    mutationFn: async (ticketId: string) => {
-      const response = await apiClient("/tickets/verify", {
-        method: "POST",
-        body: JSON.stringify({ ticketId, eventId }),
-      });
-      return response.json();
+    mutationFn: async (ticketId: string | number) => {
+      const response = await apiClient(`/api/Tickets/scan/${ticketId}`, { method: "POST" });
+      const text = await response.text();
+      if (text !== "Success") throw new Error(text);
+      return text;
     },
     onSuccess: () => {
+      // Odświeżamy dane wydarzenia (licznik) i listę osób
+      queryClient.invalidateQueries({ queryKey: ["organizer", "events", eventId] });
       queryClient.invalidateQueries({ queryKey: ["organizer", "events", eventId, "attendees"] });
     },
   });

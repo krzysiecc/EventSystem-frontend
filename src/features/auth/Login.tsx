@@ -21,7 +21,6 @@ const Login = () => {
   const login = useAuthStore((state) => state.login);
   const addToast = useToastStore((state) => state.addToast);
 
-  // Redirect to intended page or role-based default after login
   const from = location.state?.from?.pathname || null;
 
   const {
@@ -35,31 +34,38 @@ const Login = () => {
 
   const onSubmit = async (data: LoginFormInputs) => {
     try {
-      const response = await apiClient("/auth/login", {
+      const response = await apiClient("/api/Auth/login", {
         method: "POST",
         body: JSON.stringify(data),
       });
 
+      // Odbieramy JSONa z tokenem
       const result = await response.json();
 
-      login(result.accessToken);
-
-      if (result.refreshToken) {
-        localStorage.setItem("refreshToken", result.refreshToken);
+      if (!result.accessToken) {
+        throw new Error("Serwer nie zwrócił tokenu.");
       }
+
+      // 1. Wywołujemy Twoją funkcję login ze stora.
+      // Zakładam, że useAuthStore używa jwt-decode, aby wyciągnąć rolę z tego tokena.
+      login(result.accessToken);
 
       addToast("Zalogowano pomyślnie!", "success");
 
-      // If we have a stored intended path use it, otherwise go to role dashboard
-      if (from) {
-        navigate(from, { replace: true });
+      // 2. Teraz sprawdzamy rolę, która została wyciągnięta z tokena
+      const user = useAuthStore.getState().user;
+      
+      if (user && user.role) {
+        const rolePath = `/${user.role.toLowerCase()}`;
+        console.log("Przekierowuję do strefy:", rolePath);
+        navigate(from || rolePath, { replace: true });
       } else {
-        const user = useAuthStore.getState().user;
-        const rolePath = `/${user?.role.toLowerCase() ?? ""}`;
-        navigate(rolePath, { replace: true });
+        // Fallback jeśli token nie miał roli lub dekodowanie nie zadziałało
+        navigate("/student"); 
       }
-    } catch {
-      addToast("Nie udało się zalogować. Sprawdź dane.", "error");
+      
+    } catch (error) {
+      addToast("Błąd logowania. Sprawdź dane.", "error");
       setError("root", {
         type: "manual",
         message: "Nieprawidłowe dane logowania lub błąd serwera.",
@@ -75,7 +81,6 @@ const Login = () => {
         </h2>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          {/* Email field */}
           <div>
             <label className="block text-sm font-medium text-text-secondary mb-1">
               Adres e-mail
@@ -95,7 +100,6 @@ const Login = () => {
             )}
           </div>
 
-          {/* Password field */}
           <div>
             <label className="block text-sm font-medium text-text-secondary mb-1">
               Hasło
@@ -115,7 +119,6 @@ const Login = () => {
             )}
           </div>
 
-          {/* API-level error display */}
           {errors.root && (
             <div className="rounded-md bg-status-error-bg p-3">
               <p className="text-sm text-status-error">{errors.root.message}</p>

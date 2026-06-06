@@ -5,12 +5,10 @@ import { useNavigate, Link } from "react-router-dom";
 import { apiClient } from "@/lib/apiClient";
 import { useToastStore } from "@/store/useToastStore";
 
-/**
- * @description Zod schema for organizer registration.
- * Validates email, password strength, password confirmation, and org token.
- */
 const registerOrganizerSchema = z
   .object({
+    firstName: z.string().min(2, { message: "Imię/Nazwa musi mieć min. 2 znaki" }),
+    lastName: z.string().min(2, { message: "Nazwisko musi mieć min. 2 znaki" }),
     email: z.string().email({ message: "Niepoprawny adres e-mail" }),
     password: z
       .string()
@@ -42,13 +40,15 @@ const RegisterOrganizer = () => {
 
   const onSubmit = async (data: RegisterOrganizerInputs) => {
     try {
-      // TODO: confirm payload shape matches .NET DTO
-      await apiClient("/auth/register-organizer", {
+      // Endpoint zgodny ze Swaggerem
+      await apiClient("/api/Auth/register/organizer", {
         method: "POST",
         body: JSON.stringify({
+          firstName: data.firstName,
+          lastName: data.lastName,
           email: data.email,
           password: data.password,
-          organizationToken: data.organizationToken,
+          Token: data.organizationToken, // Poprawiony klucz z instrukcji!
         }),
       });
 
@@ -79,7 +79,43 @@ const RegisterOrganizer = () => {
         </p>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          {/* Email field */}
+          
+          <div className="grid grid-cols-2 gap-4">
+            {/* Imię */}
+            <div>
+              <label className="block text-sm font-medium text-text-secondary mb-1">
+                Imię (Nazwa)
+              </label>
+              <input
+                type="text"
+                {...register("firstName")}
+                className={`w-full rounded-md border p-2 bg-bg-tertiary text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-primary ${errors.firstName ? "border-status-error" : "border-border-medium"}`}
+              />
+              {errors.firstName && (
+                <p className="mt-1 text-sm text-status-error">
+                  {errors.firstName.message}
+                </p>
+              )}
+            </div>
+
+            {/* Nazwisko */}
+            <div>
+              <label className="block text-sm font-medium text-text-secondary mb-1">
+                Nazwisko
+              </label>
+              <input
+                type="text"
+                {...register("lastName")}
+                className={`w-full rounded-md border p-2 bg-bg-tertiary text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-primary ${errors.lastName ? "border-status-error" : "border-border-medium"}`}
+              />
+              {errors.lastName && (
+                <p className="mt-1 text-sm text-status-error">
+                  {errors.lastName.message}
+                </p>
+              )}
+            </div>
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-text-secondary mb-1">
               Adres e-mail
@@ -99,7 +135,6 @@ const RegisterOrganizer = () => {
             )}
           </div>
 
-          {/* Organization token field */}
           <div>
             <label className="block text-sm font-medium text-text-secondary mb-1">
               Token organizacyjny
@@ -121,7 +156,6 @@ const RegisterOrganizer = () => {
             )}
           </div>
 
-          {/* Password field */}
           <div>
             <label className="block text-sm font-medium text-text-secondary mb-1">
               Hasło
@@ -140,7 +174,6 @@ const RegisterOrganizer = () => {
             )}
           </div>
 
-          {/* Confirm password field */}
           <div>
             <label className="block text-sm font-medium text-text-secondary mb-1">
               Potwierdź hasło
@@ -161,7 +194,6 @@ const RegisterOrganizer = () => {
             )}
           </div>
 
-          {/* API-level error */}
           {errors.root && (
             <div className="rounded-md bg-status-error-bg p-3">
               <p className="text-sm text-status-error">{errors.root.message}</p>

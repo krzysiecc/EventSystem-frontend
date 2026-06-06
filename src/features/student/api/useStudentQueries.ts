@@ -1,41 +1,31 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
 
-// TODO: check with DTOs
 export interface PublicEvent {
-  id: string;
+  id: number;
   title: string;
+  description: string;
   date: string;
   location: string;
-  capacity: number;
+  maxCapacity: number;
+  imageUrl?: string;
   ticketsSold: number;
-  description: string;
 }
 
-// TODO: check with DTOs
 export interface Ticket {
-  id: string;
-  eventId: string;
+  id: number;
   eventTitle: string;
   eventDate: string;
   eventLocation: string;
+  qrCodeContent: string;
   isUsed: boolean;
 }
 
-/**
- * @description Hooks for student queries: fetching events, fetching tickets, registering for events.
- *
- * @param none
- * @returns       useAllEvents - fetches all published events for students
- * @returns       useMyTickets - fetches the logged-in student's tickets
- * @returns       useRegisterForEvent - mutation hook to register the student for an event, invalidates relevant queries on success
- * @returns       useEventDetails - fetches detailed information about a specific event by ID
- */
 export const useAllEvents = () => {
   return useQuery({
     queryKey: ["student", "events"],
     queryFn: async (): Promise<PublicEvent[]> => {
-      const response = await apiClient("/events/published");
+      const response = await apiClient("/api/Events");
       return response.json();
     },
   });
@@ -45,37 +35,39 @@ export const useMyTickets = () => {
   return useQuery({
     queryKey: ["student", "tickets"],
     queryFn: async (): Promise<Ticket[]> => {
-      const response = await apiClient("/tickets/my-tickets");
+      const response = await apiClient("/api/Tickets/my");
       return response.json();
     },
+  });
+};
+
+// DODAJ TO - Brakujący eksport dla widoku szczegółów
+export const useEventDetails = (eventId: number | undefined) => {
+  return useQuery({
+    queryKey: ["student", "events", eventId],
+    queryFn: async (): Promise<PublicEvent> => {
+      if (!eventId) throw new Error("Brak ID");
+      const response = await apiClient(`/api/Events/${eventId}`);
+      return response.json();
+    },
+    enabled: !!eventId,
   });
 };
 
 export const useRegisterForEvent = () => {
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async (eventId: string) => {
-      const response = await apiClient(`/events/${eventId}/register`, {
+    mutationFn: async (eventId: number) => {
+      const response = await apiClient(`/api/Tickets/enroll/${eventId}`, {
         method: "POST",
       });
-      return response.json();
+      const text = await response.text();
+      if (text !== "Success") throw new Error(text);
+      return text;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["student", "events"] });
       queryClient.invalidateQueries({ queryKey: ["student", "tickets"] });
     },
-  });
-};
-
-export const useEventDetails = (id: string | undefined) => {
-  return useQuery({
-    queryKey: ["student", "events", id],
-    queryFn: async (): Promise<PublicEvent> => {
-      if (!id) throw new Error("No ID provided");
-      const response = await apiClient(`/events/${id}`);
-      return response.json();
-    },
-    enabled: !!id, // Zapytanie nie wyśle się, jeśli nie ma ID
   });
 };

@@ -4,33 +4,12 @@ import "@/styles/index.css";
 import App from "./App.tsx";
 import { useAuthStore } from "@/store/useAuthStore";
 
-async function enableMocking() {
-  if (import.meta.env.PROD) return;
+// Inicjalizacja stanu autoryzacji (np. pobranie tokena z localStorage)
+useAuthStore.getState().initializeFromStorage();
 
-  const { worker } = await import("./mocks/browser");
-
-  return worker.start({
-    onUnhandledRequest(request, print) {
-      if (
-        request.url.includes("chrome-extension") ||
-        request.url.includes("node_modules") ||
-        request.url.includes("src/")
-      ) {
-        return;
-      }
-      if (request.url.includes("/api/")) {
-        print.warning();
-      }
-    },
-  });
-}
-
-enableMocking().then(() => {
-  useAuthStore.getState().initializeFromStorage();
-
-  createRoot(document.getElementById("root")!).render(
-    <StrictMode>
-      <App />
-    </StrictMode>,
-  );
-});
+// Renderowanie aplikacji bez pośrednictwa Mock Service Worker
+createRoot(document.getElementById("root")!).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+);

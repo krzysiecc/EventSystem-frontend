@@ -7,6 +7,8 @@ import { useToastStore } from "@/store/useToastStore";
 
 const registerStudentSchema = z
   .object({
+    firstName: z.string().min(2, { message: "Imię musi mieć min. 2 znaki" }),
+    lastName: z.string().min(2, { message: "Nazwisko musi mieć min. 2 znaki" }),
     email: z.string().email({ message: "Niepoprawny adres email" }),
     password: z
       .string()
@@ -35,9 +37,14 @@ const RegisterStudent = () => {
 
   const onSubmit = async (data: RegisterStudentInputs) => {
     try {
-      await apiClient("/auth/register", {
+      await apiClient("/api/Auth/register/student", {
         method: "POST",
-        body: JSON.stringify({ email: data.email, password: data.password }),
+        body: JSON.stringify({ 
+          firstName: data.firstName, // Dodane z instrukcji
+          lastName: data.lastName,   // Dodane z instrukcji
+          email: data.email, 
+          password: data.password 
+        }),
       });
 
       addToast("Konto utworzone pomyślnie! Możesz się teraz zalogować.", "success");
@@ -62,6 +69,43 @@ const RegisterStudent = () => {
         </p>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          
+          <div className="grid grid-cols-2 gap-4">
+            {/* Imię */}
+            <div>
+              <label className="block text-sm font-medium text-text-secondary mb-1">
+                Imię
+              </label>
+              <input
+                type="text"
+                {...register("firstName")}
+                className={`w-full rounded-md border p-2 bg-bg-tertiary text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-primary ${errors.firstName ? "border-status-error" : "border-border-medium"}`}
+              />
+              {errors.firstName && (
+                <p className="mt-1 text-sm text-status-error">
+                  {errors.firstName.message}
+                </p>
+              )}
+            </div>
+
+            {/* Nazwisko */}
+            <div>
+              <label className="block text-sm font-medium text-text-secondary mb-1">
+                Nazwisko
+              </label>
+              <input
+                type="text"
+                {...register("lastName")}
+                className={`w-full rounded-md border p-2 bg-bg-tertiary text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-primary ${errors.lastName ? "border-status-error" : "border-border-medium"}`}
+              />
+              {errors.lastName && (
+                <p className="mt-1 text-sm text-status-error">
+                  {errors.lastName.message}
+                </p>
+              )}
+            </div>
+          </div>
+
           {/* Email */}
           <div>
             <label className="block text-sm font-medium text-text-secondary mb-1">

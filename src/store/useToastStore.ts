@@ -15,21 +15,28 @@ interface ToastState {
 }
 
 /**
- * @description Zustand store for managing toast notifications across the app. Provides methods to add and remove toasts, with automatic cleanup after a timeout.
- * 
- * @param none
- * @returns {ToastState}     Zustand store with toast state and actions for managing notifications
+ * @description Zustand store for managing toast notifications across the app. 
+ * Replaced crypto.randomUUID with a custom generator to support non-HTTPS environments (Local IP).
  */
 export const useToastStore = create<ToastState>((set) => ({
   toasts: [],
   addToast: (message, type) => {
-    const id = crypto.randomUUID();
-    set((state) => ({ toasts: [...state.toasts, { id, message, type }] }));
+    // Bezpieczny generator ID działający na HTTP i IP
+    const id = Math.random().toString(36).substring(2, 9) + Date.now().toString(36);
+    
+    set((state) => ({ 
+      toasts: [...state.toasts, { id, message, type }] 
+    }));
 
+    // Automatyczne usuwanie po 3 sekundach
     setTimeout(() => {
-      set((state) => ({ toasts: state.toasts.filter((t) => t.id !== id) }));
+      set((state) => ({ 
+        toasts: state.toasts.filter((t) => t.id !== id) 
+      }));
     }, 3000);
   },
   removeToast: (id) =>
-    set((state) => ({ toasts: state.toasts.filter((t) => t.id !== id) })),
+    set((state) => ({ 
+      toasts: state.toasts.filter((t) => t.id !== id) 
+    })),
 }));

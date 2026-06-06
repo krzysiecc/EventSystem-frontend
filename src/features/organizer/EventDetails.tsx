@@ -1,85 +1,111 @@
 import { useParams, Link } from "react-router-dom";
-import { useOrganizerEventDetails } from "./api/useEvents";
+import { useOrganizerEventDetails, useEventAttendees, useManualCheckIn } from "./api/useEvents";
 
-const EventDetailsOrg = () => {
-  const { id } = useParams<{ id: string }>();
-  const { data: event, isLoading, isError } = useOrganizerEventDetails(id);
+const EventDetailsOrganizer = () => {
+  const { id: eventId } = useParams<{ id: string }>();
 
-  if (isLoading) return <div className="p-6">Ładowanie...</div>;
-  if (isError || !event)
+  const { data: event, isLoading: isEventLoading, isError: isEventError } = useOrganizerEventDetails(eventId);
+  const { data: attendees, isLoading: isAttendeesLoading } = useEventAttendees(eventId);
+  const checkInMutation = useManualCheckIn(eventId);
+
+  if (isEventLoading) return <div className="p-10 text-center text-text-primary">Wczytywanie szczegółów...</div>;
+  
+  if (isEventError || !event) {
     return (
-      <div className="p-6 text-status-error">Błąd wczytywania wydarzenia.</div>
+      <div className="p-10 text-center text-status-error">
+        <h2 className="text-2xl font-bold">Błąd wczytywania strony</h2>
+        <p className="mt-2 text-text-muted">Upewnij się, że jesteś zalogowany jako organizator tego wydarzenia.</p>
+        <Link to="/organizer/dashboard" className="underline mt-4 inline-block text-accent-primary">Wróć do panelu</Link>
+      </div>
     );
-
-  const progress = Math.round((event.ticketsSold / event.capacity) * 100);
+  }
 
   return (
-    <div className="layout-container py-6 max-w-4xl">
-      <Link
-        to="/organizer/events"
-        className="text-accent-primary hover:underline mb-6 inline-block"
-      >
-        ← Wróć do listy
-      </Link>
-
-      <div className="bg-surface-raised border border-border-light rounded-xl p-6 shadow-sm mb-6">
-        <div className="flex justify-between items-start mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-text-primary mb-2">
-              {event.title}
-            </h1>
-            <p className="text-text-secondary">
-              📅 {new Date(event.date).toLocaleString()} • 📍 {event.location}
-            </p>
-          </div>
-          <span className="bg-status-success-bg text-status-success px-3 py-1 rounded-full text-sm font-bold uppercase">
-            {event.status}
-          </span>
+    <div className="p-8 max-w-5xl mx-auto bg-bg-primary text-text-primary min-h-screen">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+        <div>
+          <Link to="/organizer/dashboard" className="text-accent-primary hover:underline text-sm mb-2 block">← Wróć do listy</Link>
+          <h1 className="text-3xl font-bold">{event.title}</h1>
+          <p className="text-text-muted">{event.location} | {new Date(event.date).toLocaleString("pl-PL")}</p>
         </div>
+        <Link 
+          to={`/organizer/scanner/${eventId}`}
+          className="bg-accent-primary text-text-on-accent px-6 py-3 rounded-xl font-bold shadow-lg hover:scale-105 transition-transform"
+        >
+          📸 Otwórz Skaner QR
+        </Link>
+      </div>
 
-        {/* Pasek postępu zapisów */}
-        <div className="bg-bg-secondary p-5 rounded-lg mb-6">
-          <div className="flex justify-between text-sm mb-2">
-            <span className="font-semibold text-text-primary">
-              Zajęte miejsca
-            </span>
-            <span className="font-semibold text-text-primary">
-              {event.ticketsSold} / {event.capacity} ({progress}%)
-            </span>
-          </div>
-          <div className="w-full bg-border-light rounded-full h-2.5">
-            <div
-              className="bg-accent-primary h-2.5 rounded-full"
-              style={{ width: `${progress}%` }}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Statystyki */}
+        <div className="md:col-span-1 bg-surface-raised p-6 rounded-2xl border border-border-light shadow-sm">
+          <h3 className="text-sm font-bold text-text-muted uppercase mb-2">Sprzedane bilety</h3>
+          <p className="text-3xl font-bold text-text-primary">
+            {event.enrolledCount} / {event.maxCapacity}
+          </p>
+          <div className="w-full bg-bg-secondary h-2 rounded-full mt-4 overflow-hidden">
+            <div 
+              className="bg-accent-primary h-full transition-all" 
+              style={{ width: `${Math.min((event.enrolledCount / event.maxCapacity) * 100, 100)}%` }}
             ></div>
           </div>
         </div>
 
-        {/* Główne akcje operacyjne */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-border-light pt-6">
-          <Link
-            to={`/organizer/scanner/${event.id}`}
-            className="flex flex-col items-center justify-center p-6 bg-status-success text-text-on-accent rounded-xl hover:opacity-90 transition-opacity shadow-md"
-          >
-            <span className="text-xl font-bold mb-1">📷 Uruchom skaner QR</span>
-            <span className="text-sm opacity-90">
-              Skanuj wejściówki na bramce
-            </span>
-          </Link>
-
-          <Link
-            to={`/organizer/events/${event.id}/attendees`}
-            className="flex flex-col items-center justify-center p-6 bg-surface-sunken border border-border-medium text-text-primary rounded-xl hover:border-accent-primary transition-colors shadow-sm"
-          >
-            <span className="text-xl font-bold mb-1">👥 Lista uczestników</span>
-            <span className="text-sm text-text-secondary">
-              Ręczne sprawdzanie obecności
-            </span>
-          </Link>
+        {/* Lista uczestników */}
+        <div className="md:col-span-2 bg-surface-raised border border-border-light rounded-2xl shadow-sm overflow-hidden">
+          <div className="p-4 border-b border-border-light font-bold bg-bg-secondary">
+            Lista obecności
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead className="bg-bg-secondary text-text-muted text-xs uppercase">
+                <tr>
+                  <th className="p-4">Student (Email)</th>
+                  <th className="p-4">Status</th>
+                  <th className="p-4 text-right">Akcja</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border-light">
+                {isAttendeesLoading ? (
+                  <tr><td colSpan={3} className="p-10 text-center">Wczytywanie listy...</td></tr>
+                ) : attendees?.length === 0 ? (
+                  <tr><td colSpan={3} className="p-10 text-center text-text-muted">Brak zapisanych osób.</td></tr>
+                ) : (
+                  attendees?.map((a) => (
+                    <tr key={a.id} className="hover:bg-bg-secondary/50 transition-colors">
+                      <td className="p-4 text-sm font-medium">{a.studentEmail}</td>
+                      <td className="p-4">
+                        {a.isUsed ? (
+                          <span className="bg-status-success/20 text-status-success px-3 py-1 rounded-full text-xs font-bold">
+                            OBECNY
+                          </span>
+                        ) : (
+                          <span className="bg-bg-secondary text-text-muted px-3 py-1 rounded-full text-xs font-bold">
+                            OCZEKUJE
+                          </span>
+                        )}
+                      </td>
+                      <td className="p-4 text-right">
+                        {!a.isUsed && (
+                          <button 
+                            onClick={() => checkInMutation.mutate(a.id)}
+                            disabled={checkInMutation.isPending}
+                            className="text-accent-primary font-bold text-xs hover:underline disabled:opacity-50"
+                          >
+                            {checkInMutation.isPending ? "..." : "Odbij ręcznie"}
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
   );
 };
 
-export default EventDetailsOrg;
+export default EventDetailsOrganizer;

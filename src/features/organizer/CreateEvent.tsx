@@ -7,7 +7,6 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
 import { useToastStore } from "@/store/useToastStore";
 
-// TODO: check validation with DTOs
 const createEventSchema = z.object({
   title: z
     .string()
@@ -38,16 +37,23 @@ const CreateEvent = () => {
   const createEventMutation = useMutation({
     mutationFn: async (data: CreateEventInputs) => {
       const cleanDescription = DOMPurify.sanitize(data.description);
+      const dateAsUtc = new Date(data.date).toISOString();
 
-      const response = await apiClient("/events", {
+      const response = await apiClient("/api/Events", {
         method: "POST",
-        body: JSON.stringify({ ...data, description: cleanDescription }),
+        body: JSON.stringify({ 
+          title: data.title,
+          location: data.location,
+          description: cleanDescription,
+          date: dateAsUtc,
+          maxCapacity: data.capacity 
+        }),
       });
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["organizer", "events"] });
-      addToast("Wydarzenie zostało pomyślnie utworzone (draft)", "success");
+      addToast("Wydarzenie zostało pomyślnie utworzone", "success");
       navigate("/organizer");
     },
     onError: () => {
