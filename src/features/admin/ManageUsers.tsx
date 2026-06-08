@@ -1,10 +1,43 @@
-import { useAllUsers } from "./api/useAdminQueries";
+import {
+  useAllUsers,
+  useUpdateUserRole,
+  useDeleteUser,
+} from "./api/useAdminQueries";
+import { useToastStore } from "@/store/useToastStore";
 
 const ManageUsers = () => {
   const { data: users, isLoading } = useAllUsers();
+  const updateRoleMutation = useUpdateUserRole();
+  const deleteUserMutation = useDeleteUser();
+  const addToast = useToastStore((state) => state.addToast);
 
   if (isLoading)
     return <div className="p-6 text-text-muted">Ładowanie użytkowników...</div>;
+
+  const handleRoleChange = (userId: string | number, newRole: string) => {
+    if (window.confirm(`Czy na pewno chcesz zmienić rolę na ${newRole}?`)) {
+      updateRoleMutation.mutate(
+        { userId, newRole },
+        {
+          onSuccess: () => addToast("Rola zaktualizowana pomyślnie", "success"),
+          onError: (err: unknown) => addToast((err as Error).message, "error"),
+        },
+      );
+    }
+  };
+
+  const handleDeleteUser = (userId: string | number, email: string) => {
+    if (
+      window.confirm(
+        `NIEODWRACALNE! Czy na pewno chcesz usunąć użytkownika ${email} i wszystkie jego dane?`,
+      )
+    ) {
+      deleteUserMutation.mutate(userId, {
+        onSuccess: () => addToast("Użytkownik usunięty", "success"),
+        onError: (err: unknown) => addToast((err as Error).message, "error"),
+      });
+    }
+  };
 
   return (
     <div className="layout-container py-6">
@@ -19,7 +52,6 @@ const ManageUsers = () => {
               <th className="p-4 font-semibold">E-mail</th>
               <th className="p-4 font-semibold">Rola</th>
               <th className="p-4 font-semibold">Data dołączenia</th>
-              <th className="p-4 font-semibold">Status</th>
               <th className="p-4 font-semibold text-right">Akcje</th>
             </tr>
           </thead>
@@ -33,36 +65,31 @@ const ManageUsers = () => {
                   {user.email}
                 </td>
                 <td className="p-4">
-                  <span
-                    className={`px-2 py-1 text-xs rounded font-bold uppercase
-                    ${
-                      user.role === "Admin"
-                        ? "bg-status-error-bg text-status-error"
-                        : user.role === "Organizer"
-                          ? "bg-accent-subtle text-accent-primary"
-                          : "bg-status-info-bg text-status-info"
-                    }`}
+                  <select
+                    value={user.role}
+                    onChange={(e) => handleRoleChange(user.id, e.target.value)}
+                    disabled={
+                      user.role === "Admin" || updateRoleMutation.isPending
+                    }
+                    className="bg-bg-tertiary border border-border-medium rounded px-2 py-1 text-sm font-medium"
                   >
-                    {user.role}
-                  </span>
+                    <option value="Student">Student</option>
+                    <option value="Organizer">Organizer</option>
+                    <option value="Admin">Admin</option>
+                  </select>
                 </td>
                 <td className="p-4 text-text-secondary">
                   {new Date(user.createdAt).toLocaleDateString()}
                 </td>
-                <td className="p-4">
-                  {user.isActive ? (
-                    <span className="text-status-success text-sm font-medium">
-                      Aktywny
-                    </span>
-                  ) : (
-                    <span className="text-status-error text-sm font-medium">
-                      Zablokowany
-                    </span>
-                  )}
-                </td>
-                <td className="p-4 text-right">
-                  <button className="text-sm font-medium text-accent-primary hover:underline">
-                    Edytuj
+                <td className="p-4 text-right space-x-2">
+                  <button
+                    onClick={() => handleDeleteUser(user.id, user.email)}
+                    disabled={
+                      user.role === "Admin" || deleteUserMutation.isPending
+                    }
+                    className="text-sm font-medium text-status-error hover:underline disabled:opacity-50"
+                  >
+                    Usuń
                   </button>
                 </td>
               </tr>

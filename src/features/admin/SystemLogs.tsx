@@ -23,7 +23,9 @@ const SystemLogs = () => {
                 className="flex flex-col sm:flex-row sm:gap-4 py-2 border-b border-border-light last:border-0 hover:bg-surface-raised transition-colors p-2 rounded"
               >
                 <div className="text-text-secondary whitespace-nowrap min-w-40">
-                  {new Date(log.timestamp).toLocaleString()}
+                  {log.timestamp
+                    ? new Date(log.timestamp).toLocaleString()
+                    : "Brak daty"}
                 </div>
                 <div className="min-w-20">
                   <span

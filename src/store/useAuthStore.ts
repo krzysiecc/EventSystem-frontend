@@ -1,24 +1,15 @@
 import { create } from "zustand";
-import { jwtDecode } from "jwt-decode";
-
-// TODO: define payload based on .NET JWT structure
-interface JwtPayload {
-  sub: string;
-  email: string;
-  role: "Student" | "Organizer" | "Admin";
-  exp: number;
-}
+import { queryClient } from "@/lib/queryClient";
 
 interface User {
   id: string;
-  email: string;
   role: "Student" | "Organizer" | "Admin";
 }
 
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
-  login: (token: string) => void;
+  login: (role: "Student" | "Organizer" | "Admin", id: string) => void;
   logout: () => void;
   initializeFromStorage: () => void;
 }
@@ -37,52 +28,27 @@ export const useAuthStore = create<AuthState>((set) => ({
    */
   initializeFromStorage: () => {
     try {
-      const token = localStorage.getItem("accessToken");
-      if (!token) return;
-
-      const decoded = jwtDecode<JwtPayload>(token);
-
-      // Check if token is expired
-      if (decoded.exp * 1000 < Date.now()) {
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
-        return;
+      const storedUser = localStorage.getItem("authUser");
+      if (storedUser) {
+        const user: User = JSON.parse(storedUser);
+        set({ user, isAuthenticated: true });
       }
-
-      const user: User = {
-        id: decoded.sub,
-        email: decoded.email,
-        role: decoded.role,
-      };
-
-      set({ user, isAuthenticated: true });
     } catch (error) {
-      console.error("Failed to restore auth state from storage:", error);
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
+      console.error("Failed to restore auth state : ", error);
+      localStorage.removeItem("authUser");
     }
   },
 
-  login: (token: string) => {
-    try {
-      const decoded = jwtDecode<JwtPayload>(token);
-
-      const user: User = {
-        id: decoded.sub,
-        email: decoded.email,
-        role: decoded.role,
-      };
-
-      localStorage.setItem("accessToken", token);
-      set({ user, isAuthenticated: true });
-    } catch (error) {
-      console.error("Failed to decode token during login:", error);
-    }
+  login: (role, id) => {
+    const user: User = { role, id };
+    localStorage.setItem("authUser", JSON.stringify(user));
+    set({ user, isAuthenticated: true });
   },
 
   logout: () => {
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("authUser");
     set({ user: null, isAuthenticated: false });
+
+    queryClient.clear();
   },
 }));

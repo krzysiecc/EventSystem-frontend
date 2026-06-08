@@ -16,7 +16,7 @@ const EventDetailsStudent = () => {
     );
 
   const handleRegister = () => {
-    registerMutation.mutate(event.id, {
+    registerMutation.mutate(event.id.toString(), {
       onSuccess: () => {
         addToast(
           "Zapisano pomyślnie! Bilet znajduje się w Twoim panelu.",
@@ -29,7 +29,7 @@ const EventDetailsStudent = () => {
     });
   };
 
-  const isFull = event.capacity <= event.ticketsSold;
+  const isFull = event.maxCapacity <= event.enrolledCount;
 
   return (
     <div className="layout-container py-6 max-w-3xl">
@@ -67,7 +67,8 @@ const EventDetailsStudent = () => {
             <span
               className={`font-medium ${isFull ? "text-status-error" : "text-status-success"}`}
             >
-              {event.capacity - event.ticketsSold} / {event.capacity} miejsc
+              {event.maxCapacity - event.enrolledCount} / {event.maxCapacity}{" "}
+              miejsc
             </span>
           </div>
         </div>

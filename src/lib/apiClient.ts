@@ -1,9 +1,11 @@
+import { useAuthStore } from "@/store/useAuthStore";
+
 const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+  import.meta.env.VITE_API_URL || "http://localhost:5064/api";
 
 let isRefreshing = false;
 let failedQueue: Array<{
-  resolve: (value: string) => void;
+  resolve: (value: void) => void;
   reject: (reason?: unknown) => void;
 }> = [];
 
@@ -14,13 +16,10 @@ let failedQueue: Array<{
  * @param token   new access token if refresh succeeded, otherwise null
  * @returns       void
  */
-const processQueue = (error: Error | null, token: string | null = null) => {
+const processQueue = (error: Error | null) => {
   failedQueue.forEach((prom) => {
-    if (error) {
-      prom.reject(error);
-    } else if (token) {
-      prom.resolve(token);
-    }
+    if (error) prom.reject(error);
+    else prom.resolve();
   });
   failedQueue = [];
 };
@@ -36,12 +35,7 @@ export const apiClient = async (
   endpoint: string,
   options: RequestInit = {},
 ): Promise<Response> => {
-  let token = localStorage.getItem("accessToken");
-
   const headers = new Headers(options.headers);
-  if (token) {
-    headers.set("Authorization", `Bearer ${token}`);
-  }
 
   if (!headers.has("Content-Type") && !(options.body instanceof FormData)) {
     headers.set("Content-Type", "application/json");
@@ -50,6 +44,7 @@ export const apiClient = async (
   const config: RequestInit = {
     ...options,
     headers,
+    credentials: "include",
   };
 
   let response = await fetch(`${API_BASE_URL}${endpoint}`, config);
@@ -59,62 +54,37 @@ export const apiClient = async (
       isRefreshing = true;
 
       try {
-        const refreshToken = localStorage.getItem("refreshToken");
-        if (!refreshToken) throw new Error("Brak refresh tokena");
-
-        // TODO: customize path to .NET endpoint
         const refreshResponse = await fetch(`${API_BASE_URL}/auth/refresh`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ refreshToken }),
+          credentials: "include",
         });
 
-        if (!refreshResponse.ok) {
-          throw new Error("Sesja wygasła");
-        }
+        if (!refreshResponse.ok) throw new Error("Session expired");
 
-        const data = await refreshResponse.json();
-
-        localStorage.setItem("accessToken", data.accessToken);
-        localStorage.setItem("refreshToken", data.refreshToken);
-        token = data.accessToken;
-
-        processQueue(null, token);
-
-        headers.set("Authorization", `Bearer ${token}`);
-        response = await fetch(`${API_BASE_URL}${endpoint}`, {
-          ...config,
-          headers,
-        });
+        processQueue(null);
+        response = await fetch(`${API_BASE_URL}${endpoint}`, config);
       } catch (error) {
-        processQueue(error as Error, null);
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
-
+        processQueue(error as Error);
+        useAuthStore.getState().logout();
         window.location.href = "/login";
         return Promise.reject(error);
       } finally {
         isRefreshing = false;
       }
     } else {
-      return new Promise<string>((resolve, reject) => {
+      return new Promise<void>((resolve, reject) => {
         failedQueue.push({ resolve, reject });
       })
-        .then((newToken) => {
-          headers.set("Authorization", `Bearer ${newToken}`);
-          return fetch(`${API_BASE_URL}${endpoint}`, { ...config, headers });
-        })
-        .catch((err) => {
-          return Promise.reject(err);
-        });
+        .then(() => fetch(`${API_BASE_URL}${endpoint}`, config))
+        .catch((err) => Promise.reject(err));
     }
   }
 
-  // other errors than 401
   if (!response.ok) {
-    // TODO: may push error message from .NET
     const errorData = await response.json().catch(() => null);
-    const errorMessage = errorData?.message || `Błąd HTTP: ${response.status}`;
+    const errorMessage =
+      errorData?.message || `HTTP error : ${response.status}`;
     return Promise.reject(new Error(errorMessage));
   }
 

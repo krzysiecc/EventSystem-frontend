@@ -7,11 +7,13 @@ import { useToastStore } from "@/store/useToastStore";
 
 /**
  * @description Zod schema for organizer registration.
- * Validates email, password strength, password confirmation, and org token.
+ * Validates first name, last name, email, password strength, password confirmation, and org token.
  */
 const registerOrganizerSchema = z
   .object({
-    email: z.string().email({ message: "Niepoprawny adres e-mail" }),
+    firstName: z.string().min(2, "Wymagane"),
+    lastName: z.string().min(2, "Wymagane"),
+    email: z.email({ message: "Niepoprawny adres e-mail" }),
     password: z
       .string()
       .min(8, { message: "Hasło musi mieć co najmniej 8 znaków" }),
@@ -48,6 +50,8 @@ const RegisterOrganizer = () => {
         body: JSON.stringify({
           email: data.email,
           password: data.password,
+          firstName: data.firstName,
+          lastName: data.lastName,
           organizationToken: data.organizationToken,
         }),
       });
@@ -79,7 +83,43 @@ const RegisterOrganizer = () => {
         </p>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          {/* Email field */}
+          {/* First name */}
+          <div>
+            <label className="block text-sm font-medium text-text-secondary mb-1">
+              Imię
+            </label>
+            <input
+              type="text"
+              {...register("firstName")}
+              className={`w-full rounded-md border p-2 bg-bg-tertiary text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-primary ${errors.firstName ? "border-status-error" : "border-border-medium"}`}
+              placeholder="Jan"
+            />
+            {errors.firstName && (
+              <p className="mt-1 text-sm text-status-error">
+                {errors.firstName.message}
+              </p>
+            )}
+          </div>
+
+          {/* Last name */}
+          <div>
+            <label className="block text-sm font-medium text-text-secondary mb-1">
+              Nazwisko
+            </label>
+            <input
+              type="text"
+              {...register("lastName")}
+              className={`w-full rounded-md border p-2 bg-bg-tertiary text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-primary ${errors.lastName ? "border-status-error" : "border-border-medium"}`}
+              placeholder="Kowalski"
+            />
+            {errors.lastName && (
+              <p className="mt-1 text-sm text-status-error">
+                {errors.lastName.message}
+              </p>
+            )}
+          </div>
+
+          {/* Email */}
           <div>
             <label className="block text-sm font-medium text-text-secondary mb-1">
               Adres e-mail
@@ -99,7 +139,7 @@ const RegisterOrganizer = () => {
             )}
           </div>
 
-          {/* Organization token field */}
+          {/* Organization token */}
           <div>
             <label className="block text-sm font-medium text-text-secondary mb-1">
               Token organizacyjny
@@ -121,7 +161,7 @@ const RegisterOrganizer = () => {
             )}
           </div>
 
-          {/* Password field */}
+          {/* Password */}
           <div>
             <label className="block text-sm font-medium text-text-secondary mb-1">
               Hasło
@@ -140,7 +180,7 @@ const RegisterOrganizer = () => {
             )}
           </div>
 
-          {/* Confirm password field */}
+          {/* Confirm password */}
           <div>
             <label className="block text-sm font-medium text-text-secondary mb-1">
               Potwierdź hasło

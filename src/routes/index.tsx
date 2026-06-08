@@ -20,7 +20,10 @@ const RegisterStudent = lazy(() => import("@/features/auth/RegisterStudent"));
 const RegisterOrganizer = lazy(
   () => import("@/features/auth/RegisterOrganizer"),
 );
+const ForgotPassword = lazy(() => import("@/features/auth/ForgotPassword"));
+const ResetPassword = lazy(() => import("@/features/auth/ResetPassword"));
 const Unauthorized = lazy(() => import("@/features/public/Unauthorized"));
+const PublicProfile = lazy(() => import("@/features/shared/PublicProfile"));
 
 // Student
 const StudentDashboard = lazy(() => import("@/features/student/Dashboard"));
@@ -30,23 +33,22 @@ const EventDetailsStudent = lazy(
 );
 const MyTickets = lazy(() => import("@/features/student/MyTickets"));
 const TicketQRView = lazy(() => import("@/features/student/TicketQRView"));
+const Profile = lazy(() => import("@/features/shared/Profile"));
 
 // Organizer
-const OrganizerDashboard = lazy(
-  () => import("@/features/organizer/Dashboard"),
-);
+const OrganizerDashboard = lazy(() => import("@/features/organizer/Dashboard"));
 const ManageEvents = lazy(() => import("@/features/organizer/ManageEvents"));
 const CreateEvent = lazy(() => import("@/features/organizer/CreateEvent"));
-const EventDetailsOrg = lazy(
-  () => import("@/features/organizer/EventDetails"),
-);
+const EventDetailsOrg = lazy(() => import("@/features/organizer/EventDetails"));
 const AttendeeList = lazy(() => import("@/features/organizer/AttendeeList"));
 const QRScanner = lazy(() => import("@/features/organizer/QRScanner"));
+const EditEvent = lazy(() => import("@/features/organizer/EditEvent"));
 
 // Admin
 const AdminDashboard = lazy(() => import("@/features/admin/Dashboard"));
 const ManageUsers = lazy(() => import("@/features/admin/ManageUsers"));
 const SystemLogs = lazy(() => import("@/features/admin/SystemLogs"));
+const Tokens = lazy(() => import("@/features/admin/AdminTokens"));
 
 // --- ROUTER CONFIG ---
 const router = createBrowserRouter([
@@ -54,21 +56,23 @@ const router = createBrowserRouter([
     element: <RootLayout />,
     errorElement: <ErrorBoundary />,
     children: [
-      // PUBLICZNE TRASY
+      // PUBLIC
       { path: "/", element: <Home /> },
       { path: "/unauthorized", element: <Unauthorized /> },
+      { path: "forgot-password", element: <ForgotPassword /> },
+      { path: "reset-password", element: <ResetPassword /> },
 
-      // AUTORYZACJA
+      // AUTH
       {
         element: <AuthLayout />,
         children: [
           { path: "login", element: <Login /> },
           { path: "register", element: <RegisterStudent /> },
-          { path: "register-organizer", element: <RegisterOrganizer /> }, 
+          { path: "register-organizer", element: <RegisterOrganizer /> },
         ],
       },
 
-      // --- STREFA STUDENTA ---
+      // --- STUDENT ---
       {
         path: "/student",
         element: (
@@ -78,14 +82,16 @@ const router = createBrowserRouter([
         ),
         children: [
           { index: true, element: <StudentDashboard /> },
+          { path: "profile", element: <Profile /> },
           { path: "events", element: <EventBrowser /> },
           { path: "events/:id", element: <EventDetailsStudent /> },
           { path: "tickets", element: <MyTickets /> },
-          { path: "tickets/:id", element: <TicketQRView /> }, // Mobile friendly
+          { path: "tickets/:id", element: <TicketQRView /> },
+          { path: "users/:userId", element: <PublicProfile /> },
         ],
       },
 
-      // --- STREFA ORGANIZATORA ---
+      // --- ORGANIZER ---
       {
         path: "/organizer",
         element: (
@@ -98,11 +104,13 @@ const router = createBrowserRouter([
           { path: "events", element: <ManageEvents /> },
           { path: "events/new", element: <CreateEvent /> },
           { path: "events/:id", element: <EventDetailsOrg /> },
-          { path: "events/:id/attendees", element: <AttendeeList /> }, // Tu będą modale do ręcznego sprawdzania obecności
+          { path: "events/:id/attendees", element: <AttendeeList /> },
+          { path: "events/:id/edit", element: <EditEvent /> },
+          { path: "profile", element: <Profile /> },
+          { path: "users/:userId", element: <PublicProfile /> },
         ],
       },
 
-      // Specjalna trasa dla Skanera (bez sidebaru, full ekran kamery)
       {
         path: "/organizer/scanner/:eventId",
         element: (
@@ -113,7 +121,7 @@ const router = createBrowserRouter([
         children: [{ index: true, element: <QRScanner /> }],
       },
 
-      // --- STREFA ADMINA ---
+      // --- ADMIN ---
       {
         path: "/admin",
         element: (
@@ -125,6 +133,7 @@ const router = createBrowserRouter([
           { index: true, element: <AdminDashboard /> },
           { path: "users", element: <ManageUsers /> },
           { path: "logs", element: <SystemLogs /> },
+          { path: "tokens", element: <Tokens /> },
         ],
       },
     ],

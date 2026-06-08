@@ -1,18 +1,16 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
 
-// TODO: check with DTOs
 export interface PublicEvent {
-  id: string;
+  id: number;
   title: string;
   date: string;
   location: string;
-  capacity: number;
-  ticketsSold: number;
+  maxCapacity: number;
+  enrolledCount: number;
   description: string;
 }
 
-// TODO: check with DTOs
 export interface Ticket {
   id: string;
   eventId: string;
@@ -35,8 +33,9 @@ export const useAllEvents = () => {
   return useQuery({
     queryKey: ["student", "events"],
     queryFn: async (): Promise<PublicEvent[]> => {
-      const response = await apiClient("/events/published");
-      return response.json();
+      const response = await apiClient("/events");
+      const json = await response.json();
+      return json.data;
     },
   });
 };
@@ -45,8 +44,9 @@ export const useMyTickets = () => {
   return useQuery({
     queryKey: ["student", "tickets"],
     queryFn: async (): Promise<Ticket[]> => {
-      const response = await apiClient("/tickets/my-tickets");
-      return response.json();
+      const response = await apiClient("/tickets/my");
+      const json = await response.json();
+      return json.data;
     },
   });
 };
@@ -56,7 +56,7 @@ export const useRegisterForEvent = () => {
 
   return useMutation({
     mutationFn: async (eventId: string) => {
-      const response = await apiClient(`/events/${eventId}/register`, {
+      const response = await apiClient(`/tickets/enroll/${eventId}`, {
         method: "POST",
       });
       return response.json();
@@ -74,8 +74,9 @@ export const useEventDetails = (id: string | undefined) => {
     queryFn: async (): Promise<PublicEvent> => {
       if (!id) throw new Error("No ID provided");
       const response = await apiClient(`/events/${id}`);
-      return response.json();
+      const json = await response.json();
+      return json.data;
     },
-    enabled: !!id, // Zapytanie nie wyśle się, jeśli nie ma ID
+    enabled: !!id,
   });
 };

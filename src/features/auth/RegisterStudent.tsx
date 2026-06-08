@@ -5,9 +5,15 @@ import { useNavigate, Link } from "react-router-dom";
 import { apiClient } from "@/lib/apiClient";
 import { useToastStore } from "@/store/useToastStore";
 
+/**
+ * @description Zod schema for student registration.
+ * Validates first name, last name, email, password strength, and password confirmation.
+ */
 const registerStudentSchema = z
   .object({
-    email: z.string().email({ message: "Niepoprawny adres email" }),
+    firstName: z.string().min(2, "Wymagane"),
+    lastName: z.string().min(2, "Wymagane"),
+    email: z.email({ message: "Niepoprawny adres email" }),
     password: z
       .string()
       .min(8, { message: "Hasło musi mieć co najmniej 8 znaków" }),
@@ -37,13 +43,24 @@ const RegisterStudent = () => {
     try {
       await apiClient("/auth/register", {
         method: "POST",
-        body: JSON.stringify({ email: data.email, password: data.password }),
+        body: JSON.stringify({
+          firstName: data.firstName,
+          lastName: data.lastName,
+          email: data.email,
+          password: data.password,
+        }),
       });
 
-      addToast("Konto utworzone pomyślnie! Możesz się teraz zalogować.", "success");
+      addToast(
+        "Konto utworzone pomyślnie! Możesz się teraz zalogować.",
+        "success",
+      );
       navigate("/login");
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Rejestracja nie powiodła się. Spróbuj ponownie.";
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Rejestracja nie powiodła się. Spróbuj ponownie.";
       setError("root", {
         type: "manual",
         message: errorMessage,
@@ -58,10 +75,45 @@ const RegisterStudent = () => {
           Rejestracja Studenta
         </h2>
         <p className="mb-6 text-center text-sm text-text-secondary">
-          Dołącz do platformy, aby odkrywać i uczestniczyć w wydarzeniach studenckich.
+          Dołącz do platformy, aby odkrywać i uczestniczyć w wydarzeniach
+          studenckich.
         </p>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          {/* First Name */}
+          <div>
+            <label className="block text-sm font-medium text-text-secondary mb-1">
+              Imię
+            </label>
+            <input
+              type="text"
+              {...register("firstName")}
+              className={`w-full rounded-md border p-2 bg-bg-tertiary text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-primary ${errors.firstName ? "border-status-error" : "border-border-medium"}`}
+            />
+            {errors.firstName && (
+              <p className="mt-1 text-sm text-status-error">
+                {errors.firstName.message}
+              </p>
+            )}
+          </div>
+
+          {/* Last Name */}
+          <div>
+            <label className="block text-sm font-medium text-text-secondary mb-1">
+              Nazwisko
+            </label>
+            <input
+              type="text"
+              {...register("lastName")}
+              className={`w-full rounded-md border p-2 bg-bg-tertiary text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-primary ${errors.lastName ? "border-status-error" : "border-border-medium"}`}
+            />
+            {errors.lastName && (
+              <p className="mt-1 text-sm text-status-error">
+                {errors.lastName.message}
+              </p>
+            )}
+          </div>
+
           {/* Email */}
           <div>
             <label className="block text-sm font-medium text-text-secondary mb-1">

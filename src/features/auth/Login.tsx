@@ -42,27 +42,22 @@ const Login = () => {
 
       const result = await response.json();
 
-      login(result.accessToken);
-
-      if (result.refreshToken) {
-        localStorage.setItem("refreshToken", result.refreshToken);
-      }
-
+      login(result.role, result.userId.toString());
       addToast("Zalogowano pomyślnie!", "success");
 
-      // If we have a stored intended path use it, otherwise go to role dashboard
-      if (from) {
-        navigate(from, { replace: true });
-      } else {
-        const user = useAuthStore.getState().user;
-        const rolePath = `/${user?.role.toLowerCase() ?? ""}`;
-        navigate(rolePath, { replace: true });
-      }
-    } catch {
-      addToast("Nie udało się zalogować. Sprawdź dane.", "error");
+      setTimeout(() => {
+        if (from && from !== "/unauthorized") {
+          navigate(from, { replace: true });
+        } else {
+          const rolePath = `/${result.role.toLowerCase()}`;
+          navigate(rolePath, { replace: true });
+        }
+      }, 50);
+    } catch (error: unknown) {
+      addToast("Nie udało się zalogować : sprawdź dane logowania", "error");
       setError("root", {
         type: "manual",
-        message: "Nieprawidłowe dane logowania lub błąd serwera.",
+        message: error instanceof Error ? error.message : "Błąd serwera",
       });
     }
   };
@@ -75,7 +70,7 @@ const Login = () => {
         </h2>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          {/* Email field */}
+          {/* Email */}
           <div>
             <label className="block text-sm font-medium text-text-secondary mb-1">
               Adres e-mail
@@ -95,7 +90,7 @@ const Login = () => {
             )}
           </div>
 
-          {/* Password field */}
+          {/* Password */}
           <div>
             <label className="block text-sm font-medium text-text-secondary mb-1">
               Hasło

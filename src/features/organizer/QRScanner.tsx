@@ -14,18 +14,15 @@ const QRScanner = () => {
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [lastScanned, setLastScanned] = useState<string | null>(null);
 
-  // TODO: verify ticket mutation from backend
   const verifyMutation = useMutation({
     mutationFn: async (ticketId: string) => {
-      const response = await apiClient("/tickets/verify", {
+      const response = await apiClient(`/tickets/scan/${ticketId}`, {
         method: "POST",
-        body: JSON.stringify({ ticketId, eventId }),
       });
       return response.json();
     },
-    onSuccess: () => {
-      // TODO: backend should return e.g. { status: "success", message: "Bilet ważny" }
-      addToast("✅ Bilet WAŻNY! Wpuszczono.", "success");
+    onSuccess: (data) => {
+      addToast(`${data.message || "Bilet WAŻNY! Wpuszczono."}`, "success");
 
       setTimeout(() => {
         isScanningRef.current = false;
@@ -35,7 +32,7 @@ const QRScanner = () => {
     onError: (error: unknown) => {
       const message =
         error instanceof Error ? error.message : "Bilet NIEWAŻNY lub ZUŻYTY!";
-      addToast(`❌ ${message}`, "error");
+      addToast(`${message}`, "error");
 
       setTimeout(() => {
         isScanningRef.current = false;

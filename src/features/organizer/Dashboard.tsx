@@ -24,8 +24,12 @@ const OrganizerDashboard = () => {
     <div className="layout-container py-6">
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-text-primary">Panel Organizatora</h1>
-          <p className="text-text-secondary">Zarządzaj swoimi nadchodzącymi wydarzeniami</p>
+          <h1 className="text-2xl font-bold text-text-primary">
+            Panel Organizatora
+          </h1>
+          <p className="text-text-secondary">
+            Zarządzaj swoimi nadchodzącymi wydarzeniami
+          </p>
         </div>
 
         <Link
@@ -69,7 +73,8 @@ const OrganizerDashboard = () => {
                 <p>📅 {new Date(event.date).toLocaleDateString()}</p>
                 <p>📍 {event.location}</p>
                 <p>
-                  🎟️ {event.ticketsSold} / {event.capacity} zarejestrowanych
+                  🎟️ {event.enrolledCount} / {event.maxCapacity}{" "}
+                  zarejestrowanych
                 </p>
               </div>
 

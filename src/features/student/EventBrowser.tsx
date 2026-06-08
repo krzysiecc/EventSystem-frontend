@@ -59,9 +59,9 @@ const EventBrowser = () => {
         )}
 
         {events?.map((event) => {
-          const remainingSeats = event.capacity - event.ticketsSold;
+          const remainingSeats = event.maxCapacity - event.enrolledCount;
           const isFull = remainingSeats <= 0;
-          const isThisCardPending = pendingEventId === event.id;
+          const isThisCardPending = pendingEventId === event.id.toString();
 
           return (
             <div
@@ -87,7 +87,6 @@ const EventBrowser = () => {
                       : `Zostało ${getRemainingSeatsLabel(remainingSeats)}`}
                   </p>
                 </div>
-                {/* Strip any HTML tags from description for plain text preview */}
                 <p className="text-sm text-text-muted line-clamp-3 mb-4">
                   {event.description.replace(/<[^>]+>/g, "")}
                 </p>
@@ -95,7 +94,7 @@ const EventBrowser = () => {
 
               <div className="p-4 border-t border-border-light bg-bg-secondary">
                 <button
-                  onClick={() => handleRegister(event.id)}
+                  onClick={() => handleRegister(event.id.toString())}
                   disabled={isFull || isThisCardPending}
                   className="w-full bg-accent-primary text-text-on-accent py-2 rounded-md font-medium transition-colors hover:bg-accent-hover disabled:opacity-50 disabled:cursor-not-allowed"
                 >
