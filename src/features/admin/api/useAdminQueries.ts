@@ -2,19 +2,23 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
 
 export interface UserDTO {
-  id: string;
+  id: number;
+  firstName: string;
+  lastName: string;
   email: string;
   role: "Student" | "Organizer" | "Admin";
-  isActive: boolean;
   createdAt: string;
+  hasActiveEvents: boolean;
 }
 
-export interface SystemLog {
-  id: string;
-  timestamp: string;
-  level: "Info" | "Warning" | "Error";
-  message: string;
-  source: string;
+export interface AuditLog {
+  id: number;
+  action: string;
+  entityType: string;
+  entityId: number | null;
+  details: string | null;
+  createdAt: string;
+  userEmail: string;
 }
 
 export const useAllUsers = () => {
@@ -31,7 +35,7 @@ export const useAllUsers = () => {
 export const useSystemLogs = () => {
   return useQuery({
     queryKey: ["admin", "logs"],
-    queryFn: async (): Promise<SystemLog[]> => {
+    queryFn: async (): Promise<AuditLog[]> => {
       const response = await apiClient("/admin/logs");
       const json = await response.json();
       return json.data;
