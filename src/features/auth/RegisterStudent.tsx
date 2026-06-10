@@ -41,7 +41,7 @@ const RegisterStudent = () => {
 
   const onSubmit = async (data: RegisterStudentInputs) => {
     try {
-      await apiClient("/auth/register", {
+      await apiClient("/auth/register/student", {
         method: "POST",
         body: JSON.stringify({
           firstName: data.firstName,
