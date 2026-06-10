@@ -49,6 +49,7 @@ const ManageUsers = () => {
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-bg-secondary text-text-secondary text-sm border-b border-border-light">
+              <th className="p-4 font-semibold">Imię i nazwisko</th>
               <th className="p-4 font-semibold">E-mail</th>
               <th className="p-4 font-semibold">Rola</th>
               <th className="p-4 font-semibold">Data dołączenia</th>
@@ -61,22 +62,30 @@ const ManageUsers = () => {
                 key={user.id}
                 className="hover:bg-bg-secondary transition-colors"
               >
+                <td className="p-4 text-text-primary">
+                  {user.firstName} {user.lastName}
+                </td>
                 <td className="p-4 font-medium text-text-primary">
                   {user.email}
                 </td>
                 <td className="p-4">
-                  <select
-                    value={user.role}
-                    onChange={(e) => handleRoleChange(user.id, e.target.value)}
-                    disabled={
-                      user.role === "Admin" || updateRoleMutation.isPending
-                    }
-                    className="bg-bg-tertiary border border-border-medium rounded px-2 py-1 text-sm font-medium"
-                  >
-                    <option value="Student">Student</option>
-                    <option value="Organizer">Organizer</option>
-                    <option value="Admin">Admin</option>
-                  </select>
+                  {user.role === "Admin" ? (
+                    <span className="px-2 py-1 text-sm font-medium text-text-secondary">
+                      Admin
+                    </span>
+                  ) : (
+                    <select
+                      value={user.role}
+                      onChange={(e) =>
+                        handleRoleChange(user.id, e.target.value)
+                      }
+                      disabled={updateRoleMutation.isPending}
+                      className="bg-bg-tertiary border border-border-medium rounded px-2 py-1 text-sm font-medium"
+                    >
+                      <option value="Student">Student</option>
+                      <option value="Organizer">Organizer</option>
+                    </select>
+                  )}
                 </td>
                 <td className="p-4 text-text-secondary">
                   {new Date(user.createdAt).toLocaleDateString()}
