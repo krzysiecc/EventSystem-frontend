@@ -4,7 +4,7 @@ import { useMyTickets } from "./api/useStudentQueries";
 const StudentDashboard = () => {
   const { data: tickets, isLoading } = useMyTickets();
 
-  const upcomingTickets = tickets?.filter((t) => !t.isUsed) || [];
+  const upcomingTickets = tickets?.filter((t) => !t.isScanned) || [];
 
   return (
     <div className="layout-container py-6 space-y-8">
@@ -52,7 +52,7 @@ const StudentDashboard = () => {
             <p className="text-sm text-text-secondary mb-3">
               📅 {new Date(upcomingTickets[0].eventDate).toLocaleString()}{" "}
               <br />
-              📍 {upcomingTickets[0].eventLocation}
+              📍 {upcomingTickets[0].location}
             </p>
             <Link
               to={`/student/tickets/${upcomingTickets[0].id}`}
