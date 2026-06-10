@@ -1,6 +1,12 @@
-import QRCode from "react-qr-code";
+import QRCodeImport from "react-qr-code";
 import { useParams, Link } from "react-router-dom";
 import { useMyTickets } from "./api/useStudentQueries";
+
+// react-qr-code only publishes a CommonJS build; in the production bundle the
+// default import can resolve to the module namespace object instead of the
+// component itself, so unwrap the inner default export when present.
+const QRCode = ((QRCodeImport as unknown as { default?: typeof QRCodeImport })
+  .default ?? QRCodeImport) as typeof QRCodeImport;
 
 const TicketQRView = () => {
   const { id } = useParams<{ id: string }>();
