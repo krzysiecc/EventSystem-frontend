@@ -46,57 +46,62 @@ const OrganizerDashboard = () => {
             Nie masz jeszcze żadnych wydarzeń.
           </p>
         ) : (
-          events?.map((event) => (
-            <div
-              key={event.id}
-              className="rounded-xl border border-border-light bg-surface-raised p-5 shadow-sm transition-shadow hover:shadow-md flex flex-col"
-            >
-              <div className="mb-4 flex items-start justify-between">
-                <h3 className="text-lg font-semibold text-text-primary line-clamp-2">
-                  {event.title}
-                </h3>
-                <span
-                  className={`rounded-full px-2 py-1 text-xs font-medium
-                  ${
-                    event.status === "published"
-                      ? "bg-status-success-bg text-status-success"
-                      : event.status === "draft"
-                        ? "bg-status-warning-bg text-status-warning"
+          events?.map((event) => {
+            const isUpcoming = new Date(event.date) >= new Date();
+
+            return (
+              <div
+                key={event.id}
+                className="rounded-xl border border-border-light bg-surface-raised p-5 shadow-sm transition-shadow hover:shadow-md flex flex-col"
+              >
+                <div className="mb-4 flex items-start justify-between">
+                  <h3 className="text-lg font-semibold text-text-primary line-clamp-2">
+                    {event.title}
+                  </h3>
+                  <span
+                    className={`rounded-full px-2 py-1 text-xs font-medium whitespace-nowrap
+                    ${
+                      isUpcoming
+                        ? "bg-status-success-bg text-status-success"
                         : "bg-status-info-bg text-status-info"
-                  }`}
-                >
-                  {event.status}
-                </span>
-              </div>
-
-              <div className="mb-4 space-y-1 text-sm text-text-secondary grow">
-                <p>📅 {new Date(event.date).toLocaleDateString()}</p>
-                <p>📍 {event.location}</p>
-                <p>
-                  🎟️ {event.enrolledCount} / {event.maxCapacity}{" "}
-                  zarejestrowanych
-                </p>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="mt-auto pt-4 border-t border-border-light flex gap-2">
-                <Link
-                  to={`/organizer/events/${event.id}`}
-                  className="flex-1 rounded-md bg-bg-secondary py-2 text-center text-sm font-medium text-accent-primary transition-colors hover:bg-accent-subtle"
-                >
-                  Zarządzaj
-                </Link>
-                {event.status === "published" && (
-                  <Link
-                    to={`/organizer/scanner/${event.id}`}
-                    className="flex-1 rounded-md bg-status-success text-text-on-accent py-2 text-center text-sm font-medium transition-opacity hover:opacity-90"
+                    }`}
                   >
-                    Skaner
+                    {isUpcoming ? "Nadchodzące" : "Zakończone"}
+                  </span>
+                </div>
+
+                <div className="mb-4 space-y-1 text-sm text-text-secondary grow">
+                  <p>📅 {new Date(event.date).toLocaleDateString()}</p>
+                  <p>📍 {event.location}</p>
+                  <p>
+                    🎟️ {event.enrolledCount} / {event.maxCapacity}{" "}
+                    zarejestrowanych
+                  </p>
+                  {typeof event.scannedCount === "number" && (
+                    <p>✅ {event.scannedCount} wpuszczonych</p>
+                  )}
+                </div>
+
+                {/* Action Buttons */}
+                <div className="mt-auto pt-4 border-t border-border-light flex gap-2">
+                  <Link
+                    to={`/organizer/events/${event.id}`}
+                    className="flex-1 rounded-md bg-bg-secondary py-2 text-center text-sm font-medium text-accent-primary transition-colors hover:bg-accent-subtle"
+                  >
+                    Zarządzaj
                   </Link>
-                )}
+                  {isUpcoming && (
+                    <Link
+                      to={`/organizer/scanner/${event.id}`}
+                      className="flex-1 rounded-md bg-status-success text-text-on-accent py-2 text-center text-sm font-medium transition-opacity hover:opacity-90"
+                    >
+                      Skaner
+                    </Link>
+                  )}
+                </div>
               </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>
