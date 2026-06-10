@@ -7,8 +7,8 @@ const MyTickets = () => {
   if (isLoading)
     return <div className="p-6 text-text-muted">Ładowanie biletów...</div>;
 
-  const activeTickets = tickets?.filter((t) => !t.isUsed) || [];
-  const pastTickets = tickets?.filter((t) => t.isUsed) || [];
+  const activeTickets = tickets?.filter((t) => !t.isScanned) || [];
+  const pastTickets = tickets?.filter((t) => t.isScanned) || [];
 
   return (
     <div className="layout-container py-6">
