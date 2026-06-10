@@ -11,7 +11,7 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.ico", "apple-touch-icon.png", "masked-icon.svg"],
+      includeAssets: ["favicon.svg"],
       manifest: {
         name: "Student Event Manager",
         short_name: "EventMgr",
@@ -20,20 +20,9 @@ export default defineConfig({
         background_color: "#0d0c1d", // --bg-primary dark mode
         display: "standalone",
         orientation: "portrait",
-        icons: [
-          // TODO: add to public/ 2 images with following names and dimensions
-          {
-            src: "/icon-192x192.png",
-            sizes: "192x192",
-            type: "image/png",
-          },
-          {
-            src: "/icon-512x512.png",
-            sizes: "512x512",
-            type: "image/png",
-            purpose: "any maskable",
-          },
-        ],
+        // NOTE: to make the app installable with proper icons, add
+        // icon-192x192.png and icon-512x512.png to public/ and list them here.
+        icons: [],
       },
     }),
   ],
