@@ -12,12 +12,12 @@ export interface PublicEvent {
 }
 
 export interface Ticket {
-  id: string;
-  eventId: string;
+  id: number;
   eventTitle: string;
   eventDate: string;
-  eventLocation: string;
-  isUsed: boolean;
+  location: string;
+  qrCodeContent: string;
+  isScanned: boolean;
 }
 
 /**
