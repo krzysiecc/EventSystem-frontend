@@ -61,6 +61,8 @@ const router = createBrowserRouter([
       { path: "/unauthorized", element: <Unauthorized /> },
       { path: "forgot-password", element: <ForgotPassword /> },
       { path: "reset-password", element: <ResetPassword /> },
+      // Publiczny profil użytkownika (cel kodu QR biletu)
+      { path: "users/:userId", element: <PublicProfile /> },
 
       // AUTH
       {
