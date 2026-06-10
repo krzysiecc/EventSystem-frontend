@@ -52,7 +52,7 @@ const ManageEvents = () => {
                     {new Date(event.date).toLocaleDateString()}
                   </td>
                   <td className="p-4 text-text-secondary">
-                    {event.ticketsSold} / {event.capacity}
+                    {event.enrolledCount} / {event.maxCapacity}
                   </td>
                   <td className="p-4">
                     <span
