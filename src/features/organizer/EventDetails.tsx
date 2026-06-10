@@ -11,7 +11,11 @@ const EventDetailsOrg = () => {
       <div className="p-6 text-status-error">Błąd wczytywania wydarzenia.</div>
     );
 
-  const progress = Math.round((event.enrolledCount / event.maxCapacity) * 100);
+  const progress =
+    event.maxCapacity > 0
+      ? Math.round((event.enrolledCount / event.maxCapacity) * 100)
+      : 0;
+  const isUpcoming = new Date(event.date) >= new Date();
 
   return (
     <div className="layout-container py-6 max-w-4xl">
@@ -32,9 +36,23 @@ const EventDetailsOrg = () => {
               📅 {new Date(event.date).toLocaleString()} • 📍 {event.location}
             </p>
           </div>
-          <span className="bg-status-success-bg text-status-success px-3 py-1 rounded-full text-sm font-bold uppercase">
-            {event.status}
-          </span>
+          <div className="flex flex-col items-end gap-2">
+            <span
+              className={`px-3 py-1 rounded-full text-sm font-bold uppercase ${
+                isUpcoming
+                  ? "bg-status-success-bg text-status-success"
+                  : "bg-status-info-bg text-status-info"
+              }`}
+            >
+              {isUpcoming ? "Nadchodzące" : "Zakończone"}
+            </span>
+            <Link
+              to={`/organizer/events/${event.id}/edit`}
+              className="text-sm font-medium text-accent-primary hover:underline"
+            >
+              ✏️ Edytuj wydarzenie
+            </Link>
+          </div>
         </div>
 
         {/* Pasek postępu zapisów */}
@@ -50,7 +68,7 @@ const EventDetailsOrg = () => {
           <div className="w-full bg-border-light rounded-full h-2.5">
             <div
               className="bg-accent-primary h-2.5 rounded-full"
-              style={{ width: `${progress}%` }}
+              style={{ width: `${Math.min(progress, 100)}%` }}
             ></div>
           </div>
         </div>
