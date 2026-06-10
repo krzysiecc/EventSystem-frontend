@@ -49,6 +49,21 @@ const AdminDashboard = () => {
         </Link>
 
         <Link
+          to="/admin/tokens"
+          className="bg-surface-raised border border-border-light p-6 rounded-xl shadow-sm hover:border-accent-primary transition flex items-center justify-between"
+        >
+          <div>
+            <h2 className="text-xl font-bold text-text-primary">
+              Tokeny organizacyjne
+            </h2>
+            <p className="text-sm text-text-secondary mt-1">
+              Generuj i unieważniaj tokeny rejestracyjne dla Organizatorów.
+            </p>
+          </div>
+          <span className="text-2xl">🔑</span>
+        </Link>
+
+        <Link
           to="/admin/logs"
           className="bg-surface-raised border border-border-light p-6 rounded-xl shadow-sm hover:border-status-warning transition flex items-center justify-between"
         >
