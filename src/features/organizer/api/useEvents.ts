@@ -10,14 +10,17 @@ export interface OrganizerEvent {
   location: string;
   enrolledCount: number;
   maxCapacity: number;
-  status: "draft" | "published" | "completed";
+  scannedCount?: number;
+  imageUrl?: string | null;
 }
 
 export interface Attendee {
-  id: string;
+  id: number;
+  scanToken: string;
   studentEmail: string;
-  registrationDate: string;
-  isUsed: boolean;
+  firstName: string;
+  lastName: string;
+  isScanned: boolean;
 }
 
 /**
@@ -77,7 +80,7 @@ export const useEventAttendees = (eventId: string | undefined) => {
 };
 
 /**
- * @description Custom hook to perform manual check-in of an attendee by ticket ID.
+ * @description Custom hook to perform manual check-in of an attendee by their ticket's scan token (GUID).
  *              This is used in the attendee list where the organizer can mark a ticket as used.
  *
  * @param eventId   the ID of the event for which the check-in is being performed
@@ -87,8 +90,8 @@ export const useManualCheckIn = (eventId: string | undefined) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (ticketId: string) => {
-      const response = await apiClient(`/tickets/scan/${ticketId}`, {
+    mutationFn: async (scanToken: string) => {
+      const response = await apiClient(`/tickets/scan/${scanToken}`, {
         method: "POST",
       });
       return response.json();
