@@ -71,6 +71,12 @@ const DashboardLayout = ({ role }: { role: string }) => {
                 Użytkownicy
               </Link>
               <Link
+                to={`${basePath}/tokens`}
+                className="font-medium text-text-secondary hover:underline"
+              >
+                Tokeny organizacyjne
+              </Link>
+              <Link
                 to={`${basePath}/logs`}
                 className="font-medium text-text-secondary hover:underline"
               >
