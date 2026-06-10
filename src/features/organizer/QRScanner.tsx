@@ -5,6 +5,9 @@ import { useMutation } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
 import { useToastStore } from "@/store/useToastStore";
 
+const GUID_PATTERN =
+  /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/;
+
 const QRScanner = () => {
   const { eventId } = useParams<{ eventId: string }>();
   const addToast = useToastStore((state) => state.addToast);
@@ -15,8 +18,8 @@ const QRScanner = () => {
   const [lastScanned, setLastScanned] = useState<string | null>(null);
 
   const verifyMutation = useMutation({
-    mutationFn: async (ticketId: string) => {
-      const response = await apiClient(`/tickets/scan/${ticketId}`, {
+    mutationFn: async (scanToken: string) => {
+      const response = await apiClient(`/tickets/scan/${scanToken}`, {
         method: "POST",
       });
       return response.json();
@@ -50,7 +53,20 @@ const QRScanner = () => {
 
       isScanningRef.current = true;
       setLastScanned(decodedText);
-      verifyMutation.mutate(decodedText);
+
+      // Ticket QRs carry a profile URL with the scan token in the query
+      // string; older codes may be a bare GUID. Accept both.
+      const token = decodedText.match(GUID_PATTERN)?.[0];
+      if (!token) {
+        addToast("To nie jest kod biletu.", "error");
+        setTimeout(() => {
+          isScanningRef.current = false;
+          setLastScanned(null);
+        }, 2000);
+        return;
+      }
+
+      verifyMutation.mutate(token);
     };
 
     html5QrCode
