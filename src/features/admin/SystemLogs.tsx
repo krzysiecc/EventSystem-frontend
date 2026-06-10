@@ -1,5 +1,17 @@
 import { useSystemLogs } from "./api/useAdminQueries";
 
+/**
+ * @description Picks a badge colour for an audit action: destructive actions
+ * red, modifying actions amber, read-only actions blue.
+ */
+const actionBadgeClass = (action: string): string => {
+  if (action.startsWith("Delete") || action.startsWith("Revoke"))
+    return "bg-status-error text-text-on-accent";
+  if (action.startsWith("Update") || action.startsWith("Generate"))
+    return "bg-status-warning text-bg-primary";
+  return "bg-status-info text-text-on-accent";
+};
+
 const SystemLogs = () => {
   const { data: logs, isLoading } = useSystemLogs();
 
@@ -16,35 +28,29 @@ const SystemLogs = () => {
         {logs?.length === 0 ? (
           <p className="text-text-muted">Brak logów w systemie.</p>
         ) : (
-          <div className="space-y-2 flex flex-col-reverse">
+          <div className="space-y-2">
             {logs?.map((log) => (
               <div
                 key={log.id}
                 className="flex flex-col sm:flex-row sm:gap-4 py-2 border-b border-border-light last:border-0 hover:bg-surface-raised transition-colors p-2 rounded"
               >
                 <div className="text-text-secondary whitespace-nowrap min-w-40">
-                  {log.timestamp
-                    ? new Date(log.timestamp).toLocaleString()
-                    : "Brak daty"}
+                  {new Date(log.createdAt).toLocaleString()}
                 </div>
-                <div className="min-w-20">
+                <div className="min-w-28">
                   <span
-                    className={`px-2 py-0.5 rounded text-xs font-bold uppercase
-                    ${
-                      log.level === "Error"
-                        ? "bg-status-error text-text-on-accent"
-                        : log.level === "Warning"
-                          ? "bg-status-warning text-bg-primary"
-                          : "bg-status-info text-text-on-accent"
-                    }`}
+                    className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${actionBadgeClass(log.action)}`}
                   >
-                    {log.level}
+                    {log.action}
                   </span>
                 </div>
-                <div className="font-semibold text-text-secondary min-w-30">
-                  [{log.source}]
+                <div className="font-semibold text-text-secondary min-w-40 break-all">
+                  [{log.userEmail}]
                 </div>
-                <div className="text-text-primary break-all">{log.message}</div>
+                <div className="text-text-primary break-all">
+                  {log.details ??
+                    `${log.entityType}${log.entityId != null ? ` #${log.entityId}` : ""}`}
+                </div>
               </div>
             ))}
           </div>
