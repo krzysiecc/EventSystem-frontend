@@ -45,14 +45,15 @@ const Login = () => {
       login(result.role, result.userId.toString());
       addToast("Zalogowano pomyślnie!", "success");
 
-      setTimeout(() => {
-        if (from && from !== "/unauthorized") {
-          navigate(from, { replace: true });
-        } else {
-          const rolePath = `/${result.role.toLowerCase()}`;
-          navigate(rolePath, { replace: true });
-        }
-      }, 50);
+      // Only honour the "from" redirect when it belongs to this user's role,
+      // otherwise the role guard would immediately bounce to /unauthorized.
+      const rolePath = `/${result.role.toLowerCase()}`;
+      const target =
+        from && from !== "/unauthorized" && from.startsWith(rolePath)
+          ? from
+          : rolePath;
+
+      navigate(target, { replace: true });
     } catch (error: unknown) {
       addToast("Nie udało się zalogować : sprawdź dane logowania", "error");
       setError("root", {
