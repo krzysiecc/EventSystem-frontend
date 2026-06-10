@@ -21,6 +21,10 @@ const TicketQRView = () => {
       <div className="p-6 text-center text-status-error">Nie znaleziono biletu.</div>
     );
 
+  // A regular phone camera opens the public profile page; the organizer's
+  // in-app scanner extracts the scan token (GUID) from the query string.
+  const qrUrl = `${window.location.origin}/users/${ticket.studentId}?ticket=${ticket.qrCodeContent}`;
+
   return (
     <div className="flex flex-col min-h-[80vh] items-center justify-center p-4">
       <Link
@@ -41,7 +45,7 @@ const TicketQRView = () => {
 
         <div className="bg-white p-4 rounded-xl inline-block mb-6 shadow-sm border border-gray-100">
           <QRCode
-            value={ticket.qrCodeContent}
+            value={qrUrl}
             size={200}
             style={{ height: "auto", maxWidth: "100%", width: "100%" }}
             viewBox={`0 0 256 256`}
@@ -61,6 +65,9 @@ const TicketQRView = () => {
           </span>
           <p className="text-xs text-text-muted mt-4 font-mono break-all">
             {ticket.qrCodeContent}
+          </p>
+          <p className="text-xs text-text-muted mt-2">
+            Zeskanowanie kodu zwykłym aparatem otworzy Twój profil publiczny.
           </p>
         </div>
       </div>
