@@ -8,9 +8,9 @@ const AttendeeList = () => {
   const checkInMutation = useManualCheckIn(id);
   const addToast = useToastStore((state) => state.addToast);
 
-  const handleManualCheckIn = (ticketId: string) => {
+  const handleManualCheckIn = (scanToken: string) => {
     if (window.confirm("Czy na pewno chcesz ręcznie potwierdzić ten bilet?")) {
-      checkInMutation.mutate(ticketId, {
+      checkInMutation.mutate(scanToken, {
         onSuccess: () => addToast("Bilet skasowany pomyślnie!", "success"),
         onError: () => addToast("Błąd podczas kasowania biletu.", "error"),
       });
@@ -36,8 +36,8 @@ const AttendeeList = () => {
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-bg-secondary text-text-secondary text-sm border-b border-border-light">
-              <th className="p-4 font-semibold">E-mail studenta</th>
-              <th className="p-4 font-semibold">Data zarejestrowania</th>
+              <th className="p-4 font-semibold">Student</th>
+              <th className="p-4 font-semibold">E-mail</th>
               <th className="p-4 font-semibold">Status biletu</th>
               <th className="p-4 font-semibold text-right">Akcja</th>
             </tr>
@@ -56,13 +56,13 @@ const AttendeeList = () => {
                   className="hover:bg-bg-secondary transition-colors"
                 >
                   <td className="p-4 font-medium text-text-primary">
-                    {attendee.studentEmail}
+                    {attendee.firstName} {attendee.lastName}
                   </td>
                   <td className="p-4 text-text-secondary">
-                    {new Date(attendee.registrationDate).toLocaleString()}
+                    {attendee.studentEmail}
                   </td>
                   <td className="p-4">
-                    {attendee.isUsed ? (
+                    {attendee.isScanned ? (
                       <span className="px-2 py-1 text-xs rounded-full bg-status-error-bg text-status-error font-medium">
                         ZUŻYTY (Obecny)
                       </span>
@@ -73,9 +73,9 @@ const AttendeeList = () => {
                     )}
                   </td>
                   <td className="p-4 text-right">
-                    {!attendee.isUsed && (
+                    {!attendee.isScanned && (
                       <button
-                        onClick={() => handleManualCheckIn(attendee.id)}
+                        onClick={() => handleManualCheckIn(attendee.scanToken)}
                         disabled={checkInMutation.isPending}
                         className="text-sm bg-accent-primary text-text-on-accent px-3 py-1 rounded hover:bg-accent-hover disabled:opacity-50"
                       >
