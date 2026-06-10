@@ -46,7 +46,7 @@ const CreateEvent = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["organizer", "events"] });
-      addToast("Wydarzenie zostało pomyślnie utworzone (draft)", "success");
+      addToast("Wydarzenie zostało pomyślnie utworzone", "success");
       navigate("/organizer");
     },
     onError: () => {
