@@ -7,7 +7,6 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
 import { useToastStore } from "@/store/useToastStore";
 
-// TODO: check validation with DTOs
 const createEventSchema = z.object({
   title: z
     .string()
@@ -15,7 +14,7 @@ const createEventSchema = z.object({
     .max(100, "Tytuł jest za długi"),
   date: z.string().min(1, "Data jest wymagana"),
   location: z.string().min(2, "Lokalizacja musi mieć min. 2 znaki"),
-  capacity: z.coerce.number().min(1, "Pojemność musi wynosić minimum 1"),
+  maxCapacity: z.coerce.number().min(1, "Pojemność musi wynosić minimum 1"),
   description: z.string().min(10, "Opis musi mieć min. 10 znaków"),
 });
 
@@ -116,13 +115,13 @@ const CreateEvent = () => {
             </label>
             <input
               type="number"
-              {...register("capacity")}
+              {...register("maxCapacity")}
               className="w-full rounded-md border border-border-medium bg-bg-tertiary p-2 text-text-primary focus:ring-2 focus:ring-accent-primary"
               placeholder="np. 50"
             />
-            {errors.capacity && (
+            {errors.maxCapacity && (
               <p className="mt-1 text-sm text-status-error">
-                {errors.capacity.message}
+                {errors.maxCapacity.message}
               </p>
             )}
           </div>
