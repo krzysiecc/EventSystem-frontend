@@ -6,7 +6,7 @@ const TicketQRView = () => {
   const { id } = useParams<{ id: string }>();
   const { data: tickets, isLoading } = useMyTickets();
 
-  const ticket = tickets?.find((t) => t.id === id);
+  const ticket = tickets?.find((t) => String(t.id) === id);
 
   if (isLoading)
     return <div className="p-6 text-center">Ładowanie biletu...</div>;
@@ -30,12 +30,12 @@ const TicketQRView = () => {
         </h2>
         <p className="text-sm text-text-secondary mb-6">
           {new Date(ticket.eventDate).toLocaleString()} <br />
-          {ticket.eventLocation}
+          {ticket.location}
         </p>
 
         <div className="bg-white p-4 rounded-xl inline-block mb-6 shadow-sm border border-gray-100">
           <QRCode
-            value={ticket.id}
+            value={ticket.qrCodeContent}
             size={200}
             style={{ height: "auto", maxWidth: "100%", width: "100%" }}
             viewBox={`0 0 256 256`}
@@ -46,15 +46,15 @@ const TicketQRView = () => {
         <div>
           <span
             className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
-              ticket.isUsed
+              ticket.isScanned
                 ? "bg-status-error-bg text-status-error"
                 : "bg-status-success-bg text-status-success"
             }`}
           >
-            {ticket.isUsed ? "UŻYTY" : "WAŻNY BILET"}
+            {ticket.isScanned ? "UŻYTY" : "WAŻNY BILET"}
           </span>
           <p className="text-xs text-text-muted mt-4 font-mono break-all">
-            {ticket.id}
+            {ticket.qrCodeContent}
           </p>
         </div>
       </div>
