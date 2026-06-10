@@ -44,15 +44,14 @@ const RegisterOrganizer = () => {
 
   const onSubmit = async (data: RegisterOrganizerInputs) => {
     try {
-      // TODO: confirm payload shape matches .NET DTO
-      await apiClient("/auth/register-organizer", {
+      await apiClient("/auth/register/organizer", {
         method: "POST",
         body: JSON.stringify({
           email: data.email,
           password: data.password,
           firstName: data.firstName,
           lastName: data.lastName,
-          organizationToken: data.organizationToken,
+          token: data.organizationToken,
         }),
       });
 
