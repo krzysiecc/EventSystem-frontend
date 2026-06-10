@@ -18,6 +18,7 @@ export interface Ticket {
   location: string;
   qrCodeContent: string;
   isScanned: boolean;
+  studentId: number;
 }
 
 /**
