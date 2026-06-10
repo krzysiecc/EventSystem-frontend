@@ -37,12 +37,20 @@ const DashboardLayout = ({ role }: { role: string }) => {
           </Link>
 
           {role === "Organizer" && (
-            <Link
-              to={`${basePath}/events`}
-              className="font-medium text-text-secondary hover:underline"
-            >
-              Moje wydarzenia
-            </Link>
+            <>
+              <Link
+                to={`${basePath}/events`}
+                className="font-medium text-text-secondary hover:underline"
+              >
+                Moje wydarzenia
+              </Link>
+              <Link
+                to={`${basePath}/profile`}
+                className="font-medium text-text-secondary hover:underline"
+              >
+                Mój profil
+              </Link>
+            </>
           )}
 
           {role === "Student" && (
@@ -58,6 +66,12 @@ const DashboardLayout = ({ role }: { role: string }) => {
                 className="font-medium text-text-secondary hover:underline"
               >
                 Moje bilety
+              </Link>
+              <Link
+                to={`${basePath}/profile`}
+                className="font-medium text-text-secondary hover:underline"
+              >
+                Mój profil
               </Link>
             </>
           )}
