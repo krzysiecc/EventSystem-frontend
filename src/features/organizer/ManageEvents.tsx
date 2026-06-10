@@ -40,41 +40,51 @@ const ManageEvents = () => {
                 </td>
               </tr>
             ) : (
-              events?.map((event) => (
-                <tr
-                  key={event.id}
-                  className="hover:bg-bg-secondary transition-colors"
-                >
-                  <td className="p-4 font-medium text-text-primary">
-                    {event.title}
-                  </td>
-                  <td className="p-4 text-text-secondary">
-                    {new Date(event.date).toLocaleDateString()}
-                  </td>
-                  <td className="p-4 text-text-secondary">
-                    {event.enrolledCount} / {event.maxCapacity}
-                  </td>
-                  <td className="p-4">
-                    <span
-                      className={`px-2 py-1 text-xs rounded-full font-medium ${
-                        event.status === "published"
-                          ? "bg-status-success-bg text-status-success"
-                          : "bg-status-warning-bg text-status-warning"
-                      }`}
-                    >
-                      {event.status}
-                    </span>
-                  </td>
-                  <td className="p-4 text-right space-x-3">
-                    <Link
-                      to={`/organizer/events/${event.id}`}
-                      className="text-accent-primary hover:underline text-sm font-medium"
-                    >
-                      Szczegóły
-                    </Link>
-                  </td>
-                </tr>
-              ))
+              events?.map((event) => {
+                const isUpcoming = new Date(event.date) >= new Date();
+
+                return (
+                  <tr
+                    key={event.id}
+                    className="hover:bg-bg-secondary transition-colors"
+                  >
+                    <td className="p-4 font-medium text-text-primary">
+                      {event.title}
+                    </td>
+                    <td className="p-4 text-text-secondary">
+                      {new Date(event.date).toLocaleDateString()}
+                    </td>
+                    <td className="p-4 text-text-secondary">
+                      {event.enrolledCount} / {event.maxCapacity}
+                    </td>
+                    <td className="p-4">
+                      <span
+                        className={`px-2 py-1 text-xs rounded-full font-medium ${
+                          isUpcoming
+                            ? "bg-status-success-bg text-status-success"
+                            : "bg-status-info-bg text-status-info"
+                        }`}
+                      >
+                        {isUpcoming ? "Nadchodzące" : "Zakończone"}
+                      </span>
+                    </td>
+                    <td className="p-4 text-right space-x-3">
+                      <Link
+                        to={`/organizer/events/${event.id}`}
+                        className="text-accent-primary hover:underline text-sm font-medium"
+                      >
+                        Szczegóły
+                      </Link>
+                      <Link
+                        to={`/organizer/events/${event.id}/edit`}
+                        className="text-accent-primary hover:underline text-sm font-medium"
+                      >
+                        Edytuj
+                      </Link>
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
