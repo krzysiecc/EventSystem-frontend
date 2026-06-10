@@ -11,7 +11,7 @@ const EventDetailsOrg = () => {
       <div className="p-6 text-status-error">Błąd wczytywania wydarzenia.</div>
     );
 
-  const progress = Math.round((event.ticketsSold / event.capacity) * 100);
+  const progress = Math.round((event.enrolledCount / event.maxCapacity) * 100);
 
   return (
     <div className="layout-container py-6 max-w-4xl">
@@ -44,7 +44,7 @@ const EventDetailsOrg = () => {
               Zajęte miejsca
             </span>
             <span className="font-semibold text-text-primary">
-              {event.ticketsSold} / {event.capacity} ({progress}%)
+              {event.enrolledCount} / {event.maxCapacity} ({progress}%)
             </span>
           </div>
           <div className="w-full bg-border-light rounded-full h-2.5">
