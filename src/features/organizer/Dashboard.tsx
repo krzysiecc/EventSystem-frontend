@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useOrganizerEvents } from "./api/useEvents";
 import PageHeader from "@/components/ui/PageHeader";
+import { formatEventDate } from "@/lib/eventDate";
 
 const OrganizerDashboard = () => {
   const { data: events, isLoading, isError } = useOrganizerEvents();
@@ -80,7 +81,7 @@ const OrganizerDashboard = () => {
                 <div className="mb-4 grow space-y-2 text-sm text-text-secondary">
                   <p className="flex items-center gap-2">
                     <CalendarDays size={15} className="text-accent-primary" />
-                    {new Date(event.date).toLocaleDateString()}
+                    {formatEventDate(event)}
                   </p>
                   <p className="flex items-center gap-2">
                     <MapPin size={15} className="text-accent-primary" />

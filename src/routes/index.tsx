@@ -138,6 +138,7 @@ const router = createBrowserRouter([
           { path: "logs", element: <SystemLogs /> },
           { path: "tokens", element: <Tokens /> },
           { path: "events", element: <AllEvents /> },
+          { path: "profile", element: <Profile /> },
         ],
       },
     ],

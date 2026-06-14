@@ -1,6 +1,7 @@
 import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, CalendarDays, MapPin, Camera, Users } from "lucide-react";
 import { useOrganizerEventDetails } from "./api/useEvents";
+import { formatEventDate } from "@/lib/eventDate";
 
 const EventDetailsOrg = () => {
   const { id } = useParams<{ id: string }>();
@@ -37,7 +38,7 @@ const EventDetailsOrg = () => {
             <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-text-secondary">
               <span className="flex items-center gap-2">
                 <CalendarDays size={15} className="text-accent-primary" />
-                {new Date(event.date).toLocaleString()}
+                {formatEventDate(event, { time: true })}
               </span>
               <span className="flex items-center gap-2">
                 <MapPin size={15} className="text-accent-primary" />

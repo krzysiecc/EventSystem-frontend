@@ -42,23 +42,24 @@ const ScrollHint = () => {
   const showDown = !atBottom;
 
   return (
-    <div className="pointer-events-none fixed right-3 top-1/2 z-40 hidden -translate-y-1/2 flex-col items-center gap-3 sm:flex">
-      {showUp && (
-        <ChevronUp size={18} className="animate-scroll-hint text-text-muted" />
-      )}
-      {showDown && (
-        <ChevronDown size={18} className="animate-scroll-hint text-text-muted" />
-      )}
+    <div className="pointer-events-none fixed right-2.5 top-1/2 z-40 hidden -translate-y-1/2 flex-col items-center gap-4 sm:flex">
+      {/* Powrót na samą górę — nad podpowiedziami, bez osobnego boksu */}
       {showUp && (
         <button
           type="button"
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           aria-label="Przewiń na samą górę"
           title="Na samą górę"
-          className="pointer-events-auto grid h-9 w-9 place-items-center rounded-md border border-border-light bg-surface-raised/85 text-text-secondary shadow-md backdrop-blur transition hover:text-accent-primary"
+          className="pointer-events-auto text-text-secondary transition hover:text-accent-primary"
         >
-          <ChevronsUp size={18} />
+          <ChevronsUp size={28} strokeWidth={2.25} />
         </button>
+      )}
+      {showUp && (
+        <ChevronUp size={24} className="animate-scroll-hint text-text-muted" />
+      )}
+      {showDown && (
+        <ChevronDown size={24} className="animate-scroll-hint text-text-muted" />
       )}
     </div>
   );

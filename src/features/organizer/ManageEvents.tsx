@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Plus, Eye, Pencil } from "lucide-react";
 import { useOrganizerEvents } from "./api/useEvents";
 import PageHeader from "@/components/ui/PageHeader";
+import { formatEventDate } from "@/lib/eventDate";
 
 const ManageEvents = () => {
   const { data: events, isLoading } = useOrganizerEvents();
@@ -56,7 +57,7 @@ const ManageEvents = () => {
                       {event.title}
                     </td>
                     <td className="p-4 font-mono text-sm text-text-secondary">
-                      {new Date(event.date).toLocaleDateString()}
+                      {formatEventDate(event)}
                     </td>
                     <td className="p-4 font-mono text-sm text-text-secondary">
                       {event.enrolledCount} / {event.maxCapacity}

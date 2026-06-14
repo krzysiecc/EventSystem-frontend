@@ -29,17 +29,17 @@ const TicketQRView = () => {
   const qrUrl = `${window.location.origin}/users/${ticket.studentId}?ticket=${ticket.qrCodeContent}`;
 
   return (
-    <div className="mx-auto flex min-h-[80vh] max-w-md flex-col items-center justify-center">
+    <div className="mx-auto flex max-w-md flex-col items-center pt-2">
       <Link
         to="/student/tickets"
-        className="mb-8 self-start inline-flex items-center gap-1.5 text-sm font-medium text-accent-primary hover:underline"
+        className="mb-6 self-start inline-flex items-center gap-1.5 text-sm font-medium text-accent-primary hover:underline"
       >
         <ArrowLeft size={15} />
         Powrót do moich biletów
       </Link>
 
       {/* Bilet z wycięciami po bokach */}
-      <div className="animate-rise relative w-full rounded-xl border border-border-light bg-surface-raised p-8 text-center shadow-lg">
+      <div className="animate-rise relative w-full rounded-xl border border-border-light bg-surface-raised p-6 text-center shadow-lg sm:p-8">
         <span
           aria-hidden="true"
           className="absolute -left-3.25 top-1/2 h-6 w-6 -translate-y-1/2 rounded-full border border-border-light bg-bg-primary"
@@ -63,11 +63,11 @@ const TicketQRView = () => {
           </span>
         </p>
 
-        <div className="mb-6 inline-block rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+        <div className="mx-auto mb-6 w-58 max-w-[78vw] rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
           <QRCode
             value={qrUrl}
-            size={200}
-            style={{ height: "auto", maxWidth: "100%", width: "100%" }}
+            size={256}
+            style={{ height: "auto", width: "100%" }}
             viewBox={`0 0 256 256`}
             level="H"
           />

@@ -1,8 +1,16 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useState } from "react";
-import { User, Globe, KeyRound, AlertTriangle, Plus, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import {
+  User,
+  Globe,
+  KeyRound,
+  AlertTriangle,
+  Plus,
+  X,
+  Palette,
+} from "lucide-react";
 import {
   useMyProfile,
   useUpdateDetails,
@@ -13,6 +21,8 @@ import {
 } from "./api/useProfileQueries";
 import { useToastStore } from "@/store/useToastStore";
 import PageHeader from "@/components/ui/PageHeader";
+import ThemeSwitcher from "@/components/ui/ThemeSwitcher";
+import PasswordInput from "@/components/ui/PasswordInput";
 
 const MAX_SOCIAL_LINKS = 5;
 
@@ -44,6 +54,7 @@ const Profile = () => {
   const detailsForm = useForm<DetailsInputs>({
     resolver: zodResolver(detailsSchema),
   });
+  const { reset: resetDetails } = detailsForm;
 
   const passwordForm = useForm<PasswordInputs>({
     resolver: zodResolver(passwordSchema),
@@ -62,6 +73,19 @@ const Profile = () => {
     setSocialLinks(profile.socialLinks ?? []);
     setLoadedProfileId(profile.id);
   }
+
+  // Pre-fill the details form with the fetched values so the inputs show the
+  // current data; the grayed "Teraz:" lines below keep showing the original
+  // (server) value so the user sees what they are changing it from.
+  useEffect(() => {
+    if (profile) {
+      resetDetails({
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+        email: profile.email,
+      });
+    }
+  }, [profile, resetDetails]);
 
   if (isLoading) return <div className="p-6">Ładowanie profilu...</div>;
 
@@ -140,6 +164,14 @@ const Profile = () => {
     }
   };
 
+  // Grayed reference to the currently-saved value (what the user is editing
+  // away from). Stays constant until the profile query refetches after a save.
+  const current = (label: string) => (
+    <p className="mt-1 truncate font-mono text-xs text-text-muted">
+      Teraz: <span className="text-text-secondary">{label || "—"}</span>
+    </p>
+  );
+
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <PageHeader kicker="Konto" title="Zarządzanie profilem" />
@@ -154,7 +186,7 @@ const Profile = () => {
           onSubmit={detailsForm.handleSubmit(handleUpdateDetails)}
           className="space-y-4"
         >
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <input
                 type="text"
@@ -162,10 +194,12 @@ const Profile = () => {
                 {...detailsForm.register("firstName")}
                 className={inputClass}
               />
-              {detailsForm.formState.errors.firstName && (
+              {detailsForm.formState.errors.firstName ? (
                 <p className="mt-1 text-xs text-status-error">
                   {detailsForm.formState.errors.firstName.message}
                 </p>
+              ) : (
+                current(profile?.firstName ?? "")
               )}
             </div>
             <div>
@@ -175,10 +209,12 @@ const Profile = () => {
                 {...detailsForm.register("lastName")}
                 className={inputClass}
               />
-              {detailsForm.formState.errors.lastName && (
+              {detailsForm.formState.errors.lastName ? (
                 <p className="mt-1 text-xs text-status-error">
                   {detailsForm.formState.errors.lastName.message}
                 </p>
+              ) : (
+                current(profile?.lastName ?? "")
               )}
             </div>
           </div>
@@ -189,10 +225,12 @@ const Profile = () => {
               {...detailsForm.register("email")}
               className={inputClass}
             />
-            {detailsForm.formState.errors.email && (
+            {detailsForm.formState.errors.email ? (
               <p className="mt-1 text-xs text-status-error">
                 {detailsForm.formState.errors.email.message}
               </p>
+            ) : (
+              current(profile?.email ?? "")
             )}
           </div>
           <button
@@ -205,6 +243,19 @@ const Profile = () => {
         </form>
       </section>
 
+      {/* WYGLĄD / MOTYW */}
+      <section className="rounded-xl border border-border-light bg-surface-raised p-6 shadow-sm">
+        <h2 className="mb-1 flex items-center gap-2 text-lg font-semibold text-text-primary">
+          <Palette size={18} className="text-accent-primary" />
+          Wygląd
+        </h2>
+        <p className="mb-4 text-sm text-text-secondary">
+          Wybierz motyw kolorystyczny. Ustawienie zapisuje się na tym
+          urządzeniu.
+        </p>
+        <ThemeSwitcher />
+      </section>
+
       {/* PROFIL PUBLICZNY */}
       <section className="rounded-xl border border-border-light bg-surface-raised p-6 shadow-sm">
         <h2 className="mb-1 flex items-center gap-2 text-lg font-semibold text-text-primary">
@@ -215,13 +266,16 @@ const Profile = () => {
           Bio i linki widoczne dla innych użytkowników na Twoim profilu.
         </p>
         <form onSubmit={handleUpdatePublicProfile} className="space-y-4">
-          <textarea
-            rows={4}
-            placeholder="Napisz coś o sobie..."
-            value={bio}
-            onChange={(e) => setBio(e.target.value)}
-            className={inputClass}
-          />
+          <div>
+            <textarea
+              rows={4}
+              placeholder="Napisz coś o sobie..."
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+              className={inputClass}
+            />
+            {current(profile?.bio ?? "")}
+          </div>
 
           <div className="space-y-2">
             {socialLinks.map((link, index) => (
@@ -287,16 +341,14 @@ const Profile = () => {
           className="space-y-4"
         >
           <div>
-            <input
-              type="password"
+            <PasswordInput
               placeholder="Obecne hasło"
               {...passwordForm.register("currentPassword")}
               className={inputClass}
             />
           </div>
           <div>
-            <input
-              type="password"
+            <PasswordInput
               placeholder="Nowe hasło"
               {...passwordForm.register("newPassword")}
               className={inputClass}
@@ -322,9 +374,8 @@ const Profile = () => {
           Usunięcie konta jest nieodwracalne. Wszystkie Twoje dane zostaną
           zniszczone.
         </p>
-        <div className="flex gap-4">
-          <input
-            type="password"
+        <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
+          <PasswordInput
             placeholder="Potwierdź hasłem"
             value={deletePass}
             onChange={(e) => setDeletePass(e.target.value)}

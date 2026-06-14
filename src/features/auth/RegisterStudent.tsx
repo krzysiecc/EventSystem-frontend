@@ -5,6 +5,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { apiClient } from "@/lib/apiClient";
 import { useToastStore } from "@/store/useToastStore";
 import AuthBrand from "@/components/ui/AuthBrand";
+import PasswordInput from "@/components/ui/PasswordInput";
 
 /**
  * @description Zod schema for student registration.
@@ -138,8 +139,7 @@ const RegisterStudent = () => {
             <label className="block text-sm font-medium text-text-secondary mb-1">
               Hasło
             </label>
-            <input
-              type="password"
+            <PasswordInput
               {...register("password")}
               className={`w-full rounded-md border p-2 bg-bg-tertiary text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-primary ${errors.password ? "border-status-error" : "border-border-medium"}`}
             />
@@ -155,8 +155,7 @@ const RegisterStudent = () => {
             <label className="block text-sm font-medium text-text-secondary mb-1">
               Potwierdź hasło
             </label>
-            <input
-              type="password"
+            <PasswordInput
               {...register("confirmPassword")}
               className={`w-full rounded-md border p-2 bg-bg-tertiary text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-primary ${errors.confirmPassword ? "border-status-error" : "border-border-medium"}`}
             />

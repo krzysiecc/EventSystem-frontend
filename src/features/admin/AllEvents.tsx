@@ -1,6 +1,7 @@
 import { CalendarDays } from "lucide-react";
 import { useAllEvents } from "./api/useAdminQueries";
 import PageHeader from "@/components/ui/PageHeader";
+import { formatEventDate } from "@/lib/eventDate";
 
 const AllEvents = () => {
   const { data: events, isLoading } = useAllEvents();
@@ -41,7 +42,7 @@ const AllEvents = () => {
                       className="text-accent-primary"
                       aria-hidden="true"
                     />
-                    {new Date(event.date).toLocaleDateString()}
+                    {formatEventDate(event)}
                   </span>
                 </td>
                 <td className="p-4 font-mono text-sm text-text-secondary">

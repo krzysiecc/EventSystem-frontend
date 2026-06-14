@@ -26,6 +26,9 @@ export interface AdminEventDTO {
   title: string;
   organizerName: string;
   date: string;
+  /** Zakres start/koniec — backend dostosuje DTO; na razie `date` = start. */
+  startDate?: string;
+  endDate?: string;
   enrolledCount: number;
   maxCapacity: number;
   status: string;

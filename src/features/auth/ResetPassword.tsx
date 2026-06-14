@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { apiClient } from "@/lib/apiClient";
 import { useToastStore } from "@/store/useToastStore";
 import AuthBrand from "@/components/ui/AuthBrand";
+import PasswordInput from "@/components/ui/PasswordInput";
 
 const ResetPassword = () => {
   const [searchParams] = useSearchParams();
@@ -48,8 +49,7 @@ const ResetPassword = () => {
           Ustaw nowe hasło
         </h2>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            type="password"
+          <PasswordInput
             required
             minLength={6}
             value={password}

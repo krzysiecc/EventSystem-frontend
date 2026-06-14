@@ -5,6 +5,9 @@ export interface PublicEvent {
   id: number;
   title: string;
   date: string;
+  /** Zakres start/koniec — backend dostosuje DTO; na razie `date` = start. */
+  startDate?: string;
+  endDate?: string;
   location: string;
   maxCapacity: number;
   enrolledCount: number;

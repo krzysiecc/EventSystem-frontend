@@ -13,7 +13,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
-import ThemeSwitcher from "@/components/ui/ThemeSwitcher";
+import PillStatus from "@/components/ui/PillStatus";
 
 type NavItem = { to: string; label: string; Icon: LucideIcon; end?: boolean };
 
@@ -43,6 +43,7 @@ const DashboardLayout = ({ role }: { role: string }) => {
           { to: `${basePath}/tokens`, label: "Tokeny", Icon: KeyRound },
           { to: `${basePath}/events`, label: "Wydarzenia", Icon: CalendarDays },
           { to: `${basePath}/logs`, label: "Logi", Icon: ScrollText },
+          { to: `${basePath}/profile`, label: "Profil", Icon: User },
         ]
       : role === "Organizer"
         ? [
@@ -106,9 +107,9 @@ const DashboardLayout = ({ role }: { role: string }) => {
             ))}
           </div>
 
-          {/* Right cluster: theme + logout */}
+          {/* Right cluster: status (zegar + użytkownik) + logout */}
           <div className="flex items-center gap-2 pl-1">
-            <ThemeSwitcher />
+            <PillStatus />
             <button
               onClick={handleLogout}
               aria-label="Wyloguj się"

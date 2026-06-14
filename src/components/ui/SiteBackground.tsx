@@ -22,16 +22,21 @@ const SiteBackground = () => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const desktop = window.matchMedia("(min-width: 768px)");
+    // Twarda blokada na urządzeniach dotykowych: telefon/tablet ma kursor
+    // „coarse" i brak hovera niezależnie od szerokości viewportu, więc nawet
+    // tryb „wersja na komputer" (który podbija szerokość) nie odblokuje WebGL.
+    const wide = window.matchMedia("(min-width: 768px)");
+    const fine = window.matchMedia("(pointer: fine)");
+    const hover = window.matchMedia("(hover: hover)");
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const compute = () => setEnabled(desktop.matches && !reduce.matches);
+    const queries = [wide, fine, hover, reduce];
+    const compute = () =>
+      setEnabled(
+        wide.matches && fine.matches && hover.matches && !reduce.matches,
+      );
     compute();
-    desktop.addEventListener("change", compute);
-    reduce.addEventListener("change", compute);
-    return () => {
-      desktop.removeEventListener("change", compute);
-      reduce.removeEventListener("change", compute);
-    };
+    queries.forEach((q) => q.addEventListener("change", compute));
+    return () => queries.forEach((q) => q.removeEventListener("change", compute));
   }, []);
 
   useEffect(() => {

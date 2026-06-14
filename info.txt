@@ -1,7 +1,13 @@
-1. przenieś ustawienia koloru strony do profilu
+1. w wydarzeniach na panelu admina nie widać organizatora i nie da się eydtować wydarzeń
 
-2. na pillbar przenieś informację o dniu i godzinie, i dodaj małymi literami imię i nazwisko zalogowanej osoby
+2. wyszarz pobierz bilet jeżeli użytkownik ma
+a) aktywny bilet
+b) zużył juz bilet na wydarzenie
 
-3. dodaj filtry dat i wyszukiwania po nazwie do panelu studenta podczas
+3. dodaj adminowi funkcję resetowania biletu na dane wydarzenie jeżeli ktoś przypadkowo kliknie albo się źle zeskanuje, powiedz jaki endpoint dodać na backu
 
-4. 
+4. ogranicz dokładnośc informacji z podpowiedzi osm do:
+ulica, numer, kod pocztowy, miasto
+dodaj możliwość nazwy własnej lokalizacji dodatkowo (typu "Budynek A-1, wejście od ulicy Hoene" żeby było coś poza sztuczną lokalizacją) i powiedz co dodac na backu
+
+5. coś zjada na tej stronie ponad 1,2 gm ramu, sprawdź czy nie ma jakichś loopów

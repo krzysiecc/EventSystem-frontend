@@ -6,6 +6,7 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { apiClient } from "@/lib/apiClient";
 import { useToastStore } from "@/store/useToastStore";
 import AuthBrand from "@/components/ui/AuthBrand";
+import PasswordInput from "@/components/ui/PasswordInput";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Niepoprawny adres e-mail" }),
@@ -98,11 +99,18 @@ const Login = () => {
 
           {/* Password */}
           <div>
-            <label className="block text-sm font-medium text-text-secondary mb-1">
-              Hasło
-            </label>
-            <input
-              type="password"
+            <div className="mb-1 flex items-center justify-between">
+              <label className="block text-sm font-medium text-text-secondary">
+                Hasło
+              </label>
+              <Link
+                to="/forgot-password"
+                className="text-xs font-medium text-accent-primary hover:underline"
+              >
+                Zapomniałeś hasła?
+              </Link>
+            </div>
+            <PasswordInput
               {...register("password")}
               className={`w-full rounded-md border p-2 bg-bg-tertiary text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-primary ${
                 errors.password ? "border-status-error" : "border-border-medium"

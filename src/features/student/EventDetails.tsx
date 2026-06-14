@@ -2,6 +2,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, CalendarDays, MapPin, Users, Ticket } from "lucide-react";
 import { useEventDetails, useRegisterForEvent } from "./api/useStudentQueries";
 import { useToastStore } from "@/store/useToastStore";
+import { formatEventDate } from "@/lib/eventDate";
 
 const EventDetailsStudent = () => {
   const { id } = useParams<{ id: string }>();
@@ -53,7 +54,7 @@ const EventDetailsStudent = () => {
               <CalendarDays size={13} /> Data
             </span>
             <span className="font-medium text-text-primary">
-              {new Date(event.date).toLocaleString()}
+              {formatEventDate(event, { time: true })}
             </span>
           </div>
           <div>

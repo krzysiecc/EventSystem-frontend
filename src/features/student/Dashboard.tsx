@@ -9,17 +9,17 @@ const StudentDashboard = () => {
   const next = upcomingTickets[0];
 
   return (
-    <div className="mx-auto max-w-5xl space-y-10">
+    <div className="mx-auto max-w-5xl space-y-8 sm:space-y-10">
       {/* HERO */}
-      <header className="animate-rise pt-4">
+      <header className="animate-rise pt-2 sm:pt-4">
         <div className="mb-3 flex items-center gap-3 font-mono text-xs uppercase tracking-[0.15em] text-text-muted">
           <span className="h-px w-8 bg-border-medium" aria-hidden="true" />
           Panel studenta
         </div>
-        <h1 className="text-4xl font-extrabold tracking-tight text-text-primary sm:text-5xl">
+        <h1 className="text-3xl font-extrabold tracking-tight text-text-primary sm:text-5xl">
           Witaj z powrotem<span className="text-accent-primary">.</span>
         </h1>
-        <p className="mt-3 max-w-lg text-text-secondary">
+        <p className="mt-3 max-w-lg text-sm text-text-secondary sm:text-base">
           Masz{" "}
           <b className="text-text-primary">{upcomingTickets.length}</b> aktywnych
           biletów. Sprawdź, co Cię czeka.
@@ -31,10 +31,12 @@ const StudentDashboard = () => {
         <Link
           to="/student/events"
           style={{ animationDelay: "60ms" }}
-          className="animate-rise group flex items-center justify-between rounded-xl bg-accent-primary p-6 text-text-on-accent shadow-sm transition hover:bg-accent-hover"
+          className="animate-rise group flex items-center justify-between rounded-xl bg-accent-primary p-5 text-text-on-accent shadow-sm transition hover:bg-accent-hover sm:p-6"
         >
           <div>
-            <span className="block text-xl font-bold">Przeglądaj wydarzenia</span>
+            <span className="block text-lg font-bold sm:text-xl">
+              Przeglądaj wydarzenia
+            </span>
             <span className="text-sm opacity-90">
               Znajdź swoje następne przeżycie
             </span>
@@ -44,10 +46,10 @@ const StudentDashboard = () => {
         <Link
           to="/student/tickets"
           style={{ animationDelay: "120ms" }}
-          className="animate-rise group flex items-center justify-between rounded-xl border border-border-medium bg-surface-raised p-6 text-text-primary shadow-sm transition hover:border-accent-primary"
+          className="animate-rise group flex items-center justify-between rounded-xl border border-border-medium bg-surface-raised p-5 text-text-primary shadow-sm transition hover:border-accent-primary sm:p-6"
         >
           <div>
-            <span className="block text-xl font-bold">Moje bilety</span>
+            <span className="block text-lg font-bold sm:text-xl">Moje bilety</span>
             <span className="text-sm text-text-secondary">
               Wyświetl i użyj kodów QR
             </span>
@@ -67,8 +69,8 @@ const StudentDashboard = () => {
         {isLoading ? (
           <p className="text-text-muted">Ładowanie...</p>
         ) : next ? (
-          <div className="rounded-xl border border-border-light bg-surface-raised p-6 shadow-sm">
-            <h3 className="text-2xl font-bold text-text-primary">
+          <div className="rounded-xl border border-border-light bg-surface-raised p-5 shadow-sm sm:p-6">
+            <h3 className="text-xl font-bold text-text-primary sm:text-2xl">
               {next.eventTitle}
             </h3>
             <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-text-secondary">
