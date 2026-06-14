@@ -6,7 +6,8 @@ import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  // PixelBlast to wendorowany komponent (React Bits) — pomijamy w lincie.
+  globalIgnores(['dist', 'src/components/ui/PixelBlast.tsx']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [

@@ -1,5 +1,6 @@
 import QRCodeImport from "react-qr-code";
 import { useParams, Link } from "react-router-dom";
+import { ArrowLeft, CalendarDays, MapPin } from "lucide-react";
 import { useMyTickets } from "./api/useStudentQueries";
 
 // react-qr-code only publishes a CommonJS build; in the production bundle the
@@ -18,7 +19,9 @@ const TicketQRView = () => {
     return <div className="p-6 text-center">Ładowanie biletu...</div>;
   if (!ticket)
     return (
-      <div className="p-6 text-center text-status-error">Nie znaleziono biletu.</div>
+      <div className="p-6 text-center text-status-error">
+        Nie znaleziono biletu.
+      </div>
     );
 
   // A regular phone camera opens the public profile page; the organizer's
@@ -26,24 +29,41 @@ const TicketQRView = () => {
   const qrUrl = `${window.location.origin}/users/${ticket.studentId}?ticket=${ticket.qrCodeContent}`;
 
   return (
-    <div className="flex flex-col min-h-[80vh] items-center justify-center p-4">
+    <div className="mx-auto flex min-h-[80vh] max-w-md flex-col items-center justify-center">
       <Link
         to="/student/tickets"
-        className="self-start mb-8 text-accent-primary font-medium hover:underline"
+        className="mb-8 self-start inline-flex items-center gap-1.5 text-sm font-medium text-accent-primary hover:underline"
       >
-        ← Powrót do moich biletów
+        <ArrowLeft size={15} />
+        Powrót do moich biletów
       </Link>
 
-      <div className="bg-surface-raised p-8 rounded-2xl shadow-xl border border-border-light max-w-sm w-full text-center">
-        <h2 className="text-2xl font-bold text-text-primary mb-1">
+      {/* Bilet z wycięciami po bokach */}
+      <div className="animate-rise relative w-full rounded-xl border border-border-light bg-surface-raised p-8 text-center shadow-lg">
+        <span
+          aria-hidden="true"
+          className="absolute -left-3.25 top-1/2 h-6 w-6 -translate-y-1/2 rounded-full border border-border-light bg-bg-primary"
+        />
+        <span
+          aria-hidden="true"
+          className="absolute -right-3.25 top-1/2 h-6 w-6 -translate-y-1/2 rounded-full border border-border-light bg-bg-primary"
+        />
+
+        <h2 className="mb-1 text-2xl font-bold text-text-primary">
           {ticket.eventTitle}
         </h2>
-        <p className="text-sm text-text-secondary mb-6">
-          {new Date(ticket.eventDate).toLocaleString()} <br />
-          {ticket.location}
+        <p className="mb-6 flex flex-col items-center gap-1 font-mono text-xs text-text-secondary">
+          <span className="flex items-center gap-1.5">
+            <CalendarDays size={13} />
+            {new Date(ticket.eventDate).toLocaleString()}
+          </span>
+          <span className="flex items-center gap-1.5">
+            <MapPin size={13} />
+            {ticket.location}
+          </span>
         </p>
 
-        <div className="bg-white p-4 rounded-xl inline-block mb-6 shadow-sm border border-gray-100">
+        <div className="mb-6 inline-block rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
           <QRCode
             value={qrUrl}
             size={200}
@@ -55,7 +75,7 @@ const TicketQRView = () => {
 
         <div>
           <span
-            className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
+            className={`inline-block rounded-full px-3 py-1 font-mono text-sm font-medium ${
               ticket.isScanned
                 ? "bg-status-error-bg text-status-error"
                 : "bg-status-success-bg text-status-success"
@@ -63,10 +83,10 @@ const TicketQRView = () => {
           >
             {ticket.isScanned ? "UŻYTY" : "WAŻNY BILET"}
           </span>
-          <p className="text-xs text-text-muted mt-4 font-mono break-all">
+          <p className="mt-4 break-all font-mono text-xs text-text-muted">
             {ticket.qrCodeContent}
           </p>
-          <p className="text-xs text-text-muted mt-2">
+          <p className="mt-2 text-xs text-text-muted">
             Zeskanowanie kodu zwykłym aparatem otworzy Twój profil publiczny.
           </p>
         </div>

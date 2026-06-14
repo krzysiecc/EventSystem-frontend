@@ -12,17 +12,25 @@ import {
   useUploadEventImage,
 } from "./api/useEvents";
 import { useToastStore } from "@/store/useToastStore";
+import LocationPicker, {
+  type LocationValue,
+} from "@/components/ui/LocationPicker";
 
-const editEventSchema = z.object({
-  title: z
-    .string()
-    .min(3, "Tytuł musi mieć min. 3 znaki")
-    .max(100, "Tytuł jest za długi"),
-  date: z.string().min(1, "Data jest wymagana"),
-  location: z.string().min(2, "Lokalizacja musi mieć min. 2 znaki"),
-  maxCapacity: z.number().min(1, "Pojemność musi wynosić minimum 1"),
-  description: z.string().min(10, "Opis musi mieć min. 10 znaków"),
-});
+const editEventSchema = z
+  .object({
+    title: z
+      .string()
+      .min(3, "Tytuł musi mieć min. 3 znaki")
+      .max(100, "Tytuł jest za długi"),
+    startDate: z.string().min(1, "Data startu jest wymagana"),
+    endDate: z.string().min(1, "Data końca jest wymagana"),
+    maxCapacity: z.number().min(1, "Pojemność musi wynosić minimum 1"),
+    description: z.string().min(10, "Opis musi mieć min. 10 znaków"),
+  })
+  .refine((d) => new Date(d.endDate) >= new Date(d.startDate), {
+    message: "Koniec nie może być wcześniej niż start",
+    path: ["endDate"],
+  });
 
 type EditEventFormInputs = z.infer<typeof editEventSchema>;
 
@@ -30,6 +38,12 @@ const labelClass =
   "mb-1.5 block font-mono text-xs uppercase tracking-wider text-text-muted";
 const inputClass =
   "w-full rounded-md border border-border-medium bg-bg-tertiary p-2 text-text-primary focus:border-accent-primary focus:outline-none focus:ring-1 focus:ring-accent-primary";
+
+const toLocalInput = (iso: string) => {
+  const d = new Date(iso);
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+  return d.toISOString().slice(0, 16);
+};
 
 const EditEvent = () => {
   const { id } = useParams<{ id: string }>();
@@ -41,6 +55,13 @@ const EditEvent = () => {
   const addToast = useToastStore((state) => state.addToast);
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [loc, setLoc] = useState<LocationValue>({
+    location: "",
+    lat: null,
+    lng: null,
+  });
+  const [loadedId, setLoadedId] = useState<string | null>(null);
+  const [locError, setLocError] = useState<string | null>(null);
 
   const {
     register,
@@ -56,20 +77,45 @@ const EditEvent = () => {
       reset({
         title: event.title,
         description: event.description,
-        date: new Date(event.date).toISOString().slice(0, 16),
-        location: event.location,
+        startDate: toLocalInput(event.startDate ?? event.date),
+        endDate: toLocalInput(event.endDate ?? event.date),
         maxCapacity: event.maxCapacity,
       });
     }
   }, [event, reset, isDirty]);
 
+  // seed lokalizacji raz na wczytane wydarzenie (render-phase, bez efektu)
+  if (event && loadedId !== id) {
+    setLoc({
+      location: event.location ?? "",
+      lat: event.lat ?? null,
+      lng: event.lng ?? null,
+    });
+    setLoadedId(id ?? null);
+  }
+
   if (isLoading) return <div className="p-6">Ładowanie...</div>;
 
   const onSubmit = (data: EditEventFormInputs) => {
+    if (loc.location.trim().length < 2) {
+      setLocError("Podaj lokalizację");
+      return;
+    }
+    setLocError(null);
     const cleanDescription = DOMPurify.sanitize(data.description);
 
     updateMutation.mutate(
-      { id: id!, data: { ...data, description: cleanDescription } },
+      {
+        id: id!,
+        data: {
+          ...data,
+          location: loc.location,
+          lat: loc.lat,
+          lng: loc.lng,
+          date: data.startDate, // kompatybilność ze starym backendem
+          description: cleanDescription,
+        },
+      },
       {
         onSuccess: () => addToast("Zaktualizowano pomyślnie", "success"),
         onError: (err: unknown) =>
@@ -161,39 +207,50 @@ const EditEvent = () => {
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className={labelClass}>Data</label>
+            <label className={labelClass}>Początek</label>
             <input
               type="datetime-local"
-              {...register("date")}
+              {...register("startDate")}
               className={inputClass}
             />
-            {errors.date && (
+            {errors.startDate && (
               <p className="mt-1 text-sm text-status-error">
-                {errors.date.message}
+                {errors.startDate.message}
               </p>
             )}
           </div>
           <div>
-            <label className={labelClass}>Maks. pojemność</label>
+            <label className={labelClass}>Koniec</label>
             <input
-              type="number"
-              {...register("maxCapacity", { valueAsNumber: true })}
+              type="datetime-local"
+              {...register("endDate")}
               className={inputClass}
             />
-            {errors.maxCapacity && (
+            {errors.endDate && (
               <p className="mt-1 text-sm text-status-error">
-                {errors.maxCapacity.message}
+                {errors.endDate.message}
               </p>
             )}
           </div>
         </div>
         <div>
-          <label className={labelClass}>Lokalizacja</label>
-          <input type="text" {...register("location")} className={inputClass} />
-          {errors.location && (
+          <label className={labelClass}>Maks. pojemność</label>
+          <input
+            type="number"
+            {...register("maxCapacity", { valueAsNumber: true })}
+            className={inputClass}
+          />
+          {errors.maxCapacity && (
             <p className="mt-1 text-sm text-status-error">
-              {errors.location.message}
+              {errors.maxCapacity.message}
             </p>
+          )}
+        </div>
+        <div>
+          <label className={labelClass}>Lokalizacja</label>
+          <LocationPicker value={loc} onChange={setLoc} />
+          {locError && (
+            <p className="mt-1 text-sm text-status-error">{locError}</p>
           )}
         </div>
         <div>

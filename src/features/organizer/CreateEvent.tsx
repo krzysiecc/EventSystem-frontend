@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -7,30 +8,54 @@ import DOMPurify from "dompurify";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
 import { useToastStore } from "@/store/useToastStore";
+import LocationPicker, {
+  type LocationValue,
+} from "@/components/ui/LocationPicker";
 
-const createEventSchema = z.object({
-  title: z
-    .string()
-    .min(3, "Tytuł musi mieć min. 3 znaki")
-    .max(100, "Tytuł jest za długi"),
-  date: z.string().min(1, "Data jest wymagana"),
-  location: z.string().min(2, "Lokalizacja musi mieć min. 2 znaki"),
-  maxCapacity: z.coerce.number().min(1, "Pojemność musi wynosić minimum 1"),
-  description: z.string().min(10, "Opis musi mieć min. 10 znaków"),
-});
+const createEventSchema = z
+  .object({
+    title: z
+      .string()
+      .min(3, "Tytuł musi mieć min. 3 znaki")
+      .max(100, "Tytuł jest za długi"),
+    startDate: z.string().min(1, "Data startu jest wymagana"),
+    endDate: z.string().min(1, "Data końca jest wymagana"),
+    maxCapacity: z.coerce.number().min(1, "Pojemność musi wynosić minimum 1"),
+    description: z.string().min(10, "Opis musi mieć min. 10 znaków"),
+  })
+  .refine((d) => new Date(d.endDate) >= new Date(d.startDate), {
+    message: "Koniec nie może być wcześniej niż start",
+    path: ["endDate"],
+  });
 
 type CreateEventInputs = z.infer<typeof createEventSchema>;
 type CreateEventFormInputs = z.input<typeof createEventSchema>;
+type CreatePayload = CreateEventInputs & LocationValue;
 
 const labelClass =
   "mb-1.5 block font-mono text-xs uppercase tracking-wider text-text-muted";
 const inputClass =
   "w-full rounded-md border border-border-medium bg-bg-tertiary p-2 text-text-primary focus:border-accent-primary focus:outline-none focus:ring-1 focus:ring-accent-primary";
 
+// minimalna data = teraz (lokalnie), żeby nie dało się wybrać przeszłości
+const minDateTime = () => {
+  const d = new Date();
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+  return d.toISOString().slice(0, 16);
+};
+
 const CreateEvent = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const addToast = useToastStore((state) => state.addToast);
+  const min = minDateTime();
+
+  const [loc, setLoc] = useState<LocationValue>({
+    location: "",
+    lat: null,
+    lng: null,
+  });
+  const [locError, setLocError] = useState<string | null>(null);
 
   const {
     register,
@@ -41,12 +66,15 @@ const CreateEvent = () => {
   });
 
   const createEventMutation = useMutation({
-    mutationFn: async (data: CreateEventInputs) => {
-      const cleanDescription = DOMPurify.sanitize(data.description);
-
+    mutationFn: async (payload: CreatePayload) => {
+      const cleanDescription = DOMPurify.sanitize(payload.description);
       const response = await apiClient("/events", {
         method: "POST",
-        body: JSON.stringify({ ...data, description: cleanDescription }),
+        body: JSON.stringify({
+          ...payload,
+          description: cleanDescription,
+          date: payload.startDate, // kompatybilność ze starym backendem
+        }),
       });
       return response.json();
     },
@@ -61,7 +89,12 @@ const CreateEvent = () => {
   });
 
   const onSubmit = (data: CreateEventInputs) => {
-    createEventMutation.mutate(data);
+    if (loc.location.trim().length < 2) {
+      setLocError("Podaj lokalizację");
+      return;
+    }
+    setLocError(null);
+    createEventMutation.mutate({ ...data, ...loc });
   };
 
   return (
@@ -81,7 +114,6 @@ const CreateEvent = () => {
         onSubmit={handleSubmit(onSubmit)}
         className="space-y-5 rounded-xl border border-border-light bg-surface-raised p-6 shadow-sm"
       >
-        {/* Tytuł */}
         <div>
           <label className={labelClass}>Tytuł wydarzenia</label>
           <input
@@ -97,54 +129,59 @@ const CreateEvent = () => {
         </div>
 
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-          {/* Data */}
           <div>
-            <label className={labelClass}>Data i godzina</label>
+            <label className={labelClass}>Początek</label>
             <input
               type="datetime-local"
-              {...register("date")}
+              min={min}
+              {...register("startDate")}
               className={inputClass}
             />
-            {errors.date && (
+            {errors.startDate && (
               <p className="mt-1 text-sm text-status-error">
-                {errors.date.message}
+                {errors.startDate.message}
               </p>
             )}
           </div>
-
-          {/* Pojemność */}
           <div>
-            <label className={labelClass}>Liczba miejsc (dostępnych)</label>
+            <label className={labelClass}>Koniec</label>
             <input
-              type="number"
-              {...register("maxCapacity")}
+              type="datetime-local"
+              min={min}
+              {...register("endDate")}
               className={inputClass}
-              placeholder="np. 50"
             />
-            {errors.maxCapacity && (
+            {errors.endDate && (
               <p className="mt-1 text-sm text-status-error">
-                {errors.maxCapacity.message}
+                {errors.endDate.message}
               </p>
             )}
           </div>
         </div>
 
-        {/* Lokalizacja */}
         <div>
-          <label className={labelClass}>Lokalizacja</label>
+          <label className={labelClass}>Liczba miejsc (dostępnych)</label>
           <input
-            {...register("location")}
+            type="number"
+            {...register("maxCapacity")}
             className={inputClass}
-            placeholder="np. Aula Główna, Budynek A"
+            placeholder="np. 50"
           />
-          {errors.location && (
+          {errors.maxCapacity && (
             <p className="mt-1 text-sm text-status-error">
-              {errors.location.message}
+              {errors.maxCapacity.message}
             </p>
           )}
         </div>
 
-        {/* Opis */}
+        <div>
+          <label className={labelClass}>Lokalizacja</label>
+          <LocationPicker value={loc} onChange={setLoc} />
+          {locError && (
+            <p className="mt-1 text-sm text-status-error">{locError}</p>
+          )}
+        </div>
+
         <div>
           <label className={labelClass}>
             Opis (obsługuje HTML, bezpieczny przed XSS)

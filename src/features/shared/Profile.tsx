@@ -2,6 +2,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useState } from "react";
+import { User, Globe, KeyRound, AlertTriangle, Plus, X } from "lucide-react";
 import {
   useMyProfile,
   useUpdateDetails,
@@ -11,6 +12,7 @@ import {
   type SocialLinkDto,
 } from "./api/useProfileQueries";
 import { useToastStore } from "@/store/useToastStore";
+import PageHeader from "@/components/ui/PageHeader";
 
 const MAX_SOCIAL_LINKS = 5;
 
@@ -27,6 +29,9 @@ const passwordSchema = z.object({
 
 type DetailsInputs = z.infer<typeof detailsSchema>;
 type PasswordInputs = z.infer<typeof passwordSchema>;
+
+const inputClass =
+  "w-full rounded-md border border-border-medium bg-bg-tertiary p-2 text-text-primary focus:border-accent-primary focus:outline-none focus:ring-1 focus:ring-accent-primary";
 
 const Profile = () => {
   const { data: profile, isLoading } = useMyProfile();
@@ -136,14 +141,13 @@ const Profile = () => {
   };
 
   return (
-    <div className="layout-container py-6 max-w-3xl space-y-8">
-      <h1 className="text-2xl font-bold text-text-primary">
-        Zarządzanie profilem
-      </h1>
+    <div className="mx-auto max-w-3xl space-y-6">
+      <PageHeader kicker="Konto" title="Zarządzanie profilem" />
 
       {/* DANE PODSTAWOWE */}
-      <section className="bg-surface-raised p-6 border border-border-light rounded-xl">
-        <h2 className="text-lg font-semibold mb-4 text-text-primary">
+      <section className="rounded-xl border border-border-light bg-surface-raised p-6 shadow-sm">
+        <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-text-primary">
+          <User size={18} className="text-accent-primary" />
           Dane podstawowe
         </h2>
         <form
@@ -154,11 +158,12 @@ const Profile = () => {
             <div>
               <input
                 type="text"
+                placeholder="Imię"
                 {...detailsForm.register("firstName")}
-                className="w-full rounded-md border border-border-medium bg-bg-tertiary p-2 text-text-primary"
+                className={inputClass}
               />
               {detailsForm.formState.errors.firstName && (
-                <p className="text-xs text-status-error mt-1">
+                <p className="mt-1 text-xs text-status-error">
                   {detailsForm.formState.errors.firstName.message}
                 </p>
               )}
@@ -166,11 +171,12 @@ const Profile = () => {
             <div>
               <input
                 type="text"
+                placeholder="Nazwisko"
                 {...detailsForm.register("lastName")}
-                className="w-full rounded-md border border-border-medium bg-bg-tertiary p-2 text-text-primary"
+                className={inputClass}
               />
               {detailsForm.formState.errors.lastName && (
-                <p className="text-xs text-status-error mt-1">
+                <p className="mt-1 text-xs text-status-error">
                   {detailsForm.formState.errors.lastName.message}
                 </p>
               )}
@@ -179,11 +185,12 @@ const Profile = () => {
           <div>
             <input
               type="email"
+              placeholder="E-mail"
               {...detailsForm.register("email")}
-              className="w-full rounded-md border border-border-medium bg-bg-tertiary p-2 text-text-primary"
+              className={inputClass}
             />
             {detailsForm.formState.errors.email && (
-              <p className="text-xs text-status-error mt-1">
+              <p className="mt-1 text-xs text-status-error">
                 {detailsForm.formState.errors.email.message}
               </p>
             )}
@@ -191,7 +198,7 @@ const Profile = () => {
           <button
             type="submit"
             disabled={updateDetailsMutation.isPending}
-            className="bg-accent-primary text-text-on-accent px-4 py-2 rounded-md hover:bg-accent-hover transition"
+            className="rounded-md bg-accent-primary px-4 py-2 text-text-on-accent transition hover:bg-accent-hover disabled:opacity-50"
           >
             Zapisz dane
           </button>
@@ -199,11 +206,12 @@ const Profile = () => {
       </section>
 
       {/* PROFIL PUBLICZNY */}
-      <section className="bg-surface-raised p-6 border border-border-light rounded-xl">
-        <h2 className="text-lg font-semibold mb-1 text-text-primary">
+      <section className="rounded-xl border border-border-light bg-surface-raised p-6 shadow-sm">
+        <h2 className="mb-1 flex items-center gap-2 text-lg font-semibold text-text-primary">
+          <Globe size={18} className="text-accent-primary" />
           Profil publiczny
         </h2>
-        <p className="text-sm text-text-secondary mb-4">
+        <p className="mb-4 text-sm text-text-secondary">
           Bio i linki widoczne dla innych użytkowników na Twoim profilu.
         </p>
         <form onSubmit={handleUpdatePublicProfile} className="space-y-4">
@@ -212,7 +220,7 @@ const Profile = () => {
             placeholder="Napisz coś o sobie..."
             value={bio}
             onChange={(e) => setBio(e.target.value)}
-            className="w-full rounded-md border border-border-medium bg-bg-tertiary p-2 text-text-primary"
+            className={inputClass}
           />
 
           <div className="space-y-2">
@@ -225,7 +233,7 @@ const Profile = () => {
                   onChange={(e) =>
                     handleLinkChange(index, "platformName", e.target.value)
                   }
-                  className="w-1/3 rounded-md border border-border-medium bg-bg-tertiary p-2 text-text-primary"
+                  className={`w-1/3 ${inputClass}`}
                 />
                 <input
                   type="url"
@@ -234,15 +242,15 @@ const Profile = () => {
                   onChange={(e) =>
                     handleLinkChange(index, "url", e.target.value)
                   }
-                  className="flex-1 rounded-md border border-border-medium bg-bg-tertiary p-2 text-text-primary"
+                  className={`flex-1 ${inputClass}`}
                 />
                 <button
                   type="button"
                   onClick={() => handleRemoveLink(index)}
-                  className="text-status-error font-bold px-2 hover:underline"
+                  className="grid w-10 shrink-0 place-items-center rounded-md text-status-error transition hover:bg-status-error-bg"
                   aria-label="Usuń link"
                 >
-                  ✕
+                  <X size={16} />
                 </button>
               </div>
             ))}
@@ -250,9 +258,10 @@ const Profile = () => {
               <button
                 type="button"
                 onClick={handleAddLink}
-                className="text-sm font-medium text-accent-primary hover:underline"
+                className="flex items-center gap-1.5 text-sm font-medium text-accent-primary hover:underline"
               >
-                + Dodaj link ({socialLinks.length}/{MAX_SOCIAL_LINKS})
+                <Plus size={14} />
+                Dodaj link ({socialLinks.length}/{MAX_SOCIAL_LINKS})
               </button>
             )}
           </div>
@@ -260,7 +269,7 @@ const Profile = () => {
           <button
             type="submit"
             disabled={updateProfileMutation.isPending}
-            className="bg-accent-primary text-text-on-accent px-4 py-2 rounded-md hover:bg-accent-hover transition"
+            className="rounded-md bg-accent-primary px-4 py-2 text-text-on-accent transition hover:bg-accent-hover disabled:opacity-50"
           >
             Zapisz profil publiczny
           </button>
@@ -268,8 +277,9 @@ const Profile = () => {
       </section>
 
       {/* ZMIANA HASŁA */}
-      <section className="bg-surface-raised p-6 border border-border-light rounded-xl">
-        <h2 className="text-lg font-semibold mb-4 text-text-primary">
+      <section className="rounded-xl border border-border-light bg-surface-raised p-6 shadow-sm">
+        <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-text-primary">
+          <KeyRound size={18} className="text-accent-primary" />
           Zmień hasło
         </h2>
         <form
@@ -281,7 +291,7 @@ const Profile = () => {
               type="password"
               placeholder="Obecne hasło"
               {...passwordForm.register("currentPassword")}
-              className="w-full rounded-md border border-border-medium bg-bg-tertiary p-2 text-text-primary"
+              className={inputClass}
             />
           </div>
           <div>
@@ -289,13 +299,13 @@ const Profile = () => {
               type="password"
               placeholder="Nowe hasło"
               {...passwordForm.register("newPassword")}
-              className="w-full rounded-md border border-border-medium bg-bg-tertiary p-2 text-text-primary"
+              className={inputClass}
             />
           </div>
           <button
             type="submit"
             disabled={changePasswordMutation.isPending}
-            className="bg-accent-primary text-text-on-accent px-4 py-2 rounded-md hover:bg-accent-hover transition"
+            className="rounded-md bg-accent-primary px-4 py-2 text-text-on-accent transition hover:bg-accent-hover disabled:opacity-50"
           >
             Zaktualizuj hasło
           </button>
@@ -303,11 +313,12 @@ const Profile = () => {
       </section>
 
       {/* DANGER ZONE */}
-      <section className="bg-status-error-bg p-6 border border-status-error rounded-xl">
-        <h2 className="text-lg font-semibold mb-4 text-status-error">
+      <section className="rounded-xl border border-status-error bg-status-error-bg p-6">
+        <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-status-error">
+          <AlertTriangle size={18} />
           Strefa niebezpieczna
         </h2>
-        <p className="text-sm text-text-secondary mb-4">
+        <p className="mb-4 text-sm text-text-secondary">
           Usunięcie konta jest nieodwracalne. Wszystkie Twoje dane zostaną
           zniszczone.
         </p>
@@ -317,12 +328,12 @@ const Profile = () => {
             placeholder="Potwierdź hasłem"
             value={deletePass}
             onChange={(e) => setDeletePass(e.target.value)}
-            className="w-full rounded-md border border-status-error bg-bg-tertiary p-2 text-text-primary focus:ring-2 focus:ring-status-error"
+            className="w-full rounded-md border border-status-error bg-bg-tertiary p-2 text-text-primary focus:outline-none focus:ring-2 focus:ring-status-error"
           />
           <button
             onClick={handleDeleteAccount}
             disabled={!deletePass || deleteAccountMutation.isPending}
-            className="bg-status-error text-white px-4 py-2 rounded-md font-bold whitespace-nowrap disabled:opacity-50"
+            className="whitespace-nowrap rounded-md bg-status-error px-4 py-2 font-bold text-white transition hover:opacity-90 disabled:opacity-50"
           >
             Usuń konto
           </button>

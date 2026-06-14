@@ -1,25 +1,24 @@
 import { useEffect, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { Html5Qrcode } from "html5-qrcode";
-import { Loader2 } from "lucide-react";
+import { Loader2, CheckCircle2, XCircle, RotateCcw, ArrowLeft } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
-import { useToastStore } from "@/store/useToastStore";
 
 const GUID_PATTERN =
   /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/;
 
+type ScanResult = { ok: boolean; message: string };
+
 const QRScanner = () => {
   const { eventId } = useParams<{ eventId: string }>();
-  const addToast = useToastStore((state) => state.addToast);
 
-  const isScanningRef = useRef<boolean>(false);
-  const lastScannedRef = useRef<string | null>(null);
+  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const handledRef = useRef(false);
 
   const [cameraError, setCameraError] = useState<string | null>(null);
-  const [statusMessage, setStatusMessage] = useState<string>(
-    "Nakieruj kamerę na kod QR",
-  );
+  const [result, setResult] = useState<ScanResult | null>(null);
+  const [sessionId, setSessionId] = useState(0);
 
   const verifyMutation = useMutation({
     mutationFn: async (scanToken: string) => {
@@ -28,51 +27,55 @@ const QRScanner = () => {
       });
       return response.json();
     },
-    onSuccess: (data) => {
-      addToast(`${data.message || "Bilet WAŻNY! Wpuszczono."}`, "success");
-      setStatusMessage("Wpuszczono!");
-      setTimeout(() => {
-        isScanningRef.current = false;
-        lastScannedRef.current = null;
-        setStatusMessage("Nakieruj kamerę na kod QR");
-      }, 2000);
-    },
-    onError: (error: unknown) => {
-      const message =
-        error instanceof Error ? error.message : "Bilet NIEWAŻNY lub ZUŻYTY!";
-      addToast(`${message}`, "error");
-      setStatusMessage("Błąd weryfikacji");
-      setTimeout(() => {
-        isScanningRef.current = false;
-        lastScannedRef.current = null;
-        setStatusMessage("Nakieruj kamerę na kod QR");
-      }, 2000);
-    },
+    onSuccess: (data) =>
+      setResult({
+        ok: true,
+        message: data?.message || "Bilet ważny — wpuszczono.",
+      }),
+    onError: (error: unknown) =>
+      setResult({
+        ok: false,
+        message:
+          error instanceof Error
+            ? error.message
+            : "Bilet nieważny lub już zużyty.",
+      }),
   });
 
+  const stopScanner = async () => {
+    const scanner = scannerRef.current;
+    if (!scanner) return;
+    try {
+      if (scanner.getState() === 2) await scanner.stop();
+    } catch {
+      /* już zatrzymany */
+    }
+    try {
+      await scanner.clear();
+    } catch {
+      /* ignore */
+    }
+  };
+
   useEffect(() => {
+    handledRef.current = false;
     const html5QrCode = new Html5Qrcode("qr-reader");
-    let isMounted = true;
+    scannerRef.current = html5QrCode;
+    let active = true;
 
     const onScanSuccess = (decodedText: string) => {
-      if (isScanningRef.current || decodedText === lastScannedRef.current)
-        return;
+      // obsługujemy TYLKO pierwszy odczyt, potem zatrzymujemy kamerę
+      if (handledRef.current) return;
+      handledRef.current = true;
+      stopScanner();
 
-      isScanningRef.current = true;
-      lastScannedRef.current = decodedText;
-
-      // Ticket QRs carry a profile URL with the scan token in the query
-      // string; older codes may be a bare GUID. Accept both.
+      // Ticket QR carries a profile URL with the scan token; older codes may be
+      // a bare GUID. Accept both by extracting the first GUID.
       const token = decodedText.match(GUID_PATTERN)?.[0];
       if (!token) {
-        addToast("To nie jest kod biletu.", "error");
-        setTimeout(() => {
-          isScanningRef.current = false;
-          lastScannedRef.current = null;
-        }, 2000);
+        setResult({ ok: false, message: "To nie jest kod biletu." });
         return;
       }
-
       verifyMutation.mutate(token);
     };
 
@@ -84,65 +87,100 @@ const QRScanner = () => {
         () => {},
       )
       .then(() => {
-        if (!isMounted) {
-          html5QrCode
-            .stop()
-            .then(() => html5QrCode.clear())
-            .catch(console.error);
-        }
+        if (!active) stopScanner();
       })
       .catch((err) => {
         console.error("Camera start error:", err);
-        if (isMounted)
+        if (active)
           setCameraError(
             "Brak dostępu do kamery. Upewnij się, że nadałeś uprawnienia w przeglądarce.",
           );
       });
 
     return () => {
-      isMounted = false;
-      try {
-        if (html5QrCode.getState() === 2) {
-          html5QrCode
-            .stop()
-            .then(() => html5QrCode.clear())
-            .catch(console.error);
-        }
-      } catch (error) {
-        console.error("Błąd podczas czyszczenia skanera:", error);
-      }
+      active = false;
+      stopScanner();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [eventId]);
+  }, [eventId, sessionId]);
+
+  const scanAgain = () => {
+    setResult(null);
+    setSessionId((n) => n + 1);
+  };
 
   return (
-    <div className="flex h-full flex-col items-center justify-center bg-black p-4">
-      <div className="absolute top-20 z-10 w-full px-4 text-center">
-        {verifyMutation.isPending ? (
-          <div className="mx-auto inline-flex items-center gap-2 rounded-full bg-status-info px-4 py-2 text-sm font-bold text-white shadow-lg">
-            <Loader2 size={15} className="animate-spin" />
-            Weryfikacja biletu...
-          </div>
-        ) : (
-          <div className="mx-auto inline-block rounded-full bg-black/60 px-4 py-2 text-sm font-bold text-white shadow-lg backdrop-blur-sm">
-            {statusMessage}
-          </div>
-        )}
-      </div>
-
-      {cameraError ? (
-        <div className="rounded-xl border border-status-error bg-status-error-bg p-6 text-center text-status-error">
-          <p className="font-bold text-lg mb-2">Błąd Kamery</p>
-          <p className="text-sm">{cameraError}</p>
+    <div className="relative flex h-full flex-col items-center justify-center bg-black p-4">
+      {/* status góra */}
+      {!result && !cameraError && (
+        <div className="absolute top-20 z-10 w-full px-4 text-center">
+          {verifyMutation.isPending ? (
+            <div className="mx-auto inline-flex items-center gap-2 rounded-full bg-status-info px-4 py-2 text-sm font-bold text-white shadow-lg">
+              <Loader2 size={15} className="animate-spin" />
+              Weryfikacja biletu...
+            </div>
+          ) : (
+            <div className="mx-auto inline-block rounded-full bg-black/60 px-4 py-2 text-sm font-bold text-white shadow-lg backdrop-blur-sm">
+              Nakieruj kamerę na kod QR
+            </div>
+          )}
         </div>
-      ) : (
-        <div
-          id="qr-reader"
-          className="w-full max-w-sm overflow-hidden rounded-2xl shadow-2xl border-4 border-surface-raised bg-black"
-        ></div>
       )}
 
-      <div className="absolute bottom-10 z-10 text-center w-full px-4 text-text-muted text-sm">
+      {/* podgląd kamery (zawsze w DOM, by można było wznowić skan) */}
+      <div
+        id="qr-reader"
+        className="w-full max-w-sm overflow-hidden rounded-2xl border-4 border-surface-raised bg-black shadow-2xl"
+      ></div>
+
+      {/* błąd kamery */}
+      {cameraError && (
+        <div className="absolute inset-0 z-20 flex items-center justify-center p-4">
+          <div className="rounded-xl border border-status-error bg-status-error-bg p-6 text-center text-status-error">
+            <p className="mb-2 text-lg font-bold">Błąd kamery</p>
+            <p className="text-sm">{cameraError}</p>
+          </div>
+        </div>
+      )}
+
+      {/* wynik skanu — kamera zatrzymana */}
+      {result && (
+        <div className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-5 bg-black/92 p-6 text-center backdrop-blur-sm">
+          {verifyMutation.isPending ? (
+            <Loader2 size={48} className="animate-spin text-white" />
+          ) : result.ok ? (
+            <CheckCircle2 size={64} className="text-status-success" />
+          ) : (
+            <XCircle size={64} className="text-status-error" />
+          )}
+          <p
+            className={`max-w-xs text-xl font-bold ${
+              result.ok ? "text-status-success" : "text-status-error"
+            }`}
+          >
+            {result.message}
+          </p>
+
+          <div className="mt-2 flex flex-col items-center gap-3">
+            <button
+              onClick={scanAgain}
+              className="inline-flex items-center gap-2 rounded-md bg-accent-primary px-5 py-2.5 font-medium text-text-on-accent transition hover:bg-accent-hover"
+            >
+              <RotateCcw size={16} />
+              Skanuj następny
+            </button>
+            <Link
+              to="/organizer"
+              className="inline-flex items-center gap-1.5 text-sm text-white/70 hover:text-white"
+            >
+              <ArrowLeft size={14} />
+              Zakończ skanowanie
+            </Link>
+          </div>
+        </div>
+      )}
+
+      <div className="absolute bottom-10 z-10 w-full px-4 text-center text-sm text-white/60">
         Problemy ze skanowaniem? <br />
         Przejdź do listy uczestników i użyj ręcznego wpuszczania.
       </div>

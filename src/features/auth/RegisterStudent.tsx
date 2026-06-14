@@ -4,6 +4,7 @@ import { z } from "zod";
 import { useNavigate, Link } from "react-router-dom";
 import { apiClient } from "@/lib/apiClient";
 import { useToastStore } from "@/store/useToastStore";
+import AuthBrand from "@/components/ui/AuthBrand";
 
 /**
  * @description Zod schema for student registration.
@@ -70,8 +71,9 @@ const RegisterStudent = () => {
 
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
-      <div className="w-full max-w-md rounded-xl bg-surface-raised p-8 shadow-lg border border-border-light">
-        <h2 className="mb-2 text-2xl font-bold text-text-primary text-center">
+      <div className="relative w-full max-w-md rounded-xl border border-border-light bg-surface-raised p-8 shadow-lg">
+        <AuthBrand />
+        <h2 className="mb-2 text-center text-2xl font-bold text-text-primary">
           Rejestracja Studenta
         </h2>
         <p className="mb-6 text-center text-sm text-text-secondary">

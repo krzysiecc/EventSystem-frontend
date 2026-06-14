@@ -218,6 +218,16 @@
     background: var(--signal);
     color: #1a1300;
   }
+
+  /* Ukrywamy natywne paski przewijania (zastępuje je <ScrollHint />). */
+  * {
+    scrollbar-width: none;
+  }
+  *::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
+  }
 }
 
 @layer utilities {
@@ -249,9 +259,55 @@
   .animate-rise {
     animation: rise-in 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
   }
+
+  /* migająca podpowiedź przewijania (ScrollHint) */
+  @keyframes scroll-hint {
+    0%,
+    100% {
+      opacity: 0.25;
+      transform: translateY(0);
+    }
+    50% {
+      opacity: 1;
+      transform: translateY(3px);
+    }
+  }
+  .animate-scroll-hint {
+    animation: scroll-hint 1.4s ease-in-out infinite;
+  }
+
+  /* dekoracyjna geometria ekranu logowania */
+  @keyframes geo-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  @keyframes geo-float {
+    0%,
+    100% {
+      transform: translateY(0) rotate(14deg);
+    }
+    50% {
+      transform: translateY(-20px) rotate(14deg);
+    }
+  }
+  .animate-geo-spin {
+    animation: geo-spin 34s linear infinite;
+  }
+  .animate-geo-spin-rev {
+    animation: geo-spin 24s linear infinite reverse;
+  }
+  .animate-geo-float {
+    animation: geo-float 8s ease-in-out infinite;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .animate-rise,
-    .animate-fade-in {
+    .animate-fade-in,
+    .animate-scroll-hint,
+    .animate-geo-spin,
+    .animate-geo-spin-rev,
+    .animate-geo-float {
       animation: none;
     }
   }

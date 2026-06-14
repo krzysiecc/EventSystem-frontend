@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { CalendarDays, MapPin, ArrowRight } from "lucide-react";
 import { useAllEvents, useRegisterForEvent } from "./api/useStudentQueries";
 import { useToastStore } from "@/store/useToastStore";
+import PageHeader from "@/components/ui/PageHeader";
 
 /**
  * @description Returns the correct Polish grammatical form for "miejsce/miejsca/miejsc"
@@ -46,19 +48,17 @@ const EventBrowser = () => {
     return <div className="p-6 text-text-muted">Ładowanie wydarzeń...</div>;
 
   return (
-    <div className="layout-container py-6">
-      <h1 className="text-2xl font-bold text-text-primary mb-6">
-        Nadchodzące wydarzenia
-      </h1>
+    <div className="mx-auto max-w-6xl">
+      <PageHeader kicker="Student" title="Nadchodzące wydarzenia" />
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {events?.length === 0 && (
-          <p className="col-span-full text-center text-text-muted py-8">
+          <p className="col-span-full py-8 text-center text-text-muted">
             Nie znaleziono dostępnych wydarzeń.
           </p>
         )}
 
-        {events?.map((event) => {
+        {events?.map((event, i) => {
           const remainingSeats = event.maxCapacity - event.enrolledCount;
           const isFull = remainingSeats <= 0;
           const isThisCardPending = pendingEventId === event.id.toString();
@@ -66,43 +66,56 @@ const EventBrowser = () => {
           return (
             <div
               key={event.id}
-              className="bg-surface-raised border border-border-light rounded-xl overflow-hidden shadow-sm flex flex-col"
+              style={{ animationDelay: `${i * 50}ms` }}
+              className="animate-rise group flex flex-col overflow-hidden rounded-xl border border-border-light bg-surface-raised shadow-sm transition hover:border-accent-primary hover:shadow-md"
             >
-              <div className="p-5 flex-1">
-                <h3 className="text-lg font-bold text-text-primary mb-2 line-clamp-2">
-                  {event.title}
-                </h3>
-                <div className="text-sm text-text-secondary space-y-1 mb-4">
-                  <p>📅 {new Date(event.date).toLocaleDateString("pl-PL")}</p>
-                  <p>📍 {event.location}</p>
-                  <p
-                    className={
+              <div className="flex-1 p-5">
+                <div className="mb-3 flex items-start justify-between gap-2">
+                  <span className="font-mono text-2xl font-extrabold leading-none text-text-primary opacity-15">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <span
+                    className={`rounded px-2 py-1 font-mono text-xs font-medium ${
                       isFull
-                        ? "text-status-error font-medium"
-                        : "text-status-info font-medium"
-                    }
+                        ? "bg-status-error-bg text-status-error"
+                        : "bg-accent-subtle text-accent-secondary"
+                    }`}
                   >
                     {isFull
-                      ? "Brak wolnych miejsc"
-                      : `Zostało ${getRemainingSeatsLabel(remainingSeats)}`}
+                      ? "Brak miejsc"
+                      : getRemainingSeatsLabel(remainingSeats)}
+                  </span>
+                </div>
+                <h3 className="mb-3 line-clamp-2 text-xl font-bold text-text-primary">
+                  {event.title}
+                </h3>
+                <div className="mb-4 space-y-1.5 text-sm text-text-secondary">
+                  <p className="flex items-center gap-2">
+                    <CalendarDays size={15} className="text-accent-primary" />
+                    {new Date(event.date).toLocaleDateString("pl-PL")}
+                  </p>
+                  <p className="flex items-center gap-2">
+                    <MapPin size={15} className="text-accent-primary" />
+                    {event.location}
                   </p>
                 </div>
-                <p className="text-sm text-text-muted line-clamp-3 mb-4">
+                <p className="line-clamp-3 text-sm text-text-muted">
                   {event.description.replace(/<[^>]+>/g, "")}
                 </p>
               </div>
 
-              <div className="p-4 border-t border-border-light bg-bg-secondary">
+              <div className="border-t border-border-light p-4">
                 <button
                   onClick={() => handleRegister(event.id.toString())}
                   disabled={isFull || isThisCardPending}
-                  className="w-full bg-accent-primary text-text-on-accent py-2 rounded-md font-medium transition-colors hover:bg-accent-hover disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex w-full items-center justify-center gap-2 rounded-md bg-accent-primary py-2 font-medium text-text-on-accent transition hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {isThisCardPending
                     ? "Przetwarzanie..."
                     : isFull
                       ? "Brak miejsc"
                       : "Pobierz bilet"}
+                  {!isFull && !isThisCardPending && <ArrowRight size={15} />}
                 </button>
               </div>
             </div>

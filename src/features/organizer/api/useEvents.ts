@@ -6,7 +6,13 @@ export interface OrganizerEvent {
   title: string;
   description: string;
   date: string;
+  /** Nowe pola start/koniec — backend dostosuje DTO; na razie `date` = start. */
+  startDate?: string;
+  endDate?: string;
   location: string;
+  /** Współrzędne z OpenStreetMap (opcjonalne). */
+  lat?: number | null;
+  lng?: number | null;
   enrolledCount: number;
   maxCapacity: number;
   scannedCount?: number;

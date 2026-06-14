@@ -62,7 +62,7 @@ const DashboardLayout = ({ role }: { role: string }) => {
           ];
 
   return (
-    <div className="min-h-screen bg-bg-primary">
+    <div className="relative z-10 min-h-screen">
       {/* Main content area — bottom padding clears the floating dock */}
       <main className="mx-auto w-full px-4 pb-32 pt-6 md:px-8">
         <Outlet />
@@ -70,7 +70,7 @@ const DashboardLayout = ({ role }: { role: string }) => {
 
       {/* Floating bottom navigation dock */}
       <nav className="fixed inset-x-0 bottom-4 z-50 px-3">
-        <div className="animate-fade-in mx-auto flex max-w-3xl items-center gap-2 rounded-xl border border-border-light bg-surface-raised/85 p-2 shadow-lg backdrop-blur-md">
+        <div className="animate-fade-in mx-auto flex w-[90%] max-w-5xl items-center gap-2 rounded-xl border border-border-light bg-surface-raised/85 p-2 shadow-lg backdrop-blur-md">
           {/* Brand */}
           <div
             className="hidden items-center gap-2 pl-1 pr-2 sm:flex"
@@ -84,8 +84,8 @@ const DashboardLayout = ({ role }: { role: string }) => {
             </span>
           </div>
 
-          {/* Nav pills */}
-          <div className="flex flex-1 items-center gap-1 overflow-x-auto">
+          {/* Nav pills — rozciągnięte równo na całą szerokość paska */}
+          <div className="flex flex-1 items-center justify-center gap-1.5">
             {navItems.map(({ to, label, Icon, end }) => (
               <NavLink
                 key={to}
@@ -93,7 +93,7 @@ const DashboardLayout = ({ role }: { role: string }) => {
                 end={end}
                 title={label}
                 className={({ isActive }) =>
-                  `flex items-center gap-2 whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium transition ${
+                  `flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium transition ${
                     isActive
                       ? "bg-accent-primary text-text-on-accent"
                       : "text-text-muted hover:text-text-primary"

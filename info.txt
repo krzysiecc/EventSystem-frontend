@@ -1,0 +1,7 @@
+1. przenieś ustawienia koloru strony do profilu
+
+2. na pillbar przenieś informację o dniu i godzinie, i dodaj małymi literami imię i nazwisko zalogowanej osoby
+
+3. dodaj filtry dat i wyszukiwania po nazwie do panelu studenta podczas
+
+4. 

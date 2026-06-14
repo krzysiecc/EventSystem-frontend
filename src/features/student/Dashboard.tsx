@@ -1,80 +1,107 @@
 import { Link } from "react-router-dom";
+import { Compass, Ticket, CalendarDays, MapPin, ArrowRight } from "lucide-react";
 import { useMyTickets } from "./api/useStudentQueries";
 
 const StudentDashboard = () => {
   const { data: tickets, isLoading } = useMyTickets();
 
   const upcomingTickets = tickets?.filter((t) => !t.isScanned) || [];
+  const next = upcomingTickets[0];
 
   return (
-    <div className="layout-container py-6 space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-text-primary">Witaj z powrotem!</h1>
-        <p className="text-text-secondary">
-          Poniżej znajdziesz szybkie podsumowanie swoich działań.
+    <div className="mx-auto max-w-5xl space-y-10">
+      {/* HERO */}
+      <header className="animate-rise pt-4">
+        <div className="mb-3 flex items-center gap-3 font-mono text-xs uppercase tracking-[0.15em] text-text-muted">
+          <span className="h-px w-8 bg-border-medium" aria-hidden="true" />
+          Panel studenta
+        </div>
+        <h1 className="text-4xl font-extrabold tracking-tight text-text-primary sm:text-5xl">
+          Witaj z powrotem<span className="text-accent-primary">.</span>
+        </h1>
+        <p className="mt-3 max-w-lg text-text-secondary">
+          Masz{" "}
+          <b className="text-text-primary">{upcomingTickets.length}</b> aktywnych
+          biletów. Sprawdź, co Cię czeka.
         </p>
-      </div>
+      </header>
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Quick actions */}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <Link
           to="/student/events"
-          className="bg-accent-primary text-text-on-accent p-6 rounded-xl shadow-sm hover:bg-accent-hover transition flex flex-col items-center justify-center"
+          style={{ animationDelay: "60ms" }}
+          className="animate-rise group flex items-center justify-between rounded-xl bg-accent-primary p-6 text-text-on-accent shadow-sm transition hover:bg-accent-hover"
         >
-          <span className="text-xl font-semibold mb-1">Przeglądaj wydarzenia</span>
-          <span className="text-sm opacity-90">
-            Znajdź swoje następne studenckie przeżycie
-          </span>
+          <div>
+            <span className="block text-xl font-bold">Przeglądaj wydarzenia</span>
+            <span className="text-sm opacity-90">
+              Znajdź swoje następne przeżycie
+            </span>
+          </div>
+          <Compass size={26} className="transition group-hover:scale-110" />
         </Link>
         <Link
           to="/student/tickets"
-          className="bg-surface-raised border border-border-medium text-text-primary p-6 rounded-xl shadow-sm hover:border-accent-primary transition flex flex-col items-center justify-center"
+          style={{ animationDelay: "120ms" }}
+          className="animate-rise group flex items-center justify-between rounded-xl border border-border-medium bg-surface-raised p-6 text-text-primary shadow-sm transition hover:border-accent-primary"
         >
-          <span className="text-xl font-semibold mb-1">Moje bilety</span>
-          <span className="text-sm text-text-secondary">
-            Wyświetl i użyj swoich kodów QR
-          </span>
+          <div>
+            <span className="block text-xl font-bold">Moje bilety</span>
+            <span className="text-sm text-text-secondary">
+              Wyświetl i użyj kodów QR
+            </span>
+          </div>
+          <Ticket
+            size={26}
+            className="text-accent-primary transition group-hover:scale-110"
+          />
         </Link>
       </div>
 
-      {/* Upcoming Ticket Widget */}
-      <div>
-        <h2 className="text-xl font-bold text-text-primary mb-4">
-          Twoje następne wydarzenie
-        </h2>
+      {/* Next event */}
+      <section className="animate-rise" style={{ animationDelay: "180ms" }}>
+        <div className="mb-4 flex items-center gap-3 font-mono text-xs uppercase tracking-[0.15em] text-text-muted">
+          <span className="text-signal">01</span> Twój następny event
+        </div>
         {isLoading ? (
           <p className="text-text-muted">Ładowanie...</p>
-        ) : upcomingTickets.length > 0 ? (
-          <div className="bg-surface-raised border-l-4 border-l-accent-primary p-5 rounded-r-xl shadow-sm">
-            <h3 className="font-semibold text-lg">
-              {upcomingTickets[0].eventTitle}
+        ) : next ? (
+          <div className="rounded-xl border border-border-light bg-surface-raised p-6 shadow-sm">
+            <h3 className="text-2xl font-bold text-text-primary">
+              {next.eventTitle}
             </h3>
-            <p className="text-sm text-text-secondary mb-3">
-              📅 {new Date(upcomingTickets[0].eventDate).toLocaleString()}{" "}
-              <br />
-              📍 {upcomingTickets[0].location}
-            </p>
+            <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-text-secondary">
+              <span className="flex items-center gap-2">
+                <CalendarDays size={15} className="text-accent-primary" />
+                {new Date(next.eventDate).toLocaleString()}
+              </span>
+              <span className="flex items-center gap-2">
+                <MapPin size={15} className="text-accent-primary" />
+                {next.location}
+              </span>
+            </div>
             <Link
-              to={`/student/tickets/${upcomingTickets[0].id}`}
-              className="text-sm font-medium text-accent-primary hover:underline"
+              to={`/student/tickets/${next.id}`}
+              className="mt-5 inline-flex items-center gap-2 rounded-md bg-accent-primary px-4 py-2 text-sm font-medium text-text-on-accent transition hover:bg-accent-hover"
             >
-              Pokaż kod QR →
+              Pokaż kod QR <ArrowRight size={15} />
             </Link>
           </div>
         ) : (
-          <div className="bg-surface-sunken p-6 rounded-xl text-center border border-border-light">
-            <p className="text-text-secondary mb-2">
+          <div className="rounded-xl border border-border-light bg-surface-sunken p-6 text-center">
+            <p className="mb-2 text-text-secondary">
               Nie masz nadchodzących wydarzeń. Czas znaleźć coś nowego!
             </p>
             <Link
               to="/student/events"
-              className="text-accent-primary font-medium hover:underline"
+              className="font-medium text-accent-primary hover:underline"
             >
               Przeglądaj dostępne wydarzenia
             </Link>
           </div>
         )}
-      </div>
+      </section>
     </div>
   );
 };

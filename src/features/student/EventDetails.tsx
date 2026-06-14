@@ -1,4 +1,5 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
+import { ArrowLeft, CalendarDays, MapPin, Users, Ticket } from "lucide-react";
 import { useEventDetails, useRegisterForEvent } from "./api/useStudentQueries";
 import { useToastStore } from "@/store/useToastStore";
 
@@ -32,37 +33,40 @@ const EventDetailsStudent = () => {
   const isFull = event.maxCapacity <= event.enrolledCount;
 
   return (
-    <div className="layout-container py-6 max-w-3xl">
+    <div className="mx-auto max-w-3xl">
       <Link
         to="/student/events"
-        className="text-accent-primary hover:underline mb-6 inline-block"
+        className="mb-6 inline-flex items-center gap-1.5 text-sm text-accent-primary hover:underline"
       >
-        ← Wróć do listy
+        <ArrowLeft size={15} />
+        Wróć do listy
       </Link>
 
-      <div className="bg-surface-raised border border-border-light rounded-2xl p-6 md:p-10 shadow-sm">
-        <h1 className="text-3xl font-extrabold text-text-primary mb-4">
+      <div className="rounded-xl border border-border-light bg-surface-raised p-6 shadow-sm md:p-10">
+        <h1 className="mb-6 text-3xl font-extrabold tracking-tight text-text-primary md:text-4xl">
           {event.title}
         </h1>
 
-        <div className="flex flex-col md:flex-row gap-6 mb-8 text-text-secondary bg-bg-secondary p-4 rounded-xl">
+        <div className="mb-8 grid grid-cols-1 gap-4 rounded-xl bg-bg-secondary p-4 sm:grid-cols-3">
           <div>
-            <span className="block text-xs uppercase font-bold text-text-muted">
-              Data
+            <span className="mb-1 flex items-center gap-1.5 font-mono text-xs uppercase tracking-wider text-text-muted">
+              <CalendarDays size={13} /> Data
             </span>
-            <span className="font-medium">
+            <span className="font-medium text-text-primary">
               {new Date(event.date).toLocaleString()}
             </span>
           </div>
           <div>
-            <span className="block text-xs uppercase font-bold text-text-muted">
-              Lokalizacja
+            <span className="mb-1 flex items-center gap-1.5 font-mono text-xs uppercase tracking-wider text-text-muted">
+              <MapPin size={13} /> Lokalizacja
             </span>
-            <span className="font-medium">{event.location}</span>
+            <span className="font-medium text-text-primary">
+              {event.location}
+            </span>
           </div>
           <div>
-            <span className="block text-xs uppercase font-bold text-text-muted">
-              Dostępność
+            <span className="mb-1 flex items-center gap-1.5 font-mono text-xs uppercase tracking-wider text-text-muted">
+              <Users size={13} /> Dostępność
             </span>
             <span
               className={`font-medium ${isFull ? "text-status-error" : "text-status-success"}`}
@@ -73,16 +77,21 @@ const EventDetailsStudent = () => {
           </div>
         </div>
 
-        <div className="prose prose-invert max-w-none text-text-primary mb-10">
-          <h3 className="text-xl font-bold mb-2">O wydarzeniu</h3>
-          <p className="whitespace-pre-wrap">{event.description}</p>
+        <div className="mb-10">
+          <h3 className="mb-2 text-xl font-bold text-text-primary">
+            O wydarzeniu
+          </h3>
+          <p className="whitespace-pre-wrap text-text-secondary">
+            {event.description}
+          </p>
         </div>
 
         <button
           onClick={handleRegister}
           disabled={isFull || registerMutation.isPending}
-          className="w-full md:w-auto bg-accent-primary text-text-on-accent px-8 py-3 rounded-lg font-bold text-lg hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-accent-primary px-8 py-3 text-lg font-bold text-text-on-accent transition hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50 md:w-auto"
         >
+          <Ticket size={18} />
           {registerMutation.isPending
             ? "Przetwarzanie..."
             : isFull

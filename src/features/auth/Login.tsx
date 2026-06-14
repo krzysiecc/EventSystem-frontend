@@ -5,6 +5,7 @@ import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useAuthStore } from "@/store/useAuthStore";
 import { apiClient } from "@/lib/apiClient";
 import { useToastStore } from "@/store/useToastStore";
+import AuthBrand from "@/components/ui/AuthBrand";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Niepoprawny adres e-mail" }),
@@ -68,8 +69,9 @@ const Login = () => {
 
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
-      <div className="w-full max-w-md rounded-xl bg-surface-raised p-8 shadow-lg border border-border-light">
-        <h2 className="mb-6 text-2xl font-bold text-text-primary text-center">
+      <div className="relative w-full max-w-md rounded-xl border border-border-light bg-surface-raised p-8 shadow-lg">
+        <AuthBrand />
+        <h2 className="mb-6 text-center text-2xl font-bold text-text-primary">
           Zaloguj się do swojego konta
         </h2>
 

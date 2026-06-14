@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { apiClient } from "@/lib/apiClient";
 import { useToastStore } from "@/store/useToastStore";
+import AuthBrand from "@/components/ui/AuthBrand";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
@@ -28,7 +29,8 @@ const ForgotPassword = () => {
 
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
-      <div className="w-full max-w-md rounded-xl bg-surface-raised p-8 shadow-lg border border-border-light text-center">
+      <div className="relative w-full max-w-md rounded-xl border border-border-light bg-surface-raised p-8 text-center shadow-lg">
+        <AuthBrand />
         <h2 className="mb-2 text-2xl font-bold text-text-primary">
           Odzyskiwanie hasła
         </h2>
