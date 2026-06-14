@@ -11,7 +11,7 @@ import "leaflet/dist/leaflet.css";
 import markerIcon from "leaflet/dist/images/marker-icon.png";
 import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
 import markerShadow from "leaflet/dist/images/marker-shadow.png";
-import { MapPin, Loader2 } from "lucide-react";
+import { MapPin, Loader2, Tag } from "lucide-react";
 
 const pinIcon = L.icon({
   iconUrl: markerIcon,
@@ -24,21 +24,49 @@ const pinIcon = L.icon({
 });
 
 export interface LocationValue {
+  /** Adres skrócony: ulica, numer, kod pocztowy, miasto. */
   location: string;
+  /** Nazwa własna miejsca (opcjonalna), np. „Budynek A-1, wejście od ul. Hoene". */
+  locationName: string;
   lat: number | null;
   lng: number | null;
+}
+
+interface NominatimAddress {
+  road?: string;
+  house_number?: string;
+  postcode?: string;
+  city?: string;
+  town?: string;
+  village?: string;
+  municipality?: string;
 }
 
 interface NominatimResult {
   display_name: string;
   lat: string;
   lon: string;
+  address?: NominatimAddress;
 }
 
 const DEFAULT_CENTER: [number, number] = [52.2297, 21.0122]; // Warszawa
 
 const inputClass =
   "w-full rounded-md border border-border-medium bg-bg-tertiary p-2 text-text-primary focus:border-accent-primary focus:outline-none focus:ring-1 focus:ring-accent-primary";
+
+/**
+ * @description Składa skrócony adres z pól OSM: „ulica numer, kod, miasto".
+ * Gdy brak danych szczegółowych — używa pełnej nazwy jako fallback.
+ */
+const formatAddress = (a?: NominatimAddress, fallback = ""): string => {
+  if (!a) return fallback;
+  const street = [a.road, a.house_number].filter(Boolean).join(" ");
+  const city = a.city || a.town || a.village || a.municipality || "";
+  const parts = [street, a.postcode, city]
+    .map((p) => (p ?? "").trim())
+    .filter(Boolean);
+  return parts.join(", ") || fallback;
+};
 
 function Recenter({ lat, lng }: { lat: number | null; lng: number | null }) {
   const map = useMap();
@@ -64,7 +92,8 @@ function ClickHandler({
 
 /**
  * @description Wybór lokalizacji przez OpenStreetMap: autouzupełnianie adresu
- * (Nominatim) + mapa Leaflet z markerem. Zwraca adres tekstowy oraz lat/lng.
+ * (Nominatim, skrócone do ulica/numer/kod/miasto) + mapa Leaflet z markerem,
+ * plus opcjonalna nazwa własna miejsca. Zwraca adres, nazwę własną i lat/lng.
  */
 const LocationPicker = ({
   value,
@@ -106,21 +135,24 @@ const LocationPicker = ({
     const lat = parseFloat(r.lat);
     const lng = parseFloat(r.lon);
     setOpen(false);
-    onChange({ location: r.display_name, lat, lng });
+    onChange({
+      ...value,
+      location: formatAddress(r.address, r.display_name),
+      lat,
+      lng,
+    });
   };
 
   const pickMap = async (lat: number, lng: number) => {
-    onChange({ location: value.location, lat, lng });
+    onChange({ ...value, lat, lng });
     try {
       const res = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`,
+        `https://nominatim.openstreetmap.org/reverse?format=jsonv2&addressdetails=1&lat=${lat}&lon=${lng}`,
         { headers: { "Accept-Language": "pl" } },
       );
       const data = await res.json();
-      const name = data.display_name as string | undefined;
-      if (name) {
-        onChange({ location: name, lat, lng });
-      }
+      const concise = formatAddress(data.address, data.display_name);
+      if (concise) onChange({ ...value, location: concise, lat, lng });
     } catch {
       /* ignorujemy błąd reverse-geocode */
     }
@@ -138,6 +170,22 @@ const LocationPicker = ({
 
   return (
     <div className="space-y-2">
+      {/* Nazwa własna (opcjonalna) */}
+      <div className="relative">
+        <Tag
+          size={15}
+          className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-muted"
+        />
+        <input
+          type="text"
+          value={value.locationName}
+          onChange={(e) => onChange({ ...value, locationName: e.target.value })}
+          placeholder="Nazwa własna (opcjonalnie, np. Budynek A-1, wejście od ul. Hoene)"
+          className={`${inputClass} pl-9`}
+        />
+      </div>
+
+      {/* Adres z autouzupełnianiem */}
       <div className="relative">
         <input
           type="text"
@@ -147,7 +195,7 @@ const LocationPicker = ({
             search(e.target.value);
           }}
           onFocus={() => results.length > 0 && setOpen(true)}
-          placeholder="Wpisz adres albo wybierz punkt na mapie"
+          placeholder="Adres: ulica i numer, kod, miasto"
           className={inputClass}
         />
         {loading && (
@@ -169,7 +217,9 @@ const LocationPicker = ({
                     size={14}
                     className="mt-0.5 shrink-0 text-accent-primary"
                   />
-                  <span className="text-text-secondary">{r.display_name}</span>
+                  <span className="text-text-secondary">
+                    {formatAddress(r.address, r.display_name)}
+                  </span>
                 </button>
               </li>
             ))}

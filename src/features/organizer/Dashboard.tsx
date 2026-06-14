@@ -85,7 +85,7 @@ const OrganizerDashboard = () => {
                   </p>
                   <p className="flex items-center gap-2">
                     <MapPin size={15} className="text-accent-primary" />
-                    {event.location}
+                    {event.locationName || event.location}
                   </p>
                   <p className="flex items-center gap-2">
                     <Ticket size={15} className="text-accent-primary" />

@@ -52,6 +52,7 @@ const CreateEvent = () => {
 
   const [loc, setLoc] = useState<LocationValue>({
     location: "",
+    locationName: "",
     lat: null,
     lng: null,
   });

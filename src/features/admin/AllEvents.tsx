@@ -1,4 +1,5 @@
-import { CalendarDays } from "lucide-react";
+import { Link } from "react-router-dom";
+import { CalendarDays, Eye, Pencil, Users } from "lucide-react";
 import { useAllEvents } from "./api/useAdminQueries";
 import PageHeader from "@/components/ui/PageHeader";
 import { formatEventDate } from "@/lib/eventDate";
@@ -21,6 +22,7 @@ const AllEvents = () => {
               <th className="p-4 font-medium">Data</th>
               <th className="p-4 font-medium">Zapisani / Pojemność</th>
               <th className="p-4 font-medium">Status</th>
+              <th className="p-4 text-right font-medium">Akcje</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border-light">
@@ -33,7 +35,7 @@ const AllEvents = () => {
                   {event.title}
                 </td>
                 <td className="p-4 text-text-secondary">
-                  {event.organizerName}
+                  {event.organizerName || "—"}
                 </td>
                 <td className="p-4 font-mono text-sm text-text-secondary">
                   <span className="flex items-center gap-2">
@@ -58,6 +60,31 @@ const AllEvents = () => {
                   >
                     {event.status}
                   </span>
+                </td>
+                <td className="p-4">
+                  <div className="flex items-center justify-end gap-3">
+                    <Link
+                      to={`/organizer/events/${event.id}`}
+                      className="flex items-center gap-1.5 text-sm font-medium text-accent-primary hover:underline"
+                    >
+                      <Eye size={14} />
+                      Szczegóły
+                    </Link>
+                    <Link
+                      to={`/organizer/events/${event.id}/edit`}
+                      className="flex items-center gap-1.5 text-sm font-medium text-accent-primary hover:underline"
+                    >
+                      <Pencil size={14} />
+                      Edytuj
+                    </Link>
+                    <Link
+                      to={`/organizer/events/${event.id}/attendees`}
+                      className="flex items-center gap-1.5 text-sm font-medium text-accent-primary hover:underline"
+                    >
+                      <Users size={14} />
+                      Uczestnicy
+                    </Link>
+                  </div>
                 </td>
               </tr>
             ))}

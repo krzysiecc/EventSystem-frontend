@@ -10,6 +10,8 @@ export interface OrganizerEvent {
   startDate?: string;
   endDate?: string;
   location: string;
+  /** Nazwa własna miejsca (opcjonalna), np. „Budynek A-1, wejście od ul. Hoene". */
+  locationName?: string | null;
   /** Współrzędne z OpenStreetMap (opcjonalne). */
   lat?: number | null;
   lng?: number | null;
@@ -90,6 +92,50 @@ export const useManualCheckIn = (eventId: string | undefined) => {
     mutationFn: async (scanToken: string) => {
       const response = await apiClient(`/tickets/scan/${scanToken}`, {
         method: "POST",
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["organizer", "events", eventId, "attendees"],
+      });
+    },
+  });
+};
+
+/**
+ * @description (ADMIN) Reset skanu biletu — cofa „zużyty" z powrotem na „oczekuje",
+ * gdy ktoś został błędnie zeskanowany. Wymaga nowego endpointu na backendzie:
+ *   POST /admin/tickets/{scanToken}/reset  → ustawia IsScanned = false.
+ */
+export const useResetTicketScan = (eventId: string | undefined) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (scanToken: string) => {
+      const response = await apiClient(`/admin/tickets/${scanToken}/reset`, {
+        method: "POST",
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["organizer", "events", eventId, "attendees"],
+      });
+    },
+  });
+};
+
+/**
+ * @description (ADMIN) Usuwa bilet/zapis uczestnika (np. przypadkowe kliknięcie
+ * „Pobierz bilet"). Wymaga nowego endpointu na backendzie:
+ *   DELETE /admin/tickets/{ticketId}  → usuwa wpis biletu i zwalnia miejsce.
+ */
+export const useDeleteTicket = (eventId: string | undefined) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (ticketId: number) => {
+      const response = await apiClient(`/admin/tickets/${ticketId}`, {
+        method: "DELETE",
       });
       return response.json();
     },

@@ -6,8 +6,15 @@ import {
   Search,
   X,
   Loader2,
+  Check,
 } from "lucide-react";
-import { useAllEvents, useRegisterForEvent } from "./api/useStudentQueries";
+import {
+  useAllEvents,
+  useRegisterForEvent,
+  useMyTickets,
+  type PublicEvent,
+  type Ticket,
+} from "./api/useStudentQueries";
 import { useToastStore } from "@/store/useToastStore";
 import PageHeader from "@/components/ui/PageHeader";
 import { formatEventDate, eventStart } from "@/lib/eventDate";
@@ -34,8 +41,22 @@ const inputClass =
 
 const EventBrowser = () => {
   const { data: events, isLoading } = useAllEvents();
+  const { data: tickets } = useMyTickets();
   const registerMutation = useRegisterForEvent();
   const addToast = useToastStore((state) => state.addToast);
+
+  // Mapowanie: czy student ma już bilet na dane wydarzenie (po ID, a w razie
+  // braku eventId — po tytule). Pozwala wyszarzyć „Pobierz bilet".
+  const ticketForEvent = useMemo(() => {
+    const byId = new Map<number, Ticket>();
+    const byTitle = new Map<string, Ticket>();
+    (tickets ?? []).forEach((t) => {
+      if (t.eventId != null) byId.set(t.eventId, t);
+      byTitle.set(t.eventTitle.trim().toLowerCase(), t);
+    });
+    return (e: PublicEvent) =>
+      byId.get(e.id) ?? byTitle.get(e.title.trim().toLowerCase());
+  }, [tickets]);
 
   // Track which event ID is currently being registered to show per-card loading
   const [pendingEventId, setPendingEventId] = useState<string | null>(null);
@@ -154,6 +175,9 @@ const EventBrowser = () => {
           const remainingSeats = event.maxCapacity - event.enrolledCount;
           const isFull = remainingSeats <= 0;
           const isThisCardPending = pendingEventId === event.id.toString();
+          const myTicket = ticketForEvent(event);
+          const hasTicket = !!myTicket;
+          const usedTicket = myTicket?.isScanned ?? false;
 
           return (
             <li
@@ -176,30 +200,48 @@ const EventBrowser = () => {
                         size={12}
                         className="shrink-0 text-accent-primary"
                       />
-                      <span className="truncate">{event.location}</span>
+                      <span className="truncate">
+                        {event.locationName || event.location}
+                      </span>
                     </span>
                   </div>
                   <span
                     className={`mt-1 inline-block rounded px-1.5 py-0.5 font-mono text-[10px] font-medium ${
-                      isFull
-                        ? "bg-status-error-bg text-status-error"
-                        : "bg-accent-subtle text-accent-secondary"
+                      usedTicket
+                        ? "bg-bg-tertiary text-text-muted"
+                        : hasTicket
+                          ? "bg-status-success-bg text-status-success"
+                          : isFull
+                            ? "bg-status-error-bg text-status-error"
+                            : "bg-accent-subtle text-accent-secondary"
                     }`}
                   >
-                    {isFull
-                      ? "Brak miejsc"
-                      : getRemainingSeatsLabel(remainingSeats)}
+                    {usedTicket
+                      ? "Bilet zużyty"
+                      : hasTicket
+                        ? "Masz bilet"
+                        : isFull
+                          ? "Brak miejsc"
+                          : getRemainingSeatsLabel(remainingSeats)}
                   </span>
                 </div>
                 <button
                   onClick={() => handleRegister(event.id.toString())}
-                  disabled={isFull || isThisCardPending}
-                  aria-label="Pobierz bilet"
-                  title="Pobierz bilet"
+                  disabled={isFull || isThisCardPending || hasTicket}
+                  aria-label={hasTicket ? "Masz już bilet" : "Pobierz bilet"}
+                  title={
+                    usedTicket
+                      ? "Bilet zużyty"
+                      : hasTicket
+                        ? "Masz już bilet"
+                        : "Pobierz bilet"
+                  }
                   className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-accent-primary text-text-on-accent transition hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {isThisCardPending ? (
                     <Loader2 size={16} className="animate-spin" />
+                  ) : hasTicket ? (
+                    <Check size={16} />
                   ) : (
                     <ArrowRight size={16} />
                   )}
@@ -216,6 +258,9 @@ const EventBrowser = () => {
           const remainingSeats = event.maxCapacity - event.enrolledCount;
           const isFull = remainingSeats <= 0;
           const isThisCardPending = pendingEventId === event.id.toString();
+          const myTicket = ticketForEvent(event);
+          const hasTicket = !!myTicket;
+          const usedTicket = myTicket?.isScanned ?? false;
 
           return (
             <div
@@ -230,14 +275,22 @@ const EventBrowser = () => {
                   </span>
                   <span
                     className={`rounded px-2 py-1 font-mono text-xs font-medium ${
-                      isFull
-                        ? "bg-status-error-bg text-status-error"
-                        : "bg-accent-subtle text-accent-secondary"
+                      usedTicket
+                        ? "bg-bg-tertiary text-text-muted"
+                        : hasTicket
+                          ? "bg-status-success-bg text-status-success"
+                          : isFull
+                            ? "bg-status-error-bg text-status-error"
+                            : "bg-accent-subtle text-accent-secondary"
                     }`}
                   >
-                    {isFull
-                      ? "Brak miejsc"
-                      : getRemainingSeatsLabel(remainingSeats)}
+                    {usedTicket
+                      ? "Bilet zużyty"
+                      : hasTicket
+                        ? "Masz bilet"
+                        : isFull
+                          ? "Brak miejsc"
+                          : getRemainingSeatsLabel(remainingSeats)}
                   </span>
                 </div>
                 <h3 className="mb-3 line-clamp-2 text-xl font-bold text-text-primary">
@@ -250,7 +303,7 @@ const EventBrowser = () => {
                   </p>
                   <p className="flex items-center gap-2">
                     <MapPin size={15} className="text-accent-primary" />
-                    {event.location}
+                    {event.locationName || event.location}
                   </p>
                 </div>
                 <p className="line-clamp-3 text-sm text-text-muted">
@@ -261,15 +314,21 @@ const EventBrowser = () => {
               <div className="border-t border-border-light p-4">
                 <button
                   onClick={() => handleRegister(event.id.toString())}
-                  disabled={isFull || isThisCardPending}
+                  disabled={isFull || isThisCardPending || hasTicket}
                   className="flex w-full items-center justify-center gap-2 rounded-md bg-accent-primary py-2 font-medium text-text-on-accent transition hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {isThisCardPending
                     ? "Przetwarzanie..."
-                    : isFull
-                      ? "Brak miejsc"
-                      : "Pobierz bilet"}
-                  {!isFull && !isThisCardPending && <ArrowRight size={15} />}
+                    : usedTicket
+                      ? "Bilet zużyty"
+                      : hasTicket
+                        ? "Masz już bilet"
+                        : isFull
+                          ? "Brak miejsc"
+                          : "Pobierz bilet"}
+                  {!isFull && !isThisCardPending && !hasTicket && (
+                    <ArrowRight size={15} />
+                  )}
                 </button>
               </div>
             </div>

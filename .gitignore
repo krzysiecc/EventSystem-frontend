@@ -200,3 +200,5 @@ yarn.lock             # optional: remove to track lockfile (recommended to keep)
 *.local
 *.orig
 *.bak
+.claude
+claude

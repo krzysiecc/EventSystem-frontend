@@ -57,6 +57,7 @@ const EditEvent = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [loc, setLoc] = useState<LocationValue>({
     location: "",
+    locationName: "",
     lat: null,
     lng: null,
   });
@@ -88,6 +89,7 @@ const EditEvent = () => {
   if (event && loadedId !== id) {
     setLoc({
       location: event.location ?? "",
+      locationName: event.locationName ?? "",
       lat: event.lat ?? null,
       lng: event.lng ?? null,
     });
@@ -110,6 +112,7 @@ const EditEvent = () => {
         data: {
           ...data,
           location: loc.location,
+          locationName: loc.locationName,
           lat: loc.lat,
           lng: loc.lng,
           date: data.startDate, // kompatybilność ze starym backendem

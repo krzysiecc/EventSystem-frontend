@@ -1,20 +1,56 @@
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, UserCheck, Check, Clock } from "lucide-react";
-import { useEventAttendees, useManualCheckIn } from "./api/useEvents";
+import {
+  ArrowLeft,
+  UserCheck,
+  Check,
+  Clock,
+  RotateCcw,
+  Trash2,
+} from "lucide-react";
+import {
+  useEventAttendees,
+  useManualCheckIn,
+  useResetTicketScan,
+  useDeleteTicket,
+} from "./api/useEvents";
 import { useToastStore } from "@/store/useToastStore";
+import { useAuthStore } from "@/store/useAuthStore";
 import PageHeader from "@/components/ui/PageHeader";
 
 const AttendeeList = () => {
   const { id } = useParams<{ id: string }>();
   const { data: attendees, isLoading } = useEventAttendees(id);
   const checkInMutation = useManualCheckIn(id);
+  const resetMutation = useResetTicketScan(id);
+  const deleteTicketMutation = useDeleteTicket(id);
   const addToast = useToastStore((state) => state.addToast);
+  const isAdmin = useAuthStore((state) => state.user?.role === "Admin");
 
   const handleManualCheckIn = (scanToken: string) => {
     if (window.confirm("Czy na pewno chcesz ręcznie potwierdzić ten bilet?")) {
       checkInMutation.mutate(scanToken, {
         onSuccess: () => addToast("Bilet skasowany pomyślnie!", "success"),
         onError: () => addToast("Błąd podczas kasowania biletu.", "error"),
+      });
+    }
+  };
+
+  // (ADMIN) cofnięcie błędnego skanu — przywraca bilet do stanu „oczekuje"
+  const handleResetScan = (scanToken: string) => {
+    if (window.confirm("Cofnąć wejście (reset skanu) dla tego biletu?")) {
+      resetMutation.mutate(scanToken, {
+        onSuccess: () => addToast("Skan cofnięty.", "success"),
+        onError: () => addToast("Nie udało się cofnąć skanu.", "error"),
+      });
+    }
+  };
+
+  // (ADMIN) usunięcie biletu — np. przypadkowy zapis na wydarzenie
+  const handleDeleteTicket = (ticketId: number) => {
+    if (window.confirm("Usunąć bilet tego uczestnika? Zwolni to miejsce.")) {
+      deleteTicketMutation.mutate(ticketId, {
+        onSuccess: () => addToast("Bilet usunięty.", "success"),
+        onError: () => addToast("Nie udało się usunąć biletu.", "error"),
       });
     }
   };
@@ -75,17 +111,41 @@ const AttendeeList = () => {
                       </span>
                     )}
                   </td>
-                  <td className="p-4 text-right">
-                    {!attendee.isScanned && (
-                      <button
-                        onClick={() => handleManualCheckIn(attendee.scanToken)}
-                        disabled={checkInMutation.isPending}
-                        className="inline-flex items-center gap-1.5 rounded-md bg-accent-primary px-3 py-1.5 text-sm text-text-on-accent transition hover:bg-accent-hover disabled:opacity-50"
-                      >
-                        <UserCheck size={15} />
-                        Wpuść
-                      </button>
-                    )}
+                  <td className="p-4">
+                    <div className="flex flex-wrap items-center justify-end gap-2">
+                      {!attendee.isScanned && (
+                        <button
+                          onClick={() =>
+                            handleManualCheckIn(attendee.scanToken)
+                          }
+                          disabled={checkInMutation.isPending}
+                          className="inline-flex items-center gap-1.5 rounded-md bg-accent-primary px-3 py-1.5 text-sm text-text-on-accent transition hover:bg-accent-hover disabled:opacity-50"
+                        >
+                          <UserCheck size={15} />
+                          Wpuść
+                        </button>
+                      )}
+                      {isAdmin && attendee.isScanned && (
+                        <button
+                          onClick={() => handleResetScan(attendee.scanToken)}
+                          disabled={resetMutation.isPending}
+                          className="inline-flex items-center gap-1.5 rounded-md border border-border-medium px-3 py-1.5 text-sm text-text-secondary transition hover:border-accent-primary hover:text-text-primary disabled:opacity-50"
+                        >
+                          <RotateCcw size={15} />
+                          Cofnij wejście
+                        </button>
+                      )}
+                      {isAdmin && (
+                        <button
+                          onClick={() => handleDeleteTicket(attendee.id)}
+                          disabled={deleteTicketMutation.isPending}
+                          className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm text-status-error transition hover:bg-status-error-bg disabled:opacity-50"
+                        >
+                          <Trash2 size={15} />
+                          Usuń
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))

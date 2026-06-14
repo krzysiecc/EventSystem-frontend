@@ -9,6 +9,8 @@ export interface PublicEvent {
   startDate?: string;
   endDate?: string;
   location: string;
+  /** Nazwa własna miejsca (opcjonalna). */
+  locationName?: string | null;
   maxCapacity: number;
   enrolledCount: number;
   description: string;
@@ -16,6 +18,9 @@ export interface PublicEvent {
 
 export interface Ticket {
   id: number;
+  /** ID wydarzenia — pozwala pewnie dopasować bilet do wydarzenia na liście.
+   *  Opcjonalne: gdy backend go nie zwraca, dopasowujemy po tytule. */
+  eventId?: number;
   eventTitle: string;
   eventDate: string;
   location: string;

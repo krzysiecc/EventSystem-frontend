@@ -326,7 +326,8 @@ const PixelBlast = ({
   speed = 0.5,
   transparent = true,
   edgeFade = 0.5,
-  noiseAmount = 0
+  noiseAmount = 0,
+  maxPixelRatio = 2
 }) => {
   const containerRef = useRef(null);
   const visibilityRef = useRef({ visible: true });
@@ -371,7 +372,7 @@ const PixelBlast = ({
       });
       renderer.domElement.style.width = '100%';
       renderer.domElement.style.height = '100%';
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, maxPixelRatio));
       container.appendChild(renderer.domElement);
       if (transparent) renderer.setClearAlpha(0);
       else renderer.setClearColor(0x000000, 1);
@@ -421,6 +422,22 @@ const PixelBlast = ({
       setSize();
       const ro = new ResizeObserver(setSize);
       ro.observe(container);
+      // Realne wstrzymanie pętli renderowania, gdy tło jest poza ekranem albo
+      // karta przeglądarki nieaktywna (wcześniej `visibilityRef` nikt nie
+      // ustawiał, więc render trwał zawsze — niepotrzebne zużycie CPU/GPU/RAM).
+      let onScreen = true;
+      const updateVisible = () => {
+        visibilityRef.current.visible =
+          onScreen && document.visibilityState !== 'hidden';
+      };
+      const io = new IntersectionObserver(entries => {
+        onScreen = entries[0]?.isIntersecting ?? true;
+        updateVisible();
+      });
+      io.observe(container);
+      const onVisibility = () => updateVisible();
+      document.addEventListener('visibilitychange', onVisibility);
+      updateVisible();
       const randomFloat = () => {
         if (typeof window !== 'undefined' && window.crypto?.getRandomValues) {
           const u32 = new Uint32Array(1);
@@ -531,6 +548,8 @@ const PixelBlast = ({
         clickIx: 0,
         uniforms,
         resizeObserver: ro,
+        intersectionObserver: io,
+        onVisibility,
         raf,
         quad,
         timeOffset,
@@ -567,6 +586,8 @@ const PixelBlast = ({
       if (!threeRef.current) return;
       const t = threeRef.current;
       t.resizeObserver?.disconnect();
+      t.intersectionObserver?.disconnect();
+      if (t.onVisibility) document.removeEventListener('visibilitychange', t.onVisibility);
       cancelAnimationFrame(t.raf);
       t.quad?.geometry.dispose();
       t.material.dispose();

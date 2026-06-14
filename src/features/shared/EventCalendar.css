@@ -1,0 +1,54 @@
+/* Kostki kalendarza (inspirowane React Bits „Cubes"). Geometria 3D tutaj,
+   kolory/obramowania przez klasy Tailwind na elementach .cal-face. */
+
+.cal-scene {
+  perspective: 1200px;
+}
+
+.cal-cube {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  transform-style: preserve-3d;
+  will-change: transform;
+  padding: 0;
+  border: none;
+  background: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.cal-cube:not(:disabled) {
+  cursor: pointer;
+}
+
+.cal-face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cal-face--top {
+  transform: translateY(-50%) rotateX(90deg);
+}
+.cal-face--bottom {
+  transform: translateY(50%) rotateX(-90deg);
+}
+.cal-face--left {
+  transform: translateX(-50%) rotateY(-90deg);
+}
+.cal-face--right {
+  transform: translateX(50%) rotateY(90deg);
+}
+.cal-face--front,
+.cal-face--back {
+  transform: rotateY(-90deg) translateX(50%) rotateY(90deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cal-cube {
+    transform: none !important;
+  }
+}

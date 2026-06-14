@@ -6,6 +6,7 @@ import {
   KeyRound,
   ScrollText,
   CalendarDays,
+  CalendarRange,
   Compass,
   Ticket,
   User,
@@ -53,11 +54,21 @@ const DashboardLayout = ({ role }: { role: string }) => {
               label: "Wydarzenia",
               Icon: CalendarDays,
             },
+            {
+              to: `${basePath}/calendar`,
+              label: "Kalendarz",
+              Icon: CalendarRange,
+            },
             { to: `${basePath}/profile`, label: "Profil", Icon: User },
           ]
         : [
             { to: basePath, label: "Panel", Icon: LayoutDashboard, end: true },
             { to: `${basePath}/events`, label: "Wydarzenia", Icon: Compass },
+            {
+              to: `${basePath}/calendar`,
+              label: "Kalendarz",
+              Icon: CalendarRange,
+            },
             { to: `${basePath}/tickets`, label: "Bilety", Icon: Ticket },
             { to: `${basePath}/profile`, label: "Profil", Icon: User },
           ];

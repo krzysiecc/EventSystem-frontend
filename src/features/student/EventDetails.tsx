@@ -62,8 +62,13 @@ const EventDetailsStudent = () => {
               <MapPin size={13} /> Lokalizacja
             </span>
             <span className="font-medium text-text-primary">
-              {event.location}
+              {event.locationName || event.location}
             </span>
+            {event.locationName && event.location && (
+              <span className="mt-0.5 block text-xs text-text-muted">
+                {event.location}
+              </span>
+            )}
           </div>
           <div>
             <span className="mb-1 flex items-center gap-1.5 font-mono text-xs uppercase tracking-wider text-text-muted">

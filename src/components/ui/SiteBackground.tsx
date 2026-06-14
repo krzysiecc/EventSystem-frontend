@@ -90,6 +90,7 @@ const SiteBackground = () => {
           liquidRadius={1.2}
           liquidWobbleSpeed={5}
           transparent
+          maxPixelRatio={1}
         />
       </Suspense>
     </div>

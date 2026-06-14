@@ -34,6 +34,7 @@ const EventDetailsStudent = lazy(
 const MyTickets = lazy(() => import("@/features/student/MyTickets"));
 const TicketQRView = lazy(() => import("@/features/student/TicketQRView"));
 const Profile = lazy(() => import("@/features/shared/Profile"));
+const EventCalendar = lazy(() => import("@/features/shared/EventCalendar"));
 
 // Organizer
 const OrganizerDashboard = lazy(() => import("@/features/organizer/Dashboard"));
@@ -86,6 +87,7 @@ const router = createBrowserRouter([
         children: [
           { index: true, element: <StudentDashboard /> },
           { path: "profile", element: <Profile /> },
+          { path: "calendar", element: <EventCalendar /> },
           { path: "events", element: <EventBrowser /> },
           { path: "events/:id", element: <EventDetailsStudent /> },
           { path: "tickets", element: <MyTickets /> },
@@ -104,6 +106,7 @@ const router = createBrowserRouter([
         ),
         children: [
           { index: true, element: <OrganizerDashboard /> },
+          { path: "calendar", element: <EventCalendar /> },
           { path: "events", element: <ManageEvents /> },
           { path: "events/new", element: <CreateEvent /> },
           { path: "events/:id", element: <EventDetailsOrg /> },
