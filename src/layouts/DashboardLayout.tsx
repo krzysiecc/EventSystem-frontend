@@ -1,5 +1,6 @@
 import { Outlet, Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/store/useAuthStore";
+import ThemeSwitcher from "@/components/ui/ThemeSwitcher";
 
 const DashboardLayout = ({ role }: { role: string }) => {
   const logout = useAuthStore((state) => state.logout);
@@ -24,8 +25,11 @@ const DashboardLayout = ({ role }: { role: string }) => {
     <div className="flex min-h-screen flex-col bg-bg-primary md:flex-row">
       {/* Sidebar navigation */}
       <aside className="flex w-full flex-col border-b border-border-light bg-surface-raised p-4 md:w-64 md:border-b-0 md:border-r">
-        <div className="mb-6 text-xl font-bold text-text-primary">
-          Panel {roleLabel}
+        <div className="mb-6 flex items-center justify-between gap-2">
+          <div className="text-xl font-bold text-text-primary">
+            Panel {roleLabel}
+          </div>
+          <ThemeSwitcher />
         </div>
 
         <nav className="flex gap-4 overflow-x-auto md:flex-col">
