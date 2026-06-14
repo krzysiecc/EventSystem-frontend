@@ -1,4 +1,6 @@
+import { Terminal } from "lucide-react";
 import { useSystemLogs } from "./api/useAdminQueries";
+import PageHeader from "@/components/ui/PageHeader";
 
 /**
  * @description Picks a badge colour for an audit action: destructive actions
@@ -25,42 +27,51 @@ const SystemLogs = () => {
   };
 
   return (
-    <div className="layout-container py-6">
-      <h1 className="text-2xl font-bold text-text-primary mb-6">
-        Logi systemowe (audyt aplikacji)
-      </h1>
+    <div className="mx-auto max-w-6xl">
+      <PageHeader
+        kicker="Administrator"
+        title="Logi systemowe"
+        subtitle="Audyt aktywności w aplikacji."
+      />
 
-      <div className="bg-surface-sunken border border-border-medium rounded-xl p-4 font-mono text-sm overflow-x-auto h-[70vh] overflow-y-auto">
-        {logs?.length === 0 ? (
-          <p className="text-text-muted">Brak logów w systemie.</p>
-        ) : (
-          <div className="space-y-2">
-            {logs?.map((log) => (
-              <div
-                key={log.id}
-                className="flex flex-col sm:flex-row sm:gap-4 py-2 border-b border-border-light last:border-0 hover:bg-surface-raised transition-colors p-2 rounded"
-              >
-                <div className="text-text-secondary whitespace-nowrap min-w-40">
-                  {formatTimestamp(log.createdAt)}
+      <div className="overflow-hidden rounded-xl border border-border-medium bg-surface-sunken shadow-sm">
+        <div className="flex items-center gap-2 border-b border-border-light bg-bg-secondary px-4 py-2.5 font-mono text-xs uppercase tracking-wider text-text-muted">
+          <Terminal size={14} className="text-signal" aria-hidden="true" />
+          audit.log
+        </div>
+
+        <div className="h-[70vh] overflow-y-auto overflow-x-auto p-3 font-mono text-sm">
+          {logs?.length === 0 ? (
+            <p className="p-2 text-text-muted">Brak logów w systemie.</p>
+          ) : (
+            <div className="space-y-1">
+              {logs?.map((log) => (
+                <div
+                  key={log.id}
+                  className="flex flex-col rounded p-2 transition-colors hover:bg-surface-raised sm:flex-row sm:gap-4"
+                >
+                  <div className="min-w-40 whitespace-nowrap text-text-muted">
+                    {formatTimestamp(log.createdAt)}
+                  </div>
+                  <div className="min-w-28">
+                    <span
+                      className={`rounded px-2 py-0.5 text-xs font-bold uppercase ${actionBadgeClass(log.action)}`}
+                    >
+                      {log.action}
+                    </span>
+                  </div>
+                  <div className="min-w-40 break-all font-semibold text-accent-secondary">
+                    [{log.userEmail}]
+                  </div>
+                  <div className="break-all text-text-primary">
+                    {log.details ??
+                      `${log.entityType}${log.entityId != null ? ` #${log.entityId}` : ""}`}
+                  </div>
                 </div>
-                <div className="min-w-28">
-                  <span
-                    className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${actionBadgeClass(log.action)}`}
-                  >
-                    {log.action}
-                  </span>
-                </div>
-                <div className="font-semibold text-text-secondary min-w-40 break-all">
-                  [{log.userEmail}]
-                </div>
-                <div className="text-text-primary break-all">
-                  {log.details ??
-                    `${log.entityType}${log.entityId != null ? ` #${log.entityId}` : ""}`}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

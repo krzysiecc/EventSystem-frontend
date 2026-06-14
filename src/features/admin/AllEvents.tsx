@@ -1,4 +1,6 @@
+import { CalendarDays } from "lucide-react";
 import { useAllEvents } from "./api/useAdminQueries";
+import PageHeader from "@/components/ui/PageHeader";
 
 const AllEvents = () => {
   const { data: events, isLoading } = useAllEvents();
@@ -6,26 +8,25 @@ const AllEvents = () => {
   if (isLoading) return <div className="p-6 text-text-muted">Ładowanie...</div>;
 
   return (
-    <div className="layout-container py-6">
-      <h1 className="text-2xl font-bold text-text-primary mb-6">
-        Wszystkie wydarzenia
-      </h1>
-      <div className="bg-surface-raised border border-border-light rounded-xl overflow-hidden shadow-sm overflow-x-auto">
-        <table className="w-full text-left border-collapse">
+    <div className="mx-auto max-w-6xl">
+      <PageHeader kicker="Administrator" title="Wszystkie wydarzenia" />
+
+      <div className="overflow-x-auto rounded-xl border border-border-light bg-surface-raised shadow-sm">
+        <table className="w-full border-collapse text-left">
           <thead>
-            <tr className="bg-bg-secondary text-text-secondary text-sm border-b border-border-light">
-              <th className="p-4 font-semibold">Tytuł</th>
-              <th className="p-4 font-semibold">Organizator</th>
-              <th className="p-4 font-semibold">Data</th>
-              <th className="p-4 font-semibold">Zapisani / Pojemność</th>
-              <th className="p-4 font-semibold">Status</th>
+            <tr className="border-b border-border-light font-mono text-xs uppercase tracking-wider text-text-muted">
+              <th className="p-4 font-medium">Tytuł</th>
+              <th className="p-4 font-medium">Organizator</th>
+              <th className="p-4 font-medium">Data</th>
+              <th className="p-4 font-medium">Zapisani / Pojemność</th>
+              <th className="p-4 font-medium">Status</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border-light">
             {events?.map((event) => (
               <tr
                 key={event.id}
-                className="hover:bg-bg-secondary transition-colors"
+                className="transition-colors hover:bg-bg-secondary"
               >
                 <td className="p-4 font-medium text-text-primary">
                   {event.title}
@@ -33,15 +34,22 @@ const AllEvents = () => {
                 <td className="p-4 text-text-secondary">
                   {event.organizerName}
                 </td>
-                <td className="p-4 text-text-secondary">
-                  {new Date(event.date).toLocaleDateString()}
+                <td className="p-4 font-mono text-sm text-text-secondary">
+                  <span className="flex items-center gap-2">
+                    <CalendarDays
+                      size={14}
+                      className="text-accent-primary"
+                      aria-hidden="true"
+                    />
+                    {new Date(event.date).toLocaleDateString()}
+                  </span>
                 </td>
-                <td className="p-4 text-text-secondary">
+                <td className="p-4 font-mono text-sm text-text-secondary">
                   {event.enrolledCount} / {event.maxCapacity}
                 </td>
                 <td className="p-4">
                   <span
-                    className={`px-2 py-1 text-xs rounded-full font-medium ${
+                    className={`rounded px-2 py-1 font-mono text-xs font-medium uppercase ${
                       event.status === "published"
                         ? "bg-status-success-bg text-status-success"
                         : "bg-status-warning-bg text-status-warning"

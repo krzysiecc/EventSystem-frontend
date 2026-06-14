@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
+import { KeyRound, ShieldOff, Send } from "lucide-react";
 import { apiClient } from "@/lib/apiClient";
 import { useToastStore } from "@/store/useToastStore";
 import { useSendTokenEmail } from "./api/useAdminQueries";
+import PageHeader from "@/components/ui/PageHeader";
 
 const AdminTokens = () => {
   const addToast = useToastStore((state) => state.addToast);
@@ -66,33 +68,46 @@ const AdminTokens = () => {
   };
 
   return (
-    <div className="layout-container py-6 max-w-3xl">
-      <h1 className="text-2xl font-bold text-text-primary mb-6">
-        Tokeny Organizacyjne
-      </h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="mx-auto max-w-4xl">
+      <PageHeader
+        kicker="Administrator"
+        title="Tokeny organizacyjne"
+        subtitle="Generuj i unieważniaj tokeny rejestracyjne dla Organizatorów."
+      />
+
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {/* Generowanie */}
-        <div className="bg-surface-raised border border-border-light p-6 rounded-xl">
-          <h2 className="text-lg font-semibold mb-2">Wygeneruj token</h2>
-          <p className="text-sm text-text-secondary mb-4">
-            Przekaż token osobie na rejestrację Organizatora.
-          </p>
+        <div className="rounded-xl border border-border-light bg-surface-raised p-6 shadow-sm">
+          <div className="mb-4 flex items-center gap-3">
+            <div className="grid h-10 w-10 place-items-center rounded-lg bg-accent-subtle text-accent-primary">
+              <KeyRound size={18} />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-text-primary">
+                Wygeneruj token
+              </h2>
+              <p className="text-sm text-text-secondary">
+                Przekaż token osobie na rejestrację Organizatora.
+              </p>
+            </div>
+          </div>
           <button
             onClick={() => generateMutation.mutate()}
             disabled={generateMutation.isPending}
-            className="w-full bg-accent-primary text-text-on-accent py-2 rounded-md hover:bg-accent-hover transition disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-2 rounded-md bg-accent-primary py-2 text-text-on-accent transition hover:bg-accent-hover disabled:opacity-50"
           >
+            <KeyRound size={16} />
             {generateMutation.isPending
               ? "Generowanie..."
               : "Generuj nowy token"}
           </button>
 
           {generatedToken && (
-            <div className="mt-4 p-4 bg-status-success-bg border border-status-success rounded-lg text-center">
-              <span className="block text-xs font-bold text-status-success uppercase mb-1">
+            <div className="mt-4 rounded-lg border border-status-success bg-status-success-bg p-4 text-center">
+              <span className="mb-1 block font-mono text-xs font-bold uppercase tracking-wider text-status-success">
                 Twój nowy token:
               </span>
-              <code className="text-lg font-mono text-text-primary select-all">
+              <code className="select-all break-all font-mono text-lg text-text-primary">
                 {generatedToken}
               </code>
 
@@ -103,13 +118,14 @@ const AdminTokens = () => {
                   placeholder="Wyślij na email..."
                   value={sendEmailInput}
                   onChange={(e) => setSendEmailInput(e.target.value)}
-                  className="flex-1 p-2 text-sm rounded-md border border-status-success bg-bg-tertiary text-text-primary"
+                  className="flex-1 rounded-md border border-status-success bg-bg-tertiary p-2 text-sm text-text-primary"
                 />
                 <button
                   type="submit"
                   disabled={sendEmailMutation.isPending}
-                  className="bg-status-success text-text-on-accent px-3 py-2 text-sm rounded-md font-medium"
+                  className="flex items-center gap-1.5 rounded-md bg-status-success px-3 py-2 text-sm font-medium text-text-on-accent disabled:opacity-50"
                 >
+                  <Send size={14} />
                   Wyślij
                 </button>
               </form>
@@ -118,25 +134,31 @@ const AdminTokens = () => {
         </div>
 
         {/* Rewokowanie */}
-        <div className="bg-status-error-bg border border-status-error p-6 rounded-xl">
-          <h2 className="text-lg font-semibold text-status-error mb-2">
-            Unieważnij token
-          </h2>
-          <p className="text-sm text-text-secondary mb-4">
-            Zablokuj wyciekły token.
-          </p>
+        <div className="rounded-xl border border-status-error bg-status-error-bg p-6">
+          <div className="mb-4 flex items-center gap-3">
+            <div className="grid h-10 w-10 place-items-center rounded-lg bg-status-error/15 text-status-error">
+              <ShieldOff size={18} />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-status-error">
+                Unieważnij token
+              </h2>
+              <p className="text-sm text-text-secondary">Zablokuj wyciekły token.</p>
+            </div>
+          </div>
           <input
             type="text"
             placeholder="Podaj token do blokady"
             value={revokeInput}
             onChange={(e) => setRevokeInput(e.target.value)}
-            className="w-full rounded-md border border-status-error bg-bg-tertiary p-2 text-text-primary mb-4"
+            className="mb-4 w-full rounded-md border border-status-error bg-bg-tertiary p-2 font-mono text-text-primary"
           />
           <button
             onClick={() => revokeMutation.mutate(revokeInput)}
             disabled={!revokeInput || revokeMutation.isPending}
-            className="w-full bg-status-error text-white font-bold py-2 rounded-md hover:opacity-90 disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-2 rounded-md bg-status-error py-2 font-bold text-white transition hover:opacity-90 disabled:opacity-50"
           >
+            <ShieldOff size={16} />
             Unieważnij token
           </button>
         </div>

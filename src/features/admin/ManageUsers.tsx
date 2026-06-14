@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { UserPlus, Pencil, Trash2, KeyRound, X } from "lucide-react";
 import {
   useAllUsers,
   useCreateUser,
@@ -9,6 +10,10 @@ import {
   type UserDTO,
 } from "./api/useAdminQueries";
 import { useToastStore } from "@/store/useToastStore";
+import PageHeader from "@/components/ui/PageHeader";
+
+const inputClass =
+  "w-full rounded-md border border-border-medium bg-bg-tertiary p-2 text-text-primary focus:border-accent-primary focus:outline-none focus:ring-1 focus:ring-accent-primary";
 
 const ManageUsers = () => {
   const { data: users, isLoading } = useAllUsers();
@@ -125,78 +130,83 @@ const ManageUsers = () => {
   };
 
   return (
-    <div className="layout-container py-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-text-primary">Użytkownicy</h1>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="bg-accent-primary text-text-on-accent px-4 py-2 rounded-md hover:bg-accent-hover"
-        >
-          + Dodaj użytkownika
-        </button>
-      </div>
+    <div className="mx-auto max-w-6xl">
+      <PageHeader
+        kicker="Administrator"
+        title="Użytkownicy"
+        actions={
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="flex items-center gap-2 rounded-md bg-accent-primary px-4 py-2 text-text-on-accent transition hover:bg-accent-hover"
+          >
+            <UserPlus size={16} />
+            Dodaj użytkownika
+          </button>
+        }
+      />
 
-      <div className="bg-surface-raised border border-border-light rounded-xl overflow-hidden shadow-sm overflow-x-auto">
-        <table className="w-full text-left border-collapse">
+      <div className="overflow-x-auto rounded-xl border border-border-light bg-surface-raised shadow-sm">
+        <table className="w-full border-collapse text-left">
           <thead>
-            <tr className="bg-bg-secondary text-text-secondary text-sm border-b border-border-light">
-              <th className="p-4 font-semibold">Imię i Nazwisko</th>
-              <th className="p-4 font-semibold">E-mail</th>
-              <th className="p-4 font-semibold">Rola</th>
-              <th className="p-4 font-semibold">Data dołączenia</th>
-              <th className="p-4 font-semibold text-right">Akcje</th>
+            <tr className="border-b border-border-light font-mono text-xs uppercase tracking-wider text-text-muted">
+              <th className="p-4 font-medium">Imię i Nazwisko</th>
+              <th className="p-4 font-medium">E-mail</th>
+              <th className="p-4 font-medium">Rola</th>
+              <th className="p-4 font-medium">Data dołączenia</th>
+              <th className="p-4 text-right font-medium">Akcje</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border-light">
             {users?.map((user) => (
               <tr
                 key={user.id}
-                className="hover:bg-bg-secondary transition-colors"
+                className="transition-colors hover:bg-bg-secondary"
               >
-                <td className="p-4 text-text-primary">
-                  {user.firstName} {user.lastName}
-                </td>
                 <td className="p-4 font-medium text-text-primary">
                   {user.firstName} {user.lastName}
                 </td>
-                <td className="p-4 text-text-secondary">{user.email}</td>
+                <td className="p-4 font-mono text-sm text-text-secondary">
+                  {user.email}
+                </td>
                 <td className="p-4">
                   {user.role === "Admin" ? (
-                    <span className="px-2 py-1 text-sm font-medium text-text-secondary">
+                    <span className="rounded bg-accent-subtle px-2 py-1 text-sm font-medium text-accent-secondary">
                       Admin
                     </span>
                   ) : (
                     <select
                       value={user.role}
-                      onChange={(e) =>
-                        handleRoleChange(user.id, e.target.value)
-                      }
+                      onChange={(e) => handleRoleChange(user.id, e.target.value)}
                       disabled={updateRoleMutation.isPending}
-                      className="bg-bg-tertiary border border-border-medium rounded px-2 py-1 text-sm font-medium"
+                      className="rounded border border-border-medium bg-bg-tertiary px-2 py-1 text-sm font-medium focus:border-accent-primary focus:outline-none"
                     >
                       <option value="Student">Student</option>
                       <option value="Organizer">Organizer</option>
                     </select>
                   )}
                 </td>
-                <td className="p-4 text-text-secondary">
+                <td className="p-4 font-mono text-sm text-text-secondary">
                   {new Date(user.createdAt).toLocaleDateString()}
                 </td>
-                <td className="p-4 text-right space-x-2">
-                  <button
-                    onClick={() => openEditModal(user)}
-                    className="text-sm font-medium text-accent-primary hover:underline"
-                  >
-                    Edytuj
-                  </button>
-                  {user.role !== "Admin" && (
+                <td className="p-4">
+                  <div className="flex items-center justify-end gap-3">
                     <button
-                      onClick={() => handleDelete(user.id, user.email)}
-                      className="text-sm font-medium text-status-error hover:underline"
+                      onClick={() => openEditModal(user)}
+                      className="flex items-center gap-1.5 text-sm font-medium text-accent-primary hover:underline"
                     >
-                      Usuń
+                      <Pencil size={14} />
+                      Edytuj
                     </button>
-                  )}
+                    {user.role !== "Admin" && (
+                      <button
+                        onClick={() => handleDelete(user.id, user.email)}
+                        className="flex items-center gap-1.5 text-sm font-medium text-status-error hover:underline"
+                      >
+                        <Trash2 size={14} />
+                        Usuń
+                      </button>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}
@@ -207,9 +217,21 @@ const ManageUsers = () => {
       {/* MODALE */}
       {/* Modal: Dodaj Użytkownika */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-bg-overlay/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-surface-raised p-6 rounded-xl w-full max-w-md border border-border-light">
-            <h2 className="text-xl font-bold mb-4">Nowy użytkownik</h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-bg-overlay/50 p-4">
+          <div className="w-full max-w-md rounded-xl border border-border-light bg-surface-raised p-6 shadow-lg">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-xl font-bold text-text-primary">
+                Nowy użytkownik
+              </h2>
+              <button
+                type="button"
+                onClick={() => setShowCreateModal(false)}
+                aria-label="Zamknij"
+                className="text-text-muted transition hover:text-text-primary"
+              >
+                <X size={20} />
+              </button>
+            </div>
             <form onSubmit={handleCreate} className="space-y-3">
               <input
                 type="email"
@@ -219,7 +241,7 @@ const ManageUsers = () => {
                 onChange={(e) =>
                   setNewUser({ ...newUser, email: e.target.value })
                 }
-                className="w-full p-2 rounded-md border border-border-medium bg-bg-tertiary text-text-primary"
+                className={inputClass}
               />
               <input
                 type="text"
@@ -229,7 +251,7 @@ const ManageUsers = () => {
                 onChange={(e) =>
                   setNewUser({ ...newUser, firstName: e.target.value })
                 }
-                className="w-full p-2 rounded-md border border-border-medium bg-bg-tertiary text-text-primary"
+                className={inputClass}
               />
               <input
                 type="text"
@@ -239,7 +261,7 @@ const ManageUsers = () => {
                 onChange={(e) =>
                   setNewUser({ ...newUser, lastName: e.target.value })
                 }
-                className="w-full p-2 rounded-md border border-border-medium bg-bg-tertiary text-text-primary"
+                className={inputClass}
               />
               <input
                 type="password"
@@ -249,7 +271,7 @@ const ManageUsers = () => {
                 onChange={(e) =>
                   setNewUser({ ...newUser, password: e.target.value })
                 }
-                className="w-full p-2 rounded-md border border-border-medium bg-bg-tertiary text-text-primary"
+                className={inputClass}
               />
               <select
                 value={newUser.role}
@@ -259,7 +281,7 @@ const ManageUsers = () => {
                     role: e.target.value as UserDTO["role"],
                   })
                 }
-                className="w-full p-2 rounded-md border border-border-medium bg-bg-tertiary text-text-primary"
+                className={inputClass}
               >
                 <option value="Student">Student</option>
                 <option value="Organizer">Organizer</option>
@@ -269,13 +291,13 @@ const ManageUsers = () => {
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="flex-1 py-2 border border-border-medium rounded-md text-text-secondary"
+                  className="flex-1 rounded-md border border-border-medium py-2 text-text-secondary transition hover:bg-bg-secondary"
                 >
                   Anuluj
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-2 bg-accent-primary text-text-on-accent rounded-md"
+                  className="flex-1 rounded-md bg-accent-primary py-2 text-text-on-accent transition hover:bg-accent-hover"
                 >
                   Dodaj
                 </button>
@@ -287,9 +309,24 @@ const ManageUsers = () => {
 
       {/* Modal: Edytuj / Resetuj Hasło */}
       {selectedUser && (
-        <div className="fixed inset-0 bg-bg-overlay/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-surface-raised p-6 rounded-xl w-full max-w-md border border-border-light space-y-6">
-            <h2 className="text-xl font-bold">Edycja: {selectedUser.email}</h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-bg-overlay/50 p-4">
+          <div className="w-full max-w-md space-y-6 rounded-xl border border-border-light bg-surface-raised p-6 shadow-lg">
+            <div className="flex items-start justify-between">
+              <h2 className="text-xl font-bold text-text-primary">
+                Edycja:{" "}
+                <span className="font-mono text-base text-text-secondary">
+                  {selectedUser.email}
+                </span>
+              </h2>
+              <button
+                type="button"
+                onClick={() => setSelectedUser(null)}
+                aria-label="Zamknij"
+                className="text-text-muted transition hover:text-text-primary"
+              >
+                <X size={20} />
+              </button>
+            </div>
 
             <form onSubmit={handleUpdate} className="space-y-3">
               <input
@@ -299,7 +336,7 @@ const ManageUsers = () => {
                 onChange={(e) =>
                   setEditData({ ...editData, email: e.target.value })
                 }
-                className="w-full p-2 rounded-md border border-border-medium bg-bg-tertiary text-text-primary"
+                className={inputClass}
               />
               <div className="grid grid-cols-2 gap-2">
                 <input
@@ -309,7 +346,7 @@ const ManageUsers = () => {
                   onChange={(e) =>
                     setEditData({ ...editData, firstName: e.target.value })
                   }
-                  className="w-full p-2 rounded-md border border-border-medium bg-bg-tertiary text-text-primary"
+                  className={inputClass}
                 />
                 <input
                   type="text"
@@ -318,7 +355,7 @@ const ManageUsers = () => {
                   onChange={(e) =>
                     setEditData({ ...editData, lastName: e.target.value })
                   }
-                  className="w-full p-2 rounded-md border border-border-medium bg-bg-tertiary text-text-primary"
+                  className={inputClass}
                 />
               </div>
               <select
@@ -329,7 +366,7 @@ const ManageUsers = () => {
                     role: e.target.value as UserDTO["role"],
                   })
                 }
-                className="w-full p-2 rounded-md border border-border-medium bg-bg-tertiary text-text-primary"
+                className={inputClass}
               >
                 <option value="Student">Student</option>
                 <option value="Organizer">Organizer</option>
@@ -337,14 +374,15 @@ const ManageUsers = () => {
               </select>
               <button
                 type="submit"
-                className="w-full py-2 bg-accent-primary text-text-on-accent rounded-md"
+                className="w-full rounded-md bg-accent-primary py-2 text-text-on-accent transition hover:bg-accent-hover"
               >
                 Zapisz dane
               </button>
             </form>
 
             <div className="border-t border-border-light pt-4">
-              <h3 className="font-semibold text-status-warning mb-2 text-sm">
+              <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-status-warning">
+                <KeyRound size={15} />
                 Reset hasła
               </h3>
               <form onSubmit={handleResetPassword} className="flex gap-2">
@@ -354,23 +392,16 @@ const ManageUsers = () => {
                   required
                   value={resetPass}
                   onChange={(e) => setResetPass(e.target.value)}
-                  className="flex-1 p-2 rounded-md border border-border-medium bg-bg-tertiary text-text-primary"
+                  className="flex-1 rounded-md border border-border-medium bg-bg-tertiary p-2 text-text-primary focus:border-status-warning focus:outline-none focus:ring-1 focus:ring-status-warning"
                 />
                 <button
                   type="submit"
-                  className="bg-status-warning text-bg-primary px-4 py-2 rounded-md font-medium"
+                  className="rounded-md bg-status-warning px-4 py-2 font-medium text-bg-primary"
                 >
                   Zresetuj
                 </button>
               </form>
             </div>
-
-            <button
-              onClick={() => setSelectedUser(null)}
-              className="w-full py-2 text-text-muted hover:text-text-secondary transition"
-            >
-              Zamknij
-            </button>
           </div>
         </div>
       )}
