@@ -49,6 +49,7 @@ const AdminDashboard = lazy(() => import("@/features/admin/Dashboard"));
 const ManageUsers = lazy(() => import("@/features/admin/ManageUsers"));
 const SystemLogs = lazy(() => import("@/features/admin/SystemLogs"));
 const Tokens = lazy(() => import("@/features/admin/AdminTokens"));
+const AllEvents = lazy(() => import("@/features/admin/AllEvents"));
 
 // --- ROUTER CONFIG ---
 const router = createBrowserRouter([
@@ -136,6 +137,7 @@ const router = createBrowserRouter([
           { path: "users", element: <ManageUsers /> },
           { path: "logs", element: <SystemLogs /> },
           { path: "tokens", element: <Tokens /> },
+          { path: "events", element: <AllEvents /> },
         ],
       },
     ],

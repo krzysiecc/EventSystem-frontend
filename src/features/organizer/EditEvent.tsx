@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -39,19 +39,23 @@ const EditEvent = () => {
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    reset,
+    formState: { errors, isDirty },
   } = useForm<EditEventFormInputs>({
     resolver: zodResolver(editEventSchema),
-    values: event
-      ? {
-          title: event.title,
-          description: event.description,
-          date: new Date(event.date).toISOString().slice(0, 16),
-          location: event.location,
-          maxCapacity: event.maxCapacity,
-        }
-      : undefined,
   });
+
+  useEffect(() => {
+    if (event && !isDirty) {
+      reset({
+        title: event.title,
+        description: event.description,
+        date: new Date(event.date).toISOString().slice(0, 16),
+        location: event.location,
+        maxCapacity: event.maxCapacity,
+      });
+    }
+  }, [event, reset, isDirty]);
 
   if (isLoading) return <div className="p-6">Ładowanie...</div>;
 
@@ -62,13 +66,8 @@ const EditEvent = () => {
       { id: id!, data: { ...data, description: cleanDescription } },
       {
         onSuccess: () => addToast("Zaktualizowano pomyślnie", "success"),
-        onError: (err: unknown) => {
-          if (err instanceof Error) {
-            addToast(err.message, "error");
-          } else {
-            addToast("Wystąpił nieoczekiwany błąd", "error");
-          }
-        },
+        onError: (err: unknown) =>
+          addToast(err instanceof Error ? err.message : "Błąd", "error"),
       },
     );
   };
@@ -83,13 +82,8 @@ const EditEvent = () => {
           addToast("Zdjęcie wgrane pomyślnie!", "success");
           setSelectedFile(null);
         },
-        onError: (err: unknown) => {
-          if (err instanceof Error) {
-            addToast(err.message, "error");
-          } else {
-            addToast("Błąd przy wgrywaniu zdjęcia", "error");
-          }
-        },
+        onError: (err: unknown) =>
+          addToast(err instanceof Error ? err.message : "Błąd", "error"),
       },
     );
   };
@@ -105,13 +99,8 @@ const EditEvent = () => {
           addToast("Usunięto wydarzenie", "success");
           navigate("/organizer/events");
         },
-        onError: (err: unknown) => {
-          if (err instanceof Error) {
-            addToast(err.message, "error");
-          } else {
-            addToast("Błąd podczas usuwania", "error");
-          }
-        },
+        onError: (err: unknown) =>
+          addToast(err instanceof Error ? err.message : "Błąd", "error"),
       });
     }
   };
@@ -128,7 +117,6 @@ const EditEvent = () => {
         Edytuj wydarzenie
       </h1>
 
-      {/* UPLOAD ZDJĘCIA */}
       <section className="bg-surface-raised p-6 border border-border-light rounded-xl mb-6">
         <h2 className="text-lg font-semibold mb-4 text-text-primary">
           Baner wydarzenia
@@ -150,7 +138,6 @@ const EditEvent = () => {
         </form>
       </section>
 
-      {/* FORMULARZ EDYCJI RHF */}
       <form
         onSubmit={handleSubmit(onSubmit)}
         className="bg-surface-raised p-6 rounded-xl border border-border-light shadow-sm space-y-5"

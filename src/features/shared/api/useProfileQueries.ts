@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiClient } from "@/lib/apiClient";
+import { apiClient, apiFetch } from "@/lib/apiClient";
 import { useAuthStore } from "@/store/useAuthStore";
 
 export interface SocialLinkDto {
@@ -21,11 +21,7 @@ export interface UserProfileDto {
 export const useMyProfile = () => {
   return useQuery({
     queryKey: ["profile", "me"],
-    queryFn: async (): Promise<UserProfileDto> => {
-      const response = await apiClient("/users/me");
-      const json = await response.json();
-      return json.data;
-    },
+    queryFn: () => apiFetch<UserProfileDto>("/users/me"),
   });
 };
 
@@ -98,12 +94,7 @@ export const useDeleteAccount = () => {
 export const usePublicProfile = (userId: string | undefined) => {
   return useQuery({
     queryKey: ["profile", "public", userId],
-    queryFn: async () => {
-      if (!userId) throw new Error("Brak ID");
-      const response = await apiClient(`/users/public/${userId}`);
-      const json = await response.json();
-      return json.data;
-    },
+    queryFn: () => apiFetch<UserProfileDto>(`/users/public/${userId}`),
     enabled: !!userId,
   });
 };

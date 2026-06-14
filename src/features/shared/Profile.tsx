@@ -1,4 +1,7 @@
-import { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { useState } from "react";
 import {
   useMyProfile,
   useUpdateDetails,
@@ -11,6 +14,20 @@ import { useToastStore } from "@/store/useToastStore";
 
 const MAX_SOCIAL_LINKS = 5;
 
+const detailsSchema = z.object({
+  firstName: z.string().min(2, "Min. 2 znaki"),
+  lastName: z.string().min(2, "Min. 2 znaki"),
+  email: z.string().email("Niepoprawny e-mail"),
+});
+
+const passwordSchema = z.object({
+  currentPassword: z.string().min(6, "Min. 6 znaków"),
+  newPassword: z.string().min(6, "Min. 6 znaków"),
+});
+
+type DetailsInputs = z.infer<typeof detailsSchema>;
+type PasswordInputs = z.infer<typeof passwordSchema>;
+
 const Profile = () => {
   const { data: profile, isLoading } = useMyProfile();
   const updateDetailsMutation = useUpdateDetails();
@@ -19,42 +36,36 @@ const Profile = () => {
   const deleteAccountMutation = useDeleteAccount();
   const addToast = useToastStore((state) => state.addToast);
 
-  const [detailsForm, setDetailsForm] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
+  const detailsForm = useForm<DetailsInputs>({
+    resolver: zodResolver(detailsSchema),
   });
-  const [passForm, setPassForm] = useState({
-    currentPassword: "",
-    newPassword: "",
+
+  const passwordForm = useForm<PasswordInputs>({
+    resolver: zodResolver(passwordSchema),
   });
+
   const [deletePass, setDeletePass] = useState("");
 
   const [bio, setBio] = useState("");
   const [socialLinks, setSocialLinks] = useState<SocialLinkDto[]>([]);
-  const [publicProfileLoaded, setPublicProfileLoaded] = useState(false);
+  const [loadedProfileId, setLoadedProfileId] = useState<number | null>(null);
 
-  useEffect(() => {
-    if (profile && !publicProfileLoaded) {
-      setBio(profile.bio ?? "");
-      setSocialLinks(profile.socialLinks ?? []);
-      setPublicProfileLoaded(true);
-    }
-  }, [profile, publicProfileLoaded]);
+  // Seed the editable public-profile state once per loaded profile, during
+  // render (React's recommended pattern for syncing state to changing data).
+  if (profile && profile.id !== loadedProfileId) {
+    setBio(profile.bio ?? "");
+    setSocialLinks(profile.socialLinks ?? []);
+    setLoadedProfileId(profile.id);
+  }
 
   if (isLoading) return <div className="p-6">Ładowanie profilu...</div>;
 
-  const handleUpdateDetails = (e: React.FormEvent) => {
-    e.preventDefault();
-    updateDetailsMutation.mutate(
-      {
-        ...detailsForm,
-        firstName: detailsForm.firstName || profile!.firstName,
-        lastName: detailsForm.lastName || profile!.lastName,
-        email: detailsForm.email || profile!.email,
-      },
-      { onSuccess: () => addToast("Dane zaktualizowane", "success") },
-    );
+  const handleUpdateDetails = (data: DetailsInputs) => {
+    updateDetailsMutation.mutate(data, {
+      onSuccess: () => addToast("Dane zaktualizowane", "success"),
+      onError: (err) =>
+        addToast(err instanceof Error ? err.message : "Błąd", "error"),
+    });
   };
 
   const handleUpdatePublicProfile = (e: React.FormEvent) => {
@@ -97,20 +108,14 @@ const Profile = () => {
     setSocialLinks((links) => links.filter((_, i) => i !== index));
   };
 
-  const handleChangePassword = (e: React.FormEvent) => {
-    e.preventDefault();
-    changePasswordMutation.mutate(passForm, {
+  const handleChangePassword = (data: PasswordInputs) => {
+    changePasswordMutation.mutate(data, {
       onSuccess: () => {
         addToast("Hasło zmienione", "success");
-        setPassForm({ currentPassword: "", newPassword: "" });
+        passwordForm.reset();
       },
-      onError: (err: unknown) => {
-        if (err instanceof Error) {
-          addToast(err.message, "error");
-        } else {
-          addToast("Wystąpił nieoczekiwany błąd", "error");
-        }
-      },
+      onError: (err) =>
+        addToast(err instanceof Error ? err.message : "Błąd", "error"),
     });
   };
 
@@ -123,13 +128,8 @@ const Profile = () => {
       deleteAccountMutation.mutate(
         { password: deletePass },
         {
-          onError: (err: unknown) => {
-            if (err instanceof Error) {
-              addToast(err.message, "error");
-            } else {
-              addToast("Wystąpił nieoczekiwany błąd", "error");
-            }
-          },
+          onError: (err) =>
+            addToast(err instanceof Error ? err.message : "Błąd", "error"),
         },
       );
     }
@@ -146,33 +146,48 @@ const Profile = () => {
         <h2 className="text-lg font-semibold mb-4 text-text-primary">
           Dane podstawowe
         </h2>
-        <form onSubmit={handleUpdateDetails} className="space-y-4">
+        <form
+          onSubmit={detailsForm.handleSubmit(handleUpdateDetails)}
+          className="space-y-4"
+        >
           <div className="grid grid-cols-2 gap-4">
-            <input
-              type="text"
-              defaultValue={profile?.firstName}
-              onChange={(e) =>
-                setDetailsForm({ ...detailsForm, firstName: e.target.value })
-              }
-              className="w-full rounded-md border border-border-medium bg-bg-tertiary p-2 text-text-primary"
-            />
-            <input
-              type="text"
-              defaultValue={profile?.lastName}
-              onChange={(e) =>
-                setDetailsForm({ ...detailsForm, lastName: e.target.value })
-              }
-              className="w-full rounded-md border border-border-medium bg-bg-tertiary p-2 text-text-primary"
-            />
+            <div>
+              <input
+                type="text"
+                {...detailsForm.register("firstName")}
+                className="w-full rounded-md border border-border-medium bg-bg-tertiary p-2 text-text-primary"
+              />
+              {detailsForm.formState.errors.firstName && (
+                <p className="text-xs text-status-error mt-1">
+                  {detailsForm.formState.errors.firstName.message}
+                </p>
+              )}
+            </div>
+            <div>
+              <input
+                type="text"
+                {...detailsForm.register("lastName")}
+                className="w-full rounded-md border border-border-medium bg-bg-tertiary p-2 text-text-primary"
+              />
+              {detailsForm.formState.errors.lastName && (
+                <p className="text-xs text-status-error mt-1">
+                  {detailsForm.formState.errors.lastName.message}
+                </p>
+              )}
+            </div>
           </div>
-          <input
-            type="email"
-            defaultValue={profile?.email}
-            onChange={(e) =>
-              setDetailsForm({ ...detailsForm, email: e.target.value })
-            }
-            className="w-full rounded-md border border-border-medium bg-bg-tertiary p-2 text-text-primary"
-          />
+          <div>
+            <input
+              type="email"
+              {...detailsForm.register("email")}
+              className="w-full rounded-md border border-border-medium bg-bg-tertiary p-2 text-text-primary"
+            />
+            {detailsForm.formState.errors.email && (
+              <p className="text-xs text-status-error mt-1">
+                {detailsForm.formState.errors.email.message}
+              </p>
+            )}
+          </div>
           <button
             type="submit"
             disabled={updateDetailsMutation.isPending}
@@ -257,28 +272,26 @@ const Profile = () => {
         <h2 className="text-lg font-semibold mb-4 text-text-primary">
           Zmień hasło
         </h2>
-        <form onSubmit={handleChangePassword} className="space-y-4">
-          <input
-            type="password"
-            placeholder="Obecne hasło"
-            required
-            value={passForm.currentPassword}
-            onChange={(e) =>
-              setPassForm({ ...passForm, currentPassword: e.target.value })
-            }
-            className="w-full rounded-md border border-border-medium bg-bg-tertiary p-2 text-text-primary"
-          />
-          <input
-            type="password"
-            placeholder="Nowe hasło"
-            required
-            minLength={6}
-            value={passForm.newPassword}
-            onChange={(e) =>
-              setPassForm({ ...passForm, newPassword: e.target.value })
-            }
-            className="w-full rounded-md border border-border-medium bg-bg-tertiary p-2 text-text-primary"
-          />
+        <form
+          onSubmit={passwordForm.handleSubmit(handleChangePassword)}
+          className="space-y-4"
+        >
+          <div>
+            <input
+              type="password"
+              placeholder="Obecne hasło"
+              {...passwordForm.register("currentPassword")}
+              className="w-full rounded-md border border-border-medium bg-bg-tertiary p-2 text-text-primary"
+            />
+          </div>
+          <div>
+            <input
+              type="password"
+              placeholder="Nowe hasło"
+              {...passwordForm.register("newPassword")}
+              className="w-full rounded-md border border-border-medium bg-bg-tertiary p-2 text-text-primary"
+            />
+          </div>
           <button
             type="submit"
             disabled={changePasswordMutation.isPending}

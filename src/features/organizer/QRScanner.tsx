@@ -13,9 +13,12 @@ const QRScanner = () => {
   const addToast = useToastStore((state) => state.addToast);
 
   const isScanningRef = useRef<boolean>(false);
+  const lastScannedRef = useRef<string | null>(null);
 
   const [cameraError, setCameraError] = useState<string | null>(null);
-  const [lastScanned, setLastScanned] = useState<string | null>(null);
+  const [statusMessage, setStatusMessage] = useState<string>(
+    "Nakieruj kamerę na kod QR",
+  );
 
   const verifyMutation = useMutation({
     mutationFn: async (scanToken: string) => {
@@ -26,20 +29,22 @@ const QRScanner = () => {
     },
     onSuccess: (data) => {
       addToast(`${data.message || "Bilet WAŻNY! Wpuszczono."}`, "success");
-
+      setStatusMessage("Wpuszczono!");
       setTimeout(() => {
         isScanningRef.current = false;
-        setLastScanned(null);
+        lastScannedRef.current = null;
+        setStatusMessage("Nakieruj kamerę na kod QR");
       }, 2000);
     },
     onError: (error: unknown) => {
       const message =
         error instanceof Error ? error.message : "Bilet NIEWAŻNY lub ZUŻYTY!";
       addToast(`${message}`, "error");
-
+      setStatusMessage("Błąd weryfikacji");
       setTimeout(() => {
         isScanningRef.current = false;
-        setLastScanned(null);
+        lastScannedRef.current = null;
+        setStatusMessage("Nakieruj kamerę na kod QR");
       }, 2000);
     },
   });
@@ -49,10 +54,11 @@ const QRScanner = () => {
     let isMounted = true;
 
     const onScanSuccess = (decodedText: string) => {
-      if (isScanningRef.current || decodedText === lastScanned) return;
+      if (isScanningRef.current || decodedText === lastScannedRef.current)
+        return;
 
       isScanningRef.current = true;
-      setLastScanned(decodedText);
+      lastScannedRef.current = decodedText;
 
       // Ticket QRs carry a profile URL with the scan token in the query
       // string; older codes may be a bare GUID. Accept both.
@@ -61,7 +67,7 @@ const QRScanner = () => {
         addToast("To nie jest kod biletu.", "error");
         setTimeout(() => {
           isScanningRef.current = false;
-          setLastScanned(null);
+          lastScannedRef.current = null;
         }, 2000);
         return;
       }
@@ -72,11 +78,7 @@ const QRScanner = () => {
     html5QrCode
       .start(
         { facingMode: "environment" },
-        {
-          fps: 10,
-          qrbox: { width: 250, height: 250 },
-          aspectRatio: 1.0,
-        },
+        { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 },
         onScanSuccess,
         () => {},
       )
@@ -98,7 +100,6 @@ const QRScanner = () => {
 
     return () => {
       isMounted = false;
-
       try {
         if (html5QrCode.getState() === 2) {
           html5QrCode
@@ -120,13 +121,9 @@ const QRScanner = () => {
           <div className="mx-auto inline-block rounded-full bg-status-info px-4 py-2 text-sm font-bold text-white shadow-lg">
             ⏳ Weryfikacja biletu...
           </div>
-        ) : lastScanned ? (
-          <div className="mx-auto inline-block rounded-full bg-bg-secondary/80 px-4 py-2 text-sm font-bold text-text-primary shadow-lg backdrop-blur-sm">
-            Przetworzono kod, czekaj...
-          </div>
         ) : (
           <div className="mx-auto inline-block rounded-full bg-black/60 px-4 py-2 text-sm font-bold text-white shadow-lg backdrop-blur-sm">
-            Nakieruj kamerę na kod QR
+            {statusMessage}
           </div>
         )}
       </div>

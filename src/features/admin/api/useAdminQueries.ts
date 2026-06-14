@@ -1,11 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiClient } from "@/lib/apiClient";
+import { apiClient, apiFetch } from "@/lib/apiClient";
 
 export interface UserDTO {
   id: number;
+  email: string;
   firstName: string;
   lastName: string;
-  email: string;
   role: "Student" | "Organizer" | "Admin";
   createdAt: string;
   hasActiveEvents: boolean;
@@ -21,24 +21,89 @@ export interface AuditLog {
   userEmail: string;
 }
 
+export interface AdminEventDTO {
+  id: number;
+  title: string;
+  organizerName: string;
+  date: string;
+  enrolledCount: number;
+  maxCapacity: number;
+  status: string;
+}
+
+// --- QUERIES ---
 export const useAllUsers = () => {
   return useQuery({
     queryKey: ["admin", "users"],
-    queryFn: async (): Promise<UserDTO[]> => {
-      const response = await apiClient("/admin/users");
-      const json = await response.json();
-      return json.data;
-    },
+    queryFn: () => apiFetch<UserDTO[]>("/admin/users"),
   });
 };
 
 export const useSystemLogs = () => {
   return useQuery({
     queryKey: ["admin", "logs"],
-    queryFn: async (): Promise<AuditLog[]> => {
-      const response = await apiClient("/admin/logs");
-      const json = await response.json();
-      return json.data;
+    queryFn: () => apiFetch<AuditLog[]>("/admin/logs"),
+  });
+};
+
+export const useAllEvents = () => {
+  return useQuery({
+    queryKey: ["admin", "events"],
+    queryFn: () => apiFetch<AdminEventDTO[]>("/admin/events"),
+  });
+};
+
+// --- MUTATIONS ---
+export const useCreateUser = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: unknown) => {
+      const res = await apiClient("/admin/users", {
+        method: "POST",
+        body: JSON.stringify(data),
+      });
+      return res.json();
+    },
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["admin", "users"] }),
+  });
+};
+
+export const useUpdateUser = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string | number;
+      data: Partial<UserDTO>;
+    }) => {
+      const res = await apiClient(`/admin/users/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(data),
+      });
+      return res.json();
+    },
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["admin", "users"] }),
+  });
+};
+
+export const useResetUserPassword = () => {
+  return useMutation({
+    mutationFn: async ({
+      id,
+      newPassword,
+    }: {
+      id: string | number;
+      newPassword: string;
+    }) => {
+      const res = await apiClient(`/admin/users/${id}/reset-password`, {
+        method: "POST",
+        body: JSON.stringify({ newPassword }),
+      });
+      return res.json();
     },
   });
 };
@@ -53,11 +118,11 @@ export const useUpdateUserRole = () => {
       userId: string | number;
       newRole: string;
     }) => {
-      const response = await apiClient(`/admin/users/${userId}/role`, {
+      const res = await apiClient(`/admin/users/${userId}/role`, {
         method: "PUT",
         body: JSON.stringify({ newRole }),
       });
-      return response.json();
+      return res.json();
     },
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: ["admin", "users"] }),
@@ -68,12 +133,24 @@ export const useDeleteUser = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (userId: string | number) => {
-      const response = await apiClient(`/admin/users/${userId}`, {
+      const res = await apiClient(`/admin/users/${userId}`, {
         method: "DELETE",
       });
-      return response.json();
+      return res.json();
     },
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: ["admin", "users"] }),
+  });
+};
+
+export const useSendTokenEmail = () => {
+  return useMutation({
+    mutationFn: async ({ token, email }: { token: string; email: string }) => {
+      const res = await apiClient("/admin/send-token-email", {
+        method: "POST",
+        body: JSON.stringify({ token, email }),
+      });
+      return res.json();
+    },
   });
 };

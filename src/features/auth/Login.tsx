@@ -42,7 +42,10 @@ const Login = () => {
 
       const result = await response.json();
 
-      login(result.role, result.userId.toString());
+      const normalizedRole =
+        result.role.charAt(0).toUpperCase() + result.role.slice(1);
+      login(normalizedRole, result.userId.toString());
+
       addToast("Zalogowano pomyślnie!", "success");
 
       // Only honour the "from" redirect when it belongs to this user's role,
@@ -55,7 +58,7 @@ const Login = () => {
 
       navigate(target, { replace: true });
     } catch (error: unknown) {
-      addToast("Nie udało się zalogować : sprawdź dane logowania", "error");
+      addToast("Nie udało się zalogować: sprawdź dane logowania", "error");
       setError("root", {
         type: "manual",
         message: error instanceof Error ? error.message : "Błąd serwera",

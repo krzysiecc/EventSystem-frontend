@@ -90,3 +90,16 @@ export const apiClient = async (
 
   return response;
 };
+
+/**
+ * @description Wrapper for apiClient that automatically parses JSON and extracts `data` property.
+ * Use this for standard GET queries where backend returns { data: T }.
+ */
+export const apiFetch = async <T>(
+  endpoint: string,
+  options: RequestInit = {},
+): Promise<T> => {
+  const response = await apiClient(endpoint, options);
+  const json = await response.json();
+  return json.data as T;
+};

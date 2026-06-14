@@ -50,7 +50,7 @@ const EventDetailsOrg = () => {
               to={`/organizer/events/${event.id}/edit`}
               className="text-sm font-medium text-accent-primary hover:underline"
             >
-              ✏️ Edytuj wydarzenie
+              Edytuj wydarzenie
             </Link>
           </div>
         </div>

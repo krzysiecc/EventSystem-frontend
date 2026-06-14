@@ -18,6 +18,12 @@ const SystemLogs = () => {
   if (isLoading)
     return <div className="p-6 text-text-muted">Ładowanie logów...</div>;
 
+  const formatTimestamp = (ts: string | null | undefined) => {
+    if (!ts) return "Brak daty";
+    const date = new Date(ts);
+    return isNaN(date.getTime()) ? "Brak daty" : date.toLocaleString("pl-PL");
+  };
+
   return (
     <div className="layout-container py-6">
       <h1 className="text-2xl font-bold text-text-primary mb-6">
@@ -35,7 +41,7 @@ const SystemLogs = () => {
                 className="flex flex-col sm:flex-row sm:gap-4 py-2 border-b border-border-light last:border-0 hover:bg-surface-raised transition-colors p-2 rounded"
               >
                 <div className="text-text-secondary whitespace-nowrap min-w-40">
-                  {new Date(log.createdAt).toLocaleString()}
+                  {formatTimestamp(log.createdAt)}
                 </div>
                 <div className="min-w-28">
                   <span

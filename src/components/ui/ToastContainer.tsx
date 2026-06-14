@@ -23,7 +23,7 @@ const ToastContainer = () => {
         <div
           key={toast.id}
           onClick={() => removeToast(toast.id)}
-          className={`cursor-pointer rounded-lg border px-4 py-3 shadow-lg transition-all duration-300 ${getTypeStyles(toast.type)}`}
+          className={`cursor-pointer rounded-lg border px-4 py-3 shadow-lg transition-all duration-300 animate-fade-in ${getTypeStyles(toast.type)}`}
         >
           <p className="text-sm font-medium">{toast.message}</p>
         </div>

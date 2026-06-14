@@ -1,6 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
-import { apiClient } from "@/lib/apiClient";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiClient, apiFetch } from "@/lib/apiClient";
 
 export interface OrganizerEvent {
   id: number;
@@ -32,11 +31,7 @@ export interface Attendee {
 export const useOrganizerEvents = () => {
   return useQuery({
     queryKey: ["organizer", "events"],
-    queryFn: async (): Promise<OrganizerEvent[]> => {
-      const response = await apiClient("/events/my");
-      const json = await response.json();
-      return json.data;
-    },
+    queryFn: () => apiFetch<OrganizerEvent[]>("/events/my"),
   });
 };
 
@@ -52,9 +47,7 @@ export const useOrganizerEventDetails = (eventId: string | undefined) => {
     queryKey: ["organizer", "events", eventId],
     queryFn: async (): Promise<OrganizerEvent> => {
       if (!eventId) throw new Error("Brak ID");
-      const response = await apiClient(`/events/${eventId}`);
-      const json = await response.json();
-      return json.data;
+      return apiFetch<OrganizerEvent>(`/events/${eventId}`);
     },
     enabled: !!eventId,
   });
@@ -71,9 +64,7 @@ export const useEventAttendees = (eventId: string | undefined) => {
     queryKey: ["organizer", "events", eventId, "attendees"],
     queryFn: async (): Promise<Attendee[]> => {
       if (!eventId) throw new Error("Brak ID");
-      const response = await apiClient(`/events/${eventId}/attendees`);
-      const json = await response.json();
-      return json.data;
+      return apiFetch<Attendee[]>(`/events/${eventId}/attendees`);
     },
     enabled: !!eventId,
   });

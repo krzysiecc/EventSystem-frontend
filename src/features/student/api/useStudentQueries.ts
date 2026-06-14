@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiClient } from "@/lib/apiClient";
+import { apiClient, apiFetch } from "@/lib/apiClient";
 
 export interface PublicEvent {
   id: number;
@@ -30,25 +30,18 @@ export interface Ticket {
  * @returns       useRegisterForEvent - mutation hook to register the student for an event, invalidates relevant queries on success
  * @returns       useEventDetails - fetches detailed information about a specific event by ID
  */
+
 export const useAllEvents = () => {
   return useQuery({
     queryKey: ["student", "events"],
-    queryFn: async (): Promise<PublicEvent[]> => {
-      const response = await apiClient("/events");
-      const json = await response.json();
-      return json.data;
-    },
+    queryFn: () => apiFetch<PublicEvent[]>("/events"),
   });
 };
 
 export const useMyTickets = () => {
   return useQuery({
     queryKey: ["student", "tickets"],
-    queryFn: async (): Promise<Ticket[]> => {
-      const response = await apiClient("/tickets/my");
-      const json = await response.json();
-      return json.data;
-    },
+    queryFn: () => apiFetch<Ticket[]>("/tickets/my"),
   });
 };
 
@@ -72,12 +65,7 @@ export const useRegisterForEvent = () => {
 export const useEventDetails = (id: string | undefined) => {
   return useQuery({
     queryKey: ["student", "events", id],
-    queryFn: async (): Promise<PublicEvent> => {
-      if (!id) throw new Error("No ID provided");
-      const response = await apiClient(`/events/${id}`);
-      const json = await response.json();
-      return json.data;
-    },
+    queryFn: () => apiFetch<PublicEvent>(`/events/${id}`),
     enabled: !!id,
   });
 };
