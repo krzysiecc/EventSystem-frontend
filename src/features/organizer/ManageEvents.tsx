@@ -1,5 +1,7 @@
 import { Link } from "react-router-dom";
+import { Plus, Eye, Pencil } from "lucide-react";
 import { useOrganizerEvents } from "./api/useEvents";
+import PageHeader from "@/components/ui/PageHeader";
 
 const ManageEvents = () => {
   const { data: events, isLoading } = useOrganizerEvents();
@@ -8,28 +10,30 @@ const ManageEvents = () => {
     return <div className="p-6 text-text-muted">Ładowanie wydarzeń...</div>;
 
   return (
-    <div className="layout-container py-6">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-text-primary">
-          Zarządzaj wydarzeniami
-        </h1>
-        <Link
-          to="/organizer/events/new"
-          className="bg-accent-primary text-text-on-accent px-4 py-2 rounded-md hover:bg-accent-hover transition"
-        >
-          + Nowe wydarzenie
-        </Link>
-      </div>
+    <div className="mx-auto max-w-6xl">
+      <PageHeader
+        kicker="Organizator"
+        title="Zarządzaj wydarzeniami"
+        actions={
+          <Link
+            to="/organizer/events/new"
+            className="flex items-center gap-2 rounded-md bg-accent-primary px-4 py-2 font-medium text-text-on-accent transition hover:bg-accent-hover"
+          >
+            <Plus size={16} />
+            Nowe wydarzenie
+          </Link>
+        }
+      />
 
-      <div className="bg-surface-raised border border-border-light rounded-xl overflow-hidden shadow-sm overflow-x-auto">
-        <table className="w-full text-left border-collapse">
+      <div className="overflow-x-auto rounded-xl border border-border-light bg-surface-raised shadow-sm">
+        <table className="w-full border-collapse text-left">
           <thead>
-            <tr className="bg-bg-secondary text-text-secondary text-sm border-b border-border-light">
-              <th className="p-4 font-semibold">Tytuł</th>
-              <th className="p-4 font-semibold">Data</th>
-              <th className="p-4 font-semibold">Zapisani</th>
-              <th className="p-4 font-semibold">Status</th>
-              <th className="p-4 font-semibold text-right">Akcje</th>
+            <tr className="border-b border-border-light font-mono text-xs uppercase tracking-wider text-text-muted">
+              <th className="p-4 font-medium">Tytuł</th>
+              <th className="p-4 font-medium">Data</th>
+              <th className="p-4 font-medium">Zapisani</th>
+              <th className="p-4 font-medium">Status</th>
+              <th className="p-4 text-right font-medium">Akcje</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border-light">
@@ -46,20 +50,20 @@ const ManageEvents = () => {
                 return (
                   <tr
                     key={event.id}
-                    className="hover:bg-bg-secondary transition-colors"
+                    className="transition-colors hover:bg-bg-secondary"
                   >
                     <td className="p-4 font-medium text-text-primary">
                       {event.title}
                     </td>
-                    <td className="p-4 text-text-secondary">
+                    <td className="p-4 font-mono text-sm text-text-secondary">
                       {new Date(event.date).toLocaleDateString()}
                     </td>
-                    <td className="p-4 text-text-secondary">
+                    <td className="p-4 font-mono text-sm text-text-secondary">
                       {event.enrolledCount} / {event.maxCapacity}
                     </td>
                     <td className="p-4">
                       <span
-                        className={`px-2 py-1 text-xs rounded-full font-medium ${
+                        className={`rounded px-2 py-1 font-mono text-xs font-medium uppercase ${
                           isUpcoming
                             ? "bg-status-success-bg text-status-success"
                             : "bg-status-info-bg text-status-info"
@@ -68,19 +72,23 @@ const ManageEvents = () => {
                         {isUpcoming ? "Nadchodzące" : "Zakończone"}
                       </span>
                     </td>
-                    <td className="p-4 text-right space-x-3">
-                      <Link
-                        to={`/organizer/events/${event.id}`}
-                        className="text-accent-primary hover:underline text-sm font-medium"
-                      >
-                        Szczegóły
-                      </Link>
-                      <Link
-                        to={`/organizer/events/${event.id}/edit`}
-                        className="text-accent-primary hover:underline text-sm font-medium"
-                      >
-                        Edytuj
-                      </Link>
+                    <td className="p-4">
+                      <div className="flex items-center justify-end gap-3">
+                        <Link
+                          to={`/organizer/events/${event.id}`}
+                          className="flex items-center gap-1.5 text-sm font-medium text-accent-primary hover:underline"
+                        >
+                          <Eye size={14} />
+                          Szczegóły
+                        </Link>
+                        <Link
+                          to={`/organizer/events/${event.id}/edit`}
+                          className="flex items-center gap-1.5 text-sm font-medium text-accent-primary hover:underline"
+                        >
+                          <Pencil size={14} />
+                          Edytuj
+                        </Link>
+                      </div>
                     </td>
                   </tr>
                 );

@@ -75,8 +75,8 @@ const AdminTokens = () => {
         subtitle="Generuj i unieważniaj tokeny rejestracyjne dla Organizatorów."
       />
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        {/* Generowanie */}
+      <div className="space-y-5">
+        {/* Generowanie — pełna szerokość */}
         <div className="rounded-xl border border-border-light bg-surface-raised p-6 shadow-sm">
           <div className="mb-4 flex items-center gap-3">
             <div className="grid h-10 w-10 place-items-center rounded-lg bg-accent-subtle text-accent-primary">
@@ -94,7 +94,7 @@ const AdminTokens = () => {
           <button
             onClick={() => generateMutation.mutate()}
             disabled={generateMutation.isPending}
-            className="flex w-full items-center justify-center gap-2 rounded-md bg-accent-primary py-2 text-text-on-accent transition hover:bg-accent-hover disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-2 rounded-md bg-accent-primary py-2.5 text-text-on-accent transition hover:bg-accent-hover disabled:opacity-50"
           >
             <KeyRound size={16} />
             {generateMutation.isPending
@@ -103,15 +103,15 @@ const AdminTokens = () => {
           </button>
 
           {generatedToken && (
-            <div className="mt-4 rounded-lg border border-status-success bg-status-success-bg p-4 text-center">
-              <span className="mb-1 block font-mono text-xs font-bold uppercase tracking-wider text-status-success">
+            <div className="mt-4 rounded-lg border border-status-success bg-status-success-bg p-4">
+              <span className="mb-2 block font-mono text-xs font-bold uppercase tracking-wider text-status-success">
                 Twój nowy token:
               </span>
-              <code className="select-all break-all font-mono text-lg text-text-primary">
+              <code className="block select-all break-all rounded border border-status-success/40 bg-bg-tertiary p-2 font-mono text-xs text-text-primary">
                 {generatedToken}
               </code>
 
-              <form onSubmit={handleSendEmail} className="mt-4 flex gap-2">
+              <form onSubmit={handleSendEmail} className="mt-3 flex gap-2">
                 <input
                   type="email"
                   required
@@ -133,33 +133,26 @@ const AdminTokens = () => {
           )}
         </div>
 
-        {/* Rewokowanie */}
-        <div className="rounded-xl border border-status-error bg-status-error-bg p-6">
-          <div className="mb-4 flex items-center gap-3">
-            <div className="grid h-10 w-10 place-items-center rounded-lg bg-status-error/15 text-status-error">
-              <ShieldOff size={18} />
-            </div>
-            <div>
-              <h2 className="text-lg font-semibold text-status-error">
-                Unieważnij token
-              </h2>
-              <p className="text-sm text-text-secondary">Zablokuj wyciekły token.</p>
-            </div>
+        {/* Rewokowanie — małe okno w osobnej linii, mniejszy font */}
+        <div className="max-w-sm rounded-lg border border-status-error bg-status-error-bg p-4 text-sm">
+          <div className="mb-3 flex items-center gap-2 text-status-error">
+            <ShieldOff size={15} />
+            <h2 className="text-sm font-semibold">Unieważnij token</h2>
           </div>
           <input
             type="text"
-            placeholder="Podaj token do blokady"
+            placeholder="Token do blokady"
             value={revokeInput}
             onChange={(e) => setRevokeInput(e.target.value)}
-            className="mb-4 w-full rounded-md border border-status-error bg-bg-tertiary p-2 font-mono text-text-primary"
+            className="mb-2 w-full rounded-md border border-status-error bg-bg-tertiary p-1.5 font-mono text-xs text-text-primary"
           />
           <button
             onClick={() => revokeMutation.mutate(revokeInput)}
             disabled={!revokeInput || revokeMutation.isPending}
-            className="flex w-full items-center justify-center gap-2 rounded-md bg-status-error py-2 font-bold text-white transition hover:opacity-90 disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-1.5 rounded-md bg-status-error py-1.5 text-xs font-bold text-white transition hover:opacity-90 disabled:opacity-50"
           >
-            <ShieldOff size={16} />
-            Unieważnij token
+            <ShieldOff size={14} />
+            Unieważnij
           </button>
         </div>
       </div>

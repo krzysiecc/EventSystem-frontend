@@ -1,6 +1,8 @@
 import { useParams, Link } from "react-router-dom";
+import { ArrowLeft, UserCheck, Check, Clock } from "lucide-react";
 import { useEventAttendees, useManualCheckIn } from "./api/useEvents";
 import { useToastStore } from "@/store/useToastStore";
+import PageHeader from "@/components/ui/PageHeader";
 
 const AttendeeList = () => {
   const { id } = useParams<{ id: string }>();
@@ -20,26 +22,25 @@ const AttendeeList = () => {
   if (isLoading) return <div className="p-6">Ładowanie uczestników...</div>;
 
   return (
-    <div className="layout-container py-6">
+    <div className="mx-auto max-w-6xl">
       <Link
         to={`/organizer/events/${id}`}
-        className="text-accent-primary hover:underline mb-6 inline-block"
+        className="mb-6 inline-flex items-center gap-1.5 text-sm text-accent-primary hover:underline"
       >
-        ← Wróć do wydarzenia
+        <ArrowLeft size={15} />
+        Wróć do wydarzenia
       </Link>
 
-      <h1 className="text-2xl font-bold text-text-primary mb-6">
-        Lista uczestników
-      </h1>
+      <PageHeader kicker="Organizator" title="Lista uczestników" />
 
-      <div className="bg-surface-raised border border-border-light rounded-xl overflow-hidden shadow-sm overflow-x-auto">
-        <table className="w-full text-left border-collapse">
+      <div className="overflow-x-auto rounded-xl border border-border-light bg-surface-raised shadow-sm">
+        <table className="w-full border-collapse text-left">
           <thead>
-            <tr className="bg-bg-secondary text-text-secondary text-sm border-b border-border-light">
-              <th className="p-4 font-semibold">Student</th>
-              <th className="p-4 font-semibold">E-mail</th>
-              <th className="p-4 font-semibold">Status biletu</th>
-              <th className="p-4 font-semibold text-right">Akcja</th>
+            <tr className="border-b border-border-light font-mono text-xs uppercase tracking-wider text-text-muted">
+              <th className="p-4 font-medium">Student</th>
+              <th className="p-4 font-medium">E-mail</th>
+              <th className="p-4 font-medium">Status biletu</th>
+              <th className="p-4 text-right font-medium">Akcja</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border-light">
@@ -53,21 +54,23 @@ const AttendeeList = () => {
               attendees?.map((attendee) => (
                 <tr
                   key={attendee.id}
-                  className="hover:bg-bg-secondary transition-colors"
+                  className="transition-colors hover:bg-bg-secondary"
                 >
                   <td className="p-4 font-medium text-text-primary">
                     {attendee.firstName} {attendee.lastName}
                   </td>
-                  <td className="p-4 text-text-secondary">
+                  <td className="p-4 font-mono text-sm text-text-secondary">
                     {attendee.studentEmail}
                   </td>
                   <td className="p-4">
                     {attendee.isScanned ? (
-                      <span className="px-2 py-1 text-xs rounded-full bg-status-error-bg text-status-error font-medium">
+                      <span className="inline-flex items-center gap-1.5 rounded bg-status-error-bg px-2 py-1 font-mono text-xs font-medium text-status-error">
+                        <Check size={13} />
                         ZUŻYTY (Obecny)
                       </span>
                     ) : (
-                      <span className="px-2 py-1 text-xs rounded-full bg-status-info-bg text-status-info font-medium">
+                      <span className="inline-flex items-center gap-1.5 rounded bg-status-info-bg px-2 py-1 font-mono text-xs font-medium text-status-info">
+                        <Clock size={13} />
                         OCZEKUJE
                       </span>
                     )}
@@ -77,9 +80,10 @@ const AttendeeList = () => {
                       <button
                         onClick={() => handleManualCheckIn(attendee.scanToken)}
                         disabled={checkInMutation.isPending}
-                        className="text-sm bg-accent-primary text-text-on-accent px-3 py-1 rounded hover:bg-accent-hover disabled:opacity-50"
+                        className="inline-flex items-center gap-1.5 rounded-md bg-accent-primary px-3 py-1.5 text-sm text-text-on-accent transition hover:bg-accent-hover disabled:opacity-50"
                       >
-                        Wpuść (check-in)
+                        <UserCheck size={15} />
+                        Wpuść
                       </button>
                     )}
                   </td>

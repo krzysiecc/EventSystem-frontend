@@ -1,5 +1,15 @@
-import { useOrganizerEvents } from "./api/useEvents";
 import { Link } from "react-router-dom";
+import {
+  Plus,
+  CalendarDays,
+  MapPin,
+  Ticket,
+  CheckCheck,
+  Settings2,
+  ScanLine,
+} from "lucide-react";
+import { useOrganizerEvents } from "./api/useEvents";
+import PageHeader from "@/components/ui/PageHeader";
 
 const OrganizerDashboard = () => {
   const { data: events, isLoading, isError } = useOrganizerEvents();
@@ -21,46 +31,43 @@ const OrganizerDashboard = () => {
   }
 
   return (
-    <div className="layout-container py-6">
-      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-text-primary">
-            Panel Organizatora
-          </h1>
-          <p className="text-text-secondary">
-            Zarządzaj swoimi nadchodzącymi wydarzeniami
-          </p>
-        </div>
-
-        <Link
-          to="/organizer/events/new"
-          className="rounded-lg bg-accent-primary px-4 py-3 text-center font-medium text-text-on-accent transition-colors hover:bg-accent-hover sm:w-auto"
-        >
-          + Zorganizuj wydarzenie
-        </Link>
-      </div>
+    <div className="mx-auto max-w-6xl">
+      <PageHeader
+        kicker="Organizator"
+        title="Twoje wydarzenia"
+        subtitle="Zarządzaj swoimi nadchodzącymi wydarzeniami."
+        actions={
+          <Link
+            to="/organizer/events/new"
+            className="flex items-center gap-2 rounded-md bg-accent-primary px-4 py-2 font-medium text-text-on-accent transition hover:bg-accent-hover"
+          >
+            <Plus size={16} />
+            Zorganizuj wydarzenie
+          </Link>
+        }
+      />
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         {events?.length === 0 ? (
-          <p className="col-span-full text-center text-text-muted py-8">
+          <p className="col-span-full py-8 text-center text-text-muted">
             Nie masz jeszcze żadnych wydarzeń.
           </p>
         ) : (
-          events?.map((event) => {
+          events?.map((event, i) => {
             const isUpcoming = new Date(event.date) >= new Date();
 
             return (
               <div
                 key={event.id}
-                className="rounded-xl border border-border-light bg-surface-raised p-5 shadow-sm transition-shadow hover:shadow-md flex flex-col"
+                style={{ animationDelay: `${i * 60}ms` }}
+                className="animate-rise flex flex-col rounded-xl border border-border-light bg-surface-raised p-5 shadow-sm transition hover:border-accent-primary hover:shadow-md"
               >
-                <div className="mb-4 flex items-start justify-between">
-                  <h3 className="text-lg font-semibold text-text-primary line-clamp-2">
+                <div className="mb-4 flex items-start justify-between gap-2">
+                  <h3 className="line-clamp-2 text-lg font-semibold text-text-primary">
                     {event.title}
                   </h3>
                   <span
-                    className={`rounded-full px-2 py-1 text-xs font-medium whitespace-nowrap
-                    ${
+                    className={`whitespace-nowrap rounded px-2 py-1 font-mono text-xs font-medium uppercase ${
                       isUpcoming
                         ? "bg-status-success-bg text-status-success"
                         : "bg-status-info-bg text-status-info"
@@ -70,31 +77,42 @@ const OrganizerDashboard = () => {
                   </span>
                 </div>
 
-                <div className="mb-4 space-y-1 text-sm text-text-secondary grow">
-                  <p>📅 {new Date(event.date).toLocaleDateString()}</p>
-                  <p>📍 {event.location}</p>
-                  <p>
-                    🎟️ {event.enrolledCount} / {event.maxCapacity}{" "}
-                    zarejestrowanych
+                <div className="mb-4 grow space-y-2 text-sm text-text-secondary">
+                  <p className="flex items-center gap-2">
+                    <CalendarDays size={15} className="text-accent-primary" />
+                    {new Date(event.date).toLocaleDateString()}
+                  </p>
+                  <p className="flex items-center gap-2">
+                    <MapPin size={15} className="text-accent-primary" />
+                    {event.location}
+                  </p>
+                  <p className="flex items-center gap-2">
+                    <Ticket size={15} className="text-accent-primary" />
+                    {event.enrolledCount} / {event.maxCapacity} zarejestrowanych
                   </p>
                   {typeof event.scannedCount === "number" && (
-                    <p>✅ {event.scannedCount} wpuszczonych</p>
+                    <p className="flex items-center gap-2">
+                      <CheckCheck size={15} className="text-status-success" />
+                      {event.scannedCount} wpuszczonych
+                    </p>
                   )}
                 </div>
 
                 {/* Action Buttons */}
-                <div className="mt-auto pt-4 border-t border-border-light flex gap-2">
+                <div className="mt-auto flex gap-2 border-t border-border-light pt-4">
                   <Link
                     to={`/organizer/events/${event.id}`}
-                    className="flex-1 rounded-md bg-bg-secondary py-2 text-center text-sm font-medium text-accent-primary transition-colors hover:bg-accent-subtle"
+                    className="flex flex-1 items-center justify-center gap-1.5 rounded-md bg-bg-secondary py-2 text-sm font-medium text-accent-primary transition hover:bg-accent-subtle"
                   >
+                    <Settings2 size={15} />
                     Zarządzaj
                   </Link>
                   {isUpcoming && (
                     <Link
                       to={`/organizer/scanner/${event.id}`}
-                      className="flex-1 rounded-md bg-status-success text-text-on-accent py-2 text-center text-sm font-medium transition-opacity hover:opacity-90"
+                      className="flex flex-1 items-center justify-center gap-1.5 rounded-md bg-status-success py-2 text-sm font-medium text-text-on-accent transition hover:opacity-90"
                     >
+                      <ScanLine size={15} />
                       Skaner
                     </Link>
                   )}

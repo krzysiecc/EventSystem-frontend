@@ -1,6 +1,21 @@
-import { Outlet, Link, useNavigate } from "react-router-dom";
+import { Outlet, NavLink, useNavigate } from "react-router-dom";
+import {
+  LogOut,
+  LayoutDashboard,
+  Users,
+  KeyRound,
+  ScrollText,
+  CalendarDays,
+  Compass,
+  Ticket,
+  User,
+  Zap,
+  type LucideIcon,
+} from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import ThemeSwitcher from "@/components/ui/ThemeSwitcher";
+
+type NavItem = { to: string; label: string; Icon: LucideIcon; end?: boolean };
 
 const DashboardLayout = ({ role }: { role: string }) => {
   const logout = useAuthStore((state) => state.logout);
@@ -13,7 +28,6 @@ const DashboardLayout = ({ role }: { role: string }) => {
 
   const basePath = `/${role.toLowerCase()}`;
 
-  // Resolve sidebar title based on role
   const roleLabel =
     role === "Student"
       ? "Studenta"
@@ -21,114 +35,91 @@ const DashboardLayout = ({ role }: { role: string }) => {
         ? "Organizatora"
         : "Administratora";
 
+  const navItems: NavItem[] =
+    role === "Admin"
+      ? [
+          { to: basePath, label: "Panel", Icon: LayoutDashboard, end: true },
+          { to: `${basePath}/users`, label: "Użytkownicy", Icon: Users },
+          { to: `${basePath}/tokens`, label: "Tokeny", Icon: KeyRound },
+          { to: `${basePath}/events`, label: "Wydarzenia", Icon: CalendarDays },
+          { to: `${basePath}/logs`, label: "Logi", Icon: ScrollText },
+        ]
+      : role === "Organizer"
+        ? [
+            { to: basePath, label: "Panel", Icon: LayoutDashboard, end: true },
+            {
+              to: `${basePath}/events`,
+              label: "Wydarzenia",
+              Icon: CalendarDays,
+            },
+            { to: `${basePath}/profile`, label: "Profil", Icon: User },
+          ]
+        : [
+            { to: basePath, label: "Panel", Icon: LayoutDashboard, end: true },
+            { to: `${basePath}/events`, label: "Wydarzenia", Icon: Compass },
+            { to: `${basePath}/tickets`, label: "Bilety", Icon: Ticket },
+            { to: `${basePath}/profile`, label: "Profil", Icon: User },
+          ];
+
   return (
-    <div className="flex min-h-screen flex-col bg-bg-primary md:flex-row">
-      {/* Sidebar navigation */}
-      <aside className="flex w-full flex-col border-b border-border-light bg-surface-raised p-4 md:w-64 md:border-b-0 md:border-r">
-        <div className="mb-6 flex items-center justify-between gap-2">
-          <div className="text-xl font-bold text-text-primary">
-            Panel {roleLabel}
-          </div>
-          <ThemeSwitcher />
-        </div>
-
-        <nav className="flex gap-4 overflow-x-auto md:flex-col">
-          <Link
-            to={basePath}
-            className="font-medium text-accent-primary hover:underline"
-          >
-            Panel główny
-          </Link>
-
-          {role === "Organizer" && (
-            <>
-              <Link
-                to={`${basePath}/events`}
-                className="font-medium text-text-secondary hover:underline"
-              >
-                Moje wydarzenia
-              </Link>
-              <Link
-                to={`${basePath}/profile`}
-                className="font-medium text-text-secondary hover:underline"
-              >
-                Mój profil
-              </Link>
-            </>
-          )}
-
-          {role === "Student" && (
-            <>
-              <Link
-                to={`${basePath}/events`}
-                className="font-medium text-text-secondary hover:underline"
-              >
-                Przeglądaj wydarzenia
-              </Link>
-              <Link
-                to={`${basePath}/tickets`}
-                className="font-medium text-text-secondary hover:underline"
-              >
-                Moje bilety
-              </Link>
-              <Link
-                to={`${basePath}/profile`}
-                className="font-medium text-text-secondary hover:underline"
-              >
-                Mój profil
-              </Link>
-            </>
-          )}
-
-          {role === "Admin" && (
-            <>
-              <Link
-                to={`${basePath}/users`}
-                className="font-medium text-text-secondary hover:underline"
-              >
-                Użytkownicy
-              </Link>
-              <Link
-                to={`${basePath}/tokens`}
-                className="font-medium text-text-secondary hover:underline"
-              >
-                Tokeny organizacyjne
-              </Link>
-              <Link
-                to={`${basePath}/logs`}
-                className="font-medium text-text-secondary hover:underline"
-              >
-                Logi systemowe
-              </Link>
-            </>
-          )}
-        </nav>
-
-        {/* Logout button visible on desktop at sidebar bottom */}
-        <div className="mt-auto hidden pt-6 md:block border-t border-border-light">
-          <button
-            onClick={handleLogout}
-            className="w-full text-left font-bold text-status-error hover:underline"
-          >
-            Wyloguj się
-          </button>
-        </div>
-      </aside>
-
-      {/* Main content area */}
-      <main className="flex-1 overflow-y-auto p-4 md:p-8">
+    <div className="min-h-screen bg-bg-primary">
+      {/* Main content area — bottom padding clears the floating dock */}
+      <main className="mx-auto w-full px-4 pb-32 pt-6 md:px-8">
         <Outlet />
       </main>
 
-      {/* Mobile logout button */}
-      <div className="border-t border-border-light bg-surface-raised p-4 md:hidden">
-        <button
-          onClick={handleLogout}
-          className="w-full text-center font-bold text-status-error hover:underline"
-        >
-          Wyloguj się
-        </button>
-      </div>
+      {/* Floating bottom navigation dock */}
+      <nav className="fixed inset-x-0 bottom-4 z-50 px-3">
+        <div className="animate-fade-in mx-auto flex max-w-3xl items-center gap-2 rounded-xl border border-border-light bg-surface-raised/85 p-2 shadow-lg backdrop-blur-md">
+          {/* Brand */}
+          <div
+            className="hidden items-center gap-2 pl-1 pr-2 sm:flex"
+            title={`Panel ${roleLabel}`}
+          >
+            <div className="grid h-8 w-8 place-items-center rounded bg-accent-primary text-text-on-accent">
+              <Zap size={16} />
+            </div>
+            <span className="hidden text-sm font-bold text-text-primary lg:inline">
+              EventHub
+            </span>
+          </div>
+
+          {/* Nav pills */}
+          <div className="flex flex-1 items-center gap-1 overflow-x-auto">
+            {navItems.map(({ to, label, Icon, end }) => (
+              <NavLink
+                key={to}
+                to={to}
+                end={end}
+                title={label}
+                className={({ isActive }) =>
+                  `flex items-center gap-2 whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium transition ${
+                    isActive
+                      ? "bg-accent-primary text-text-on-accent"
+                      : "text-text-muted hover:text-text-primary"
+                  }`
+                }
+              >
+                <Icon size={16} />
+                <span className="hidden sm:inline">{label}</span>
+              </NavLink>
+            ))}
+          </div>
+
+          {/* Right cluster: theme + logout */}
+          <div className="flex items-center gap-2 pl-1">
+            <ThemeSwitcher />
+            <button
+              onClick={handleLogout}
+              aria-label="Wyloguj się"
+              title="Wyloguj się"
+              className="grid h-9 w-9 place-items-center rounded-md text-status-error transition hover:bg-status-error-bg"
+            >
+              <LogOut size={16} />
+            </button>
+          </div>
+        </div>
+      </nav>
     </div>
   );
 };

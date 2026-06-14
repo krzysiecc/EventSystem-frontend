@@ -2,6 +2,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useNavigate, Link } from "react-router-dom";
+import { ArrowLeft, Plus } from "lucide-react";
 import DOMPurify from "dompurify";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
@@ -20,6 +21,11 @@ const createEventSchema = z.object({
 
 type CreateEventInputs = z.infer<typeof createEventSchema>;
 type CreateEventFormInputs = z.input<typeof createEventSchema>;
+
+const labelClass =
+  "mb-1.5 block font-mono text-xs uppercase tracking-wider text-text-muted";
+const inputClass =
+  "w-full rounded-md border border-border-medium bg-bg-tertiary p-2 text-text-primary focus:border-accent-primary focus:outline-none focus:ring-1 focus:ring-accent-primary";
 
 const CreateEvent = () => {
   const navigate = useNavigate();
@@ -59,28 +65,28 @@ const CreateEvent = () => {
   };
 
   return (
-    <div className="layout-container py-6 max-w-2xl">
-      <div className="mb-6">
-        <Link to="/organizer" className="text-accent-primary hover:underline">
-          ← Powrót do panelu
-        </Link>
-        <h1 className="text-2xl font-bold text-text-primary mt-4">
-          Utwórz nowe wydarzenie
-        </h1>
-      </div>
+    <div className="mx-auto max-w-2xl">
+      <Link
+        to="/organizer"
+        className="mb-4 inline-flex items-center gap-1.5 text-sm text-accent-primary hover:underline"
+      >
+        <ArrowLeft size={15} />
+        Powrót do panelu
+      </Link>
+      <h1 className="mb-6 text-3xl font-extrabold tracking-tight text-text-primary">
+        Utwórz nowe wydarzenie
+      </h1>
 
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="bg-surface-raised p-6 rounded-xl border border-border-light shadow-sm space-y-5"
+        className="space-y-5 rounded-xl border border-border-light bg-surface-raised p-6 shadow-sm"
       >
         {/* Tytuł */}
         <div>
-          <label className="block text-sm font-medium text-text-secondary mb-1">
-            Tytuł wydarzenia
-          </label>
+          <label className={labelClass}>Tytuł wydarzenia</label>
           <input
             {...register("title")}
-            className="w-full rounded-md border border-border-medium bg-bg-tertiary p-2 text-text-primary focus:ring-2 focus:ring-accent-primary"
+            className={inputClass}
             placeholder="np. Nocne Programowanie z Pizzą"
           />
           {errors.title && (
@@ -90,16 +96,14 @@ const CreateEvent = () => {
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
           {/* Data */}
           <div>
-            <label className="block text-sm font-medium text-text-secondary mb-1">
-              Data i godzina
-            </label>
+            <label className={labelClass}>Data i godzina</label>
             <input
               type="datetime-local"
               {...register("date")}
-              className="w-full rounded-md border border-border-medium bg-bg-tertiary p-2 text-text-primary focus:ring-2 focus:ring-accent-primary"
+              className={inputClass}
             />
             {errors.date && (
               <p className="mt-1 text-sm text-status-error">
@@ -110,13 +114,11 @@ const CreateEvent = () => {
 
           {/* Pojemność */}
           <div>
-            <label className="block text-sm font-medium text-text-secondary mb-1">
-              Liczba miejsc (dostępnych)
-            </label>
+            <label className={labelClass}>Liczba miejsc (dostępnych)</label>
             <input
               type="number"
               {...register("maxCapacity")}
-              className="w-full rounded-md border border-border-medium bg-bg-tertiary p-2 text-text-primary focus:ring-2 focus:ring-accent-primary"
+              className={inputClass}
               placeholder="np. 50"
             />
             {errors.maxCapacity && (
@@ -129,12 +131,10 @@ const CreateEvent = () => {
 
         {/* Lokalizacja */}
         <div>
-          <label className="block text-sm font-medium text-text-secondary mb-1">
-            Lokalizacja
-          </label>
+          <label className={labelClass}>Lokalizacja</label>
           <input
             {...register("location")}
-            className="w-full rounded-md border border-border-medium bg-bg-tertiary p-2 text-text-primary focus:ring-2 focus:ring-accent-primary"
+            className={inputClass}
             placeholder="np. Aula Główna, Budynek A"
           />
           {errors.location && (
@@ -146,13 +146,13 @@ const CreateEvent = () => {
 
         {/* Opis */}
         <div>
-          <label className="block text-sm font-medium text-text-secondary mb-1">
+          <label className={labelClass}>
             Opis (obsługuje HTML, bezpieczny przed XSS)
           </label>
           <textarea
             {...register("description")}
             rows={5}
-            className="w-full rounded-md border border-border-medium bg-bg-tertiary p-2 text-text-primary focus:ring-2 focus:ring-accent-primary"
+            className={inputClass}
             placeholder="Podaj szczegóły wydarzenia..."
           ></textarea>
           {errors.description && (
@@ -162,12 +162,13 @@ const CreateEvent = () => {
           )}
         </div>
 
-        <div className="pt-4 border-t border-border-light">
+        <div className="border-t border-border-light pt-4">
           <button
             type="submit"
             disabled={createEventMutation.isPending}
-            className="w-full bg-accent-primary text-text-on-accent py-2 rounded-md font-medium hover:bg-accent-hover transition-colors disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-2 rounded-md bg-accent-primary py-2.5 font-medium text-text-on-accent transition hover:bg-accent-hover disabled:opacity-50"
           >
+            <Plus size={16} />
             {createEventMutation.isPending
               ? "Zapisywanie..."
               : "Utwórz wydarzenie"}

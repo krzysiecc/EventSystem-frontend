@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { ArrowLeft, ImagePlus, Trash2, Save } from "lucide-react";
 import DOMPurify from "dompurify";
 import {
   useOrganizerEventDetails,
@@ -24,6 +25,11 @@ const editEventSchema = z.object({
 });
 
 type EditEventFormInputs = z.infer<typeof editEventSchema>;
+
+const labelClass =
+  "mb-1.5 block font-mono text-xs uppercase tracking-wider text-text-muted";
+const inputClass =
+  "w-full rounded-md border border-border-medium bg-bg-tertiary p-2 text-text-primary focus:border-accent-primary focus:outline-none focus:ring-1 focus:ring-accent-primary";
 
 const EditEvent = () => {
   const { id } = useParams<{ id: string }>();
@@ -106,32 +112,34 @@ const EditEvent = () => {
   };
 
   return (
-    <div className="layout-container py-6 max-w-2xl">
+    <div className="mx-auto max-w-2xl">
       <Link
         to={`/organizer/events/${id}`}
-        className="text-accent-primary hover:underline mb-6 inline-block"
+        className="mb-4 inline-flex items-center gap-1.5 text-sm text-accent-primary hover:underline"
       >
-        ← Wróć do szczegółów
+        <ArrowLeft size={15} />
+        Wróć do szczegółów
       </Link>
-      <h1 className="text-2xl font-bold text-text-primary mb-6">
+      <h1 className="mb-6 text-3xl font-extrabold tracking-tight text-text-primary">
         Edytuj wydarzenie
       </h1>
 
-      <section className="bg-surface-raised p-6 border border-border-light rounded-xl mb-6">
-        <h2 className="text-lg font-semibold mb-4 text-text-primary">
+      <section className="mb-6 rounded-xl border border-border-light bg-surface-raised p-6">
+        <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-text-primary">
+          <ImagePlus size={18} className="text-accent-primary" />
           Baner wydarzenia
         </h2>
-        <form onSubmit={handleImageUpload} className="flex gap-4 items-center">
+        <form onSubmit={handleImageUpload} className="flex items-center gap-4">
           <input
             type="file"
             accept="image/*"
             onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-            className="flex-1 text-sm text-text-secondary file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-accent-subtle file:text-accent-primary hover:file:bg-accent-hover"
+            className="flex-1 text-sm text-text-secondary file:mr-4 file:rounded-md file:border-0 file:bg-accent-subtle file:px-4 file:py-2 file:text-sm file:font-semibold file:text-accent-primary hover:file:bg-accent-hover"
           />
           <button
             type="submit"
             disabled={!selectedFile || uploadImageMutation.isPending}
-            className="bg-accent-primary text-text-on-accent px-4 py-2 rounded-md disabled:opacity-50"
+            className="rounded-md bg-accent-primary px-4 py-2 text-text-on-accent transition hover:bg-accent-hover disabled:opacity-50"
           >
             Wgraj zdjęcie
           </button>
@@ -140,98 +148,82 @@ const EditEvent = () => {
 
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="bg-surface-raised p-6 rounded-xl border border-border-light shadow-sm space-y-5"
+        className="space-y-5 rounded-xl border border-border-light bg-surface-raised p-6 shadow-sm"
       >
         <div>
-          <label className="block text-sm font-medium text-text-secondary mb-1">
-            Tytuł
-          </label>
-          <input
-            type="text"
-            {...register("title")}
-            className="w-full rounded-md border border-border-medium bg-bg-tertiary p-2 text-text-primary"
-          />
+          <label className={labelClass}>Tytuł</label>
+          <input type="text" {...register("title")} className={inputClass} />
           {errors.title && (
-            <p className="text-sm text-status-error mt-1">
+            <p className="mt-1 text-sm text-status-error">
               {errors.title.message}
             </p>
           )}
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-text-secondary mb-1">
-              Data
-            </label>
+            <label className={labelClass}>Data</label>
             <input
               type="datetime-local"
               {...register("date")}
-              className="w-full rounded-md border border-border-medium bg-bg-tertiary p-2 text-text-primary"
+              className={inputClass}
             />
             {errors.date && (
-              <p className="text-sm text-status-error mt-1">
+              <p className="mt-1 text-sm text-status-error">
                 {errors.date.message}
               </p>
             )}
           </div>
           <div>
-            <label className="block text-sm font-medium text-text-secondary mb-1">
-              Maks. pojemność
-            </label>
+            <label className={labelClass}>Maks. pojemność</label>
             <input
               type="number"
               {...register("maxCapacity", { valueAsNumber: true })}
-              className="w-full rounded-md border border-border-medium bg-bg-tertiary p-2 text-text-primary"
+              className={inputClass}
             />
             {errors.maxCapacity && (
-              <p className="text-sm text-status-error mt-1">
+              <p className="mt-1 text-sm text-status-error">
                 {errors.maxCapacity.message}
               </p>
             )}
           </div>
         </div>
         <div>
-          <label className="block text-sm font-medium text-text-secondary mb-1">
-            Lokalizacja
-          </label>
-          <input
-            type="text"
-            {...register("location")}
-            className="w-full rounded-md border border-border-medium bg-bg-tertiary p-2 text-text-primary"
-          />
+          <label className={labelClass}>Lokalizacja</label>
+          <input type="text" {...register("location")} className={inputClass} />
           {errors.location && (
-            <p className="text-sm text-status-error mt-1">
+            <p className="mt-1 text-sm text-status-error">
               {errors.location.message}
             </p>
           )}
         </div>
         <div>
-          <label className="block text-sm font-medium text-text-secondary mb-1">
-            Opis (obsługuje HTML)
-          </label>
+          <label className={labelClass}>Opis (obsługuje HTML)</label>
           <textarea
             rows={5}
             {...register("description")}
-            className="w-full rounded-md border border-border-medium bg-bg-tertiary p-2 text-text-primary"
+            className={inputClass}
           ></textarea>
           {errors.description && (
-            <p className="text-sm text-status-error mt-1">
+            <p className="mt-1 text-sm text-status-error">
               {errors.description.message}
             </p>
           )}
         </div>
-        <div className="pt-4 border-t border-border-light flex justify-between">
+        <div className="flex items-center justify-between border-t border-border-light pt-4">
           <button
             type="button"
             onClick={handleDelete}
-            className="text-status-error font-bold hover:underline"
+            className="flex items-center gap-1.5 font-bold text-status-error hover:underline"
           >
+            <Trash2 size={16} />
             Usuń wydarzenie
           </button>
           <button
             type="submit"
             disabled={updateMutation.isPending}
-            className="bg-accent-primary text-text-on-accent px-6 py-2 rounded-md hover:bg-accent-hover transition disabled:opacity-50"
+            className="flex items-center gap-2 rounded-md bg-accent-primary px-6 py-2 text-text-on-accent transition hover:bg-accent-hover disabled:opacity-50"
           >
+            <Save size={16} />
             {updateMutation.isPending ? "Zapisywanie..." : "Zapisz zmiany"}
           </button>
         </div>

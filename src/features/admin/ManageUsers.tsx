@@ -1,14 +1,15 @@
 import { useState } from "react";
-import { UserPlus, Pencil, Trash2, KeyRound, X } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
+import { UserPlus, Pencil, Trash2, Mail, ShieldAlert, X } from "lucide-react";
 import {
   useAllUsers,
   useCreateUser,
   useUpdateUser,
-  useResetUserPassword,
   useUpdateUserRole,
   useDeleteUser,
   type UserDTO,
 } from "./api/useAdminQueries";
+import { apiClient } from "@/lib/apiClient";
 import { useToastStore } from "@/store/useToastStore";
 import PageHeader from "@/components/ui/PageHeader";
 
@@ -19,10 +20,23 @@ const ManageUsers = () => {
   const { data: users, isLoading } = useAllUsers();
   const createUserMutation = useCreateUser();
   const updateUserMutation = useUpdateUser();
-  const resetPassMutation = useResetUserPassword();
   const updateRoleMutation = useUpdateUserRole();
   const deleteUserMutation = useDeleteUser();
   const addToast = useToastStore((state) => state.addToast);
+
+  // Admin wysyła użytkownikowi maila z linkiem resetu (reuse public flow).
+  const sendResetLinkMutation = useMutation({
+    mutationFn: async (email: string) => {
+      const res = await apiClient("/auth/forgot-password", {
+        method: "POST",
+        body: JSON.stringify({ email }),
+      });
+      return res.json();
+    },
+    onSuccess: () => addToast("Wysłano link do resetu hasła", "success"),
+    onError: (err) =>
+      addToast(err instanceof Error ? err.message : "Błąd", "error"),
+  });
 
   const [selectedUser, setSelectedUser] = useState<UserDTO | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -34,13 +48,14 @@ const ManageUsers = () => {
     lastName: "",
     role: "Student" as UserDTO["role"],
   });
-  const [resetPass, setResetPass] = useState("");
   const [editData, setEditData] = useState({
     firstName: "",
     lastName: "",
     email: "",
     role: "Student" as UserDTO["role"],
   });
+  // Monit potwierdzenia hasłem przy promocji do Admina (na razie tylko front).
+  const [adminPassword, setAdminPassword] = useState("");
 
   if (isLoading)
     return <div className="p-6 text-text-muted">Ładowanie użytkowników...</div>;
@@ -71,6 +86,7 @@ const ManageUsers = () => {
       email: user.email,
       role: user.role,
     });
+    setAdminPassword("");
     setSelectedUser(user);
   };
 
@@ -82,24 +98,7 @@ const ManageUsers = () => {
       {
         onSuccess: () => {
           addToast("Zaktualizowano", "success");
-          setSelectedUser(null);
-        },
-        onError: (err) =>
-          addToast(err instanceof Error ? err.message : "Błąd", "error"),
-      },
-    );
-  };
-
-  const handleResetPassword = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedUser) return;
-    if (!resetPass) return;
-    resetPassMutation.mutate(
-      { id: selectedUser.id, newPassword: resetPass },
-      {
-        onSuccess: () => {
-          addToast("Hasło zresetowane", "success");
-          setResetPass("");
+          setAdminPassword("");
           setSelectedUser(null);
         },
         onError: (err) =>
@@ -312,12 +311,12 @@ const ManageUsers = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-bg-overlay/50 p-4">
           <div className="w-full max-w-md space-y-6 rounded-xl border border-border-light bg-surface-raised p-6 shadow-lg">
             <div className="flex items-start justify-between">
-              <h2 className="text-xl font-bold text-text-primary">
-                Edycja:{" "}
-                <span className="font-mono text-base text-text-secondary">
-                  {selectedUser.email}
-                </span>
-              </h2>
+              <div>
+                <h2 className="text-xl font-bold text-text-primary">Edycja</h2>
+                <p className="mt-1 font-mono text-xs text-text-muted">
+                  ID: {selectedUser.id} · {selectedUser.email}
+                </p>
+              </div>
               <button
                 type="button"
                 onClick={() => setSelectedUser(null)}
@@ -372,6 +371,25 @@ const ManageUsers = () => {
                 <option value="Organizer">Organizer</option>
                 <option value="Admin">Admin</option>
               </select>
+              {editData.role === "Admin" && selectedUser.role !== "Admin" && (
+                <div className="rounded-md border border-status-warning bg-status-warning-bg p-3">
+                  <label className="mb-2 flex items-center gap-2 text-xs font-semibold text-status-warning">
+                    <ShieldAlert size={14} />
+                    Nadajesz uprawnienia administratora
+                  </label>
+                  <input
+                    type="password"
+                    required
+                    placeholder="Potwierdź swoim hasłem administratora"
+                    value={adminPassword}
+                    onChange={(e) => setAdminPassword(e.target.value)}
+                    className={inputClass}
+                  />
+                  <p className="mt-1 text-xs text-text-muted">
+                    Weryfikacja hasła po stronie serwera w przygotowaniu.
+                  </p>
+                </div>
+              )}
               <button
                 type="submit"
                 className="w-full rounded-md bg-accent-primary py-2 text-text-on-accent transition hover:bg-accent-hover"
@@ -382,25 +400,24 @@ const ManageUsers = () => {
 
             <div className="border-t border-border-light pt-4">
               <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-status-warning">
-                <KeyRound size={15} />
+                <Mail size={15} />
                 Reset hasła
               </h3>
-              <form onSubmit={handleResetPassword} className="flex gap-2">
-                <input
-                  type="password"
-                  placeholder="Nowe hasło"
-                  required
-                  value={resetPass}
-                  onChange={(e) => setResetPass(e.target.value)}
-                  className="flex-1 rounded-md border border-border-medium bg-bg-tertiary p-2 text-text-primary focus:border-status-warning focus:outline-none focus:ring-1 focus:ring-status-warning"
-                />
-                <button
-                  type="submit"
-                  className="rounded-md bg-status-warning px-4 py-2 font-medium text-bg-primary"
-                >
-                  Zresetuj
-                </button>
-              </form>
+              <p className="mb-3 text-sm text-text-secondary">
+                Wyślij użytkownikowi e-mail z linkiem do samodzielnego
+                zresetowania hasła.
+              </p>
+              <button
+                type="button"
+                onClick={() => sendResetLinkMutation.mutate(selectedUser.email)}
+                disabled={sendResetLinkMutation.isPending}
+                className="flex w-full items-center justify-center gap-2 rounded-md bg-status-warning py-2 font-medium text-bg-primary transition hover:opacity-90 disabled:opacity-50"
+              >
+                <Mail size={16} />
+                {sendResetLinkMutation.isPending
+                  ? "Wysyłanie..."
+                  : "Wyślij link do resetu hasła"}
+              </button>
             </div>
           </div>
         </div>

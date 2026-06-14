@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Html5Qrcode } from "html5-qrcode";
+import { Loader2 } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
 import { useToastStore } from "@/store/useToastStore";
@@ -118,8 +119,9 @@ const QRScanner = () => {
     <div className="flex h-full flex-col items-center justify-center bg-black p-4">
       <div className="absolute top-20 z-10 w-full px-4 text-center">
         {verifyMutation.isPending ? (
-          <div className="mx-auto inline-block rounded-full bg-status-info px-4 py-2 text-sm font-bold text-white shadow-lg">
-            ⏳ Weryfikacja biletu...
+          <div className="mx-auto inline-flex items-center gap-2 rounded-full bg-status-info px-4 py-2 text-sm font-bold text-white shadow-lg">
+            <Loader2 size={15} className="animate-spin" />
+            Weryfikacja biletu...
           </div>
         ) : (
           <div className="mx-auto inline-block rounded-full bg-black/60 px-4 py-2 text-sm font-bold text-white shadow-lg backdrop-blur-sm">
