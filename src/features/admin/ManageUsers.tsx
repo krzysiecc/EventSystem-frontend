@@ -11,6 +11,7 @@ import {
 } from "./api/useAdminQueries";
 import { apiClient } from "@/lib/apiClient";
 import { useToastStore } from "@/store/useToastStore";
+import { useConfirmStore } from "@/store/useConfirmStore";
 import PageHeader from "@/components/ui/PageHeader";
 
 const inputClass =
@@ -23,6 +24,7 @@ const ManageUsers = () => {
   const updateRoleMutation = useUpdateUserRole();
   const deleteUserMutation = useDeleteUser();
   const addToast = useToastStore((state) => state.addToast);
+  const confirm = useConfirmStore((state) => state.confirm);
 
   // Admin wysyła użytkownikowi maila z linkiem resetu (reuse public flow).
   const sendResetLinkMutation = useMutation({
@@ -118,14 +120,19 @@ const ManageUsers = () => {
     );
   };
 
-  const handleDelete = (userId: number, email: string) => {
-    if (window.confirm(`NIEODWRACALNE! Usunąć ${email}?`)) {
-      deleteUserMutation.mutate(userId, {
-        onSuccess: () => addToast("Usunięto", "success"),
-        onError: (err) =>
-          addToast(err instanceof Error ? err.message : "Błąd", "error"),
-      });
-    }
+  const handleDelete = async (userId: number, email: string) => {
+    const ok = await confirm({
+      title: "Usunąć użytkownika?",
+      message: `Konto ${email} zostanie trwale usunięte. Tej operacji nie można cofnąć.`,
+      confirmText: "Usuń użytkownika",
+      variant: "danger",
+    });
+    if (!ok) return;
+    deleteUserMutation.mutate(userId, {
+      onSuccess: () => addToast("Usunięto", "success"),
+      onError: (err) =>
+        addToast(err instanceof Error ? err.message : "Błąd", "error"),
+    });
   };
 
   return (

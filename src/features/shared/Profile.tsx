@@ -20,6 +20,7 @@ import {
   type SocialLinkDto,
 } from "./api/useProfileQueries";
 import { useToastStore } from "@/store/useToastStore";
+import { useConfirmStore } from "@/store/useConfirmStore";
 import PageHeader from "@/components/ui/PageHeader";
 import ThemeSwitcher from "@/components/ui/ThemeSwitcher";
 import PasswordInput from "@/components/ui/PasswordInput";
@@ -50,6 +51,7 @@ const Profile = () => {
   const changePasswordMutation = useChangePassword();
   const deleteAccountMutation = useDeleteAccount();
   const addToast = useToastStore((state) => state.addToast);
+  const confirm = useConfirmStore((state) => state.confirm);
 
   const detailsForm = useForm<DetailsInputs>({
     resolver: zodResolver(detailsSchema),
@@ -148,20 +150,22 @@ const Profile = () => {
     });
   };
 
-  const handleDeleteAccount = () => {
-    if (
-      window.confirm(
-        "Zostaniesz wylogowany. Usunięcie jest nieodwracalne. Jesteś pewien?",
-      )
-    ) {
-      deleteAccountMutation.mutate(
-        { password: deletePass },
-        {
-          onError: (err) =>
-            addToast(err instanceof Error ? err.message : "Błąd", "error"),
-        },
-      );
-    }
+  const handleDeleteAccount = async () => {
+    const ok = await confirm({
+      title: "Usunąć konto?",
+      message:
+        "Zostaniesz wylogowany, a wszystkie Twoje dane zostaną trwale usunięte. Tej operacji nie można cofnąć.",
+      confirmText: "Usuń konto",
+      variant: "danger",
+    });
+    if (!ok) return;
+    deleteAccountMutation.mutate(
+      { password: deletePass },
+      {
+        onError: (err) =>
+          addToast(err instanceof Error ? err.message : "Błąd", "error"),
+      },
+    );
   };
 
   // Grayed reference to the currently-saved value (what the user is editing

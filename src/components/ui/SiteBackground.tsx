@@ -80,15 +80,18 @@ const SiteBackground = () => {
           variant="circle"
           pixelSize={6}
           color={THEME_COLOR[theme] ?? "#6A1FE6"}
-          patternScale={3}
+          // Niższa skala = większe, dłuższe „fale"; wolny `speed` = powolny,
+          // morski rytm. Delikatny liquid o niskiej częstotliwości = mniej
+          // gwałtowne falowanie pod kursorem.
+          patternScale={1.6}
           patternDensity={0.9}
-          speed={0.4}
+          speed={0.1}
           edgeFade={0.4}
           enableRipples={false}
           liquid
-          liquidStrength={0.045}
-          liquidRadius={0.8}
-          liquidWobbleSpeed={4}
+          liquidStrength={0.028}
+          liquidRadius={1.1}
+          liquidWobbleSpeed={1.4}
           transparent
           maxPixelRatio={1}
         />

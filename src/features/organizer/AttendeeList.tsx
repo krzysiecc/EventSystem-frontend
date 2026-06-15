@@ -14,6 +14,7 @@ import {
   useDeleteTicket,
 } from "./api/useEvents";
 import { useToastStore } from "@/store/useToastStore";
+import { useConfirmStore } from "@/store/useConfirmStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import PageHeader from "@/components/ui/PageHeader";
 
@@ -24,35 +25,49 @@ const AttendeeList = () => {
   const resetMutation = useResetTicketScan(id);
   const deleteTicketMutation = useDeleteTicket(id);
   const addToast = useToastStore((state) => state.addToast);
+  const confirm = useConfirmStore((state) => state.confirm);
   const isAdmin = useAuthStore((state) => state.user?.role === "Admin");
 
-  const handleManualCheckIn = (scanToken: string) => {
-    if (window.confirm("Czy na pewno chcesz ręcznie potwierdzić ten bilet?")) {
-      checkInMutation.mutate(scanToken, {
-        onSuccess: () => addToast("Bilet skasowany pomyślnie!", "success"),
-        onError: () => addToast("Błąd podczas kasowania biletu.", "error"),
-      });
-    }
+  const handleManualCheckIn = async (scanToken: string) => {
+    const ok = await confirm({
+      title: "Wpuścić uczestnika?",
+      message: "Bilet zostanie ręcznie oznaczony jako zużyty (obecny).",
+      confirmText: "Wpuść",
+    });
+    if (!ok) return;
+    checkInMutation.mutate(scanToken, {
+      onSuccess: () => addToast("Bilet skasowany pomyślnie!", "success"),
+      onError: () => addToast("Błąd podczas kasowania biletu.", "error"),
+    });
   };
 
   // (ADMIN) cofnięcie błędnego skanu — przywraca bilet do stanu „oczekuje"
-  const handleResetScan = (scanToken: string) => {
-    if (window.confirm("Cofnąć wejście (reset skanu) dla tego biletu?")) {
-      resetMutation.mutate(scanToken, {
-        onSuccess: () => addToast("Skan cofnięty.", "success"),
-        onError: () => addToast("Nie udało się cofnąć skanu.", "error"),
-      });
-    }
+  const handleResetScan = async (scanToken: string) => {
+    const ok = await confirm({
+      title: "Cofnąć wejście?",
+      message: "Reset skanu przywróci bilet do stanu „oczekuje”.",
+      confirmText: "Cofnij wejście",
+    });
+    if (!ok) return;
+    resetMutation.mutate(scanToken, {
+      onSuccess: () => addToast("Skan cofnięty.", "success"),
+      onError: () => addToast("Nie udało się cofnąć skanu.", "error"),
+    });
   };
 
   // (ADMIN) usunięcie biletu — np. przypadkowy zapis na wydarzenie
-  const handleDeleteTicket = (ticketId: number) => {
-    if (window.confirm("Usunąć bilet tego uczestnika? Zwolni to miejsce.")) {
-      deleteTicketMutation.mutate(ticketId, {
-        onSuccess: () => addToast("Bilet usunięty.", "success"),
-        onError: () => addToast("Nie udało się usunąć biletu.", "error"),
-      });
-    }
+  const handleDeleteTicket = async (ticketId: number) => {
+    const ok = await confirm({
+      title: "Usunąć bilet?",
+      message: "Bilet tego uczestnika zostanie usunięty i zwolni miejsce.",
+      confirmText: "Usuń bilet",
+      variant: "danger",
+    });
+    if (!ok) return;
+    deleteTicketMutation.mutate(ticketId, {
+      onSuccess: () => addToast("Bilet usunięty.", "success"),
+      onError: () => addToast("Nie udało się usunąć biletu.", "error"),
+    });
   };
 
   if (isLoading) return <div className="p-6">Ładowanie uczestników...</div>;

@@ -12,6 +12,7 @@ import {
   useUploadEventImage,
 } from "./api/useEvents";
 import { useToastStore } from "@/store/useToastStore";
+import { useConfirmStore } from "@/store/useConfirmStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import LocationPicker, {
   type LocationValue,
@@ -54,6 +55,7 @@ const EditEvent = () => {
   const deleteMutation = useDeleteEvent();
   const uploadImageMutation = useUploadEventImage();
   const addToast = useToastStore((state) => state.addToast);
+  const confirm = useConfirmStore((state) => state.confirm);
   const isAdmin = useAuthStore((state) => state.user?.role === "Admin");
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -145,21 +147,23 @@ const EditEvent = () => {
     );
   };
 
-  const handleDelete = () => {
-    if (
-      window.confirm(
-        "Czy na pewno chcesz usunąć to wydarzenie? Upewnij się, że nie ma zarejestrowanych osób.",
-      )
-    ) {
-      deleteMutation.mutate(id!, {
-        onSuccess: () => {
-          addToast("Usunięto wydarzenie", "success");
-          navigate(isAdmin ? "/admin/events" : "/organizer/events");
-        },
-        onError: (err: unknown) =>
-          addToast(err instanceof Error ? err.message : "Błąd", "error"),
-      });
-    }
+  const handleDelete = async () => {
+    const ok = await confirm({
+      title: "Usunąć wydarzenie?",
+      message:
+        "Wydarzenie zostanie trwale usunięte. Upewnij się, że nie ma zarejestrowanych osób.",
+      confirmText: "Usuń wydarzenie",
+      variant: "danger",
+    });
+    if (!ok) return;
+    deleteMutation.mutate(id!, {
+      onSuccess: () => {
+        addToast("Usunięto wydarzenie", "success");
+        navigate(isAdmin ? "/admin/events" : "/organizer/events");
+      },
+      onError: (err: unknown) =>
+        addToast(err instanceof Error ? err.message : "Błąd", "error"),
+    });
   };
 
   return (

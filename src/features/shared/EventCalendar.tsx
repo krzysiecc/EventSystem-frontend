@@ -83,43 +83,55 @@ const EventCalendar = () => {
   const totalCells = Math.ceil((firstDow + daysInMonth) / 7) * 7;
   const todayKey = keyOf(init);
 
-  // Delikatne przechylenie całej siatki względem środka kalendarza: kursor na
-  // środku = zero ruchu, im dalej od środka, tym mocniejsze (ale subtelne)
-  // pochylenie wszystkich kostek (tylko mysz, bez reduced-motion).
+  // Każda kostka przechyla się OSOBNO względem kursora: liczymy odległość
+  // kursora od środka danej kostki, więc powierzchnia siatki „ugina się" wokół
+  // myszy falą — kostki bliżej kursora reagują mocniej, dalsze leżą płasko.
+  // (tylko mysz, bez reduced-motion). gsap.quickTo = płynnie, bez tworzenia
+  // nowego tweena na każdy ruch myszy.
   useEffect(() => {
     const grid = gridRef.current;
     if (!grid) return;
     if (!window.matchMedia("(hover: hover)").matches) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-    const maxAngle = 12;
-    let raf = 0;
+    const maxAngle = 18;
+    const falloff = 200; // px — zasięg, w jakim kostka reaguje na kursor
 
-    const tiltTo = (nx: number, ny: number) => {
-      gsap.to(grid.querySelectorAll<HTMLElement>(".cal-cube"), {
-        duration: 0.4,
-        ease: "power3.out",
-        overwrite: true,
-        rotateX: -ny * maxAngle,
-        rotateY: nx * maxAngle,
-      });
+    const cubes = Array.from(grid.querySelectorAll<HTMLElement>(".cal-cube"));
+    const setters = cubes.map((el) => ({
+      el,
+      rx: gsap.quickTo(el, "rotateX", { duration: 0.5, ease: "power3.out" }),
+      ry: gsap.quickTo(el, "rotateY", { duration: 0.5, ease: "power3.out" }),
+    }));
+
+    let raf = 0;
+    let last: { x: number; y: number } | null = null;
+
+    const apply = () => {
+      raf = 0;
+      if (!last) return;
+      for (const { el, rx, ry } of setters) {
+        const r = el.getBoundingClientRect();
+        const cx = r.left + r.width / 2;
+        const cy = r.top + r.height / 2;
+        // Offset kursora od środka TEJ kostki, znormalizowany i przycięty.
+        const nx = Math.max(-1, Math.min(1, (last.x - cx) / falloff));
+        const ny = Math.max(-1, Math.min(1, (last.y - cy) / falloff));
+        rx(-ny * maxAngle);
+        ry(nx * maxAngle);
+      }
     };
 
     const onMove = (e: PointerEvent) => {
-      const rect = grid.getBoundingClientRect();
-      // Przesunięcie kursora od środka, znormalizowane do ~[-1, 1].
-      const nx = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-      const ny = ((e.clientY - rect.top) / rect.height) * 2 - 1;
-      if (raf) cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => tiltTo(nx, ny));
+      last = { x: e.clientX, y: e.clientY };
+      if (!raf) raf = requestAnimationFrame(apply);
     };
     const reset = () => {
-      gsap.to(grid.querySelectorAll<HTMLElement>(".cal-cube"), {
-        duration: 0.6,
-        ease: "power3.out",
-        rotateX: 0,
-        rotateY: 0,
-      });
+      last = null;
+      for (const { rx, ry } of setters) {
+        rx(0);
+        ry(0);
+      }
     };
 
     grid.addEventListener("pointermove", onMove);
@@ -128,7 +140,7 @@ const EventCalendar = () => {
       grid.removeEventListener("pointermove", onMove);
       grid.removeEventListener("pointerleave", reset);
       if (raf) cancelAnimationFrame(raf);
-      gsap.killTweensOf(grid.querySelectorAll(".cal-cube"));
+      gsap.killTweensOf(cubes);
     };
   }, [year, month]);
 
@@ -173,7 +185,7 @@ const EventCalendar = () => {
   const years = Array.from({ length: 7 }, (_, i) => init.getFullYear() - 2 + i);
 
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="mx-auto max-w-xl">
       <PageHeader
         kicker="Kalendarz"
         title="Wydarzenia"
@@ -238,7 +250,7 @@ const EventCalendar = () => {
       </div>
 
       {/* Nagłówki dni tygodnia */}
-      <div className="mb-2 grid grid-cols-7 gap-1.5 sm:gap-2">
+      <div className="mb-3 grid grid-cols-7 gap-3 sm:gap-4">
         {WEEKDAYS.map((d) => (
           <div
             key={d}
@@ -250,7 +262,7 @@ const EventCalendar = () => {
       </div>
 
       {/* Siatka kostek */}
-      <div ref={gridRef} className="cal-scene grid grid-cols-7 gap-1.5 sm:gap-2">
+      <div ref={gridRef} className="cal-scene grid grid-cols-7 gap-3 sm:gap-4">
         {Array.from({ length: totalCells }, (_, index) => {
           const dayNum = index - firstDow + 1;
           if (dayNum < 1 || dayNum > daysInMonth) {
