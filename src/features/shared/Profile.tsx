@@ -42,7 +42,7 @@ type DetailsInputs = z.infer<typeof detailsSchema>;
 type PasswordInputs = z.infer<typeof passwordSchema>;
 
 const inputClass =
-  "w-full rounded-md border border-border-medium bg-bg-tertiary p-2 text-text-primary focus:border-accent-primary focus:outline-none focus:ring-1 focus:ring-accent-primary";
+  "w-full rounded-md border border-border-medium bg-bg-tertiary px-2.5 py-1.5 text-sm text-text-primary focus:border-accent-primary focus:outline-none focus:ring-1 focus:ring-accent-primary";
 
 const Profile = () => {
   const { data: profile, isLoading } = useMyProfile();
@@ -177,20 +177,23 @@ const Profile = () => {
   );
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="mx-auto max-w-5xl space-y-5">
       <PageHeader kicker="Konto" title="Zarządzanie profilem" />
 
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 lg:items-start">
+        {/* LEWA KOLUMNA */}
+        <div className="space-y-5">
       {/* DANE PODSTAWOWE */}
-      <section className="rounded-xl border border-border-light bg-surface-raised p-6 shadow-sm">
-        <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-text-primary">
-          <User size={18} className="text-accent-primary" />
+      <section className="rounded-xl border border-border-light bg-surface-raised p-5 shadow-sm">
+        <h2 className="mb-3 flex items-center gap-2 text-base font-semibold text-text-primary">
+          <User size={17} className="text-accent-primary" />
           Dane podstawowe
         </h2>
         <form
           onSubmit={detailsForm.handleSubmit(handleUpdateDetails)}
-          className="space-y-4"
+          className="space-y-3"
         >
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <input
                 type="text"
@@ -247,10 +250,43 @@ const Profile = () => {
         </form>
       </section>
 
+      {/* ZMIANA HASŁA */}
+      <section className="rounded-xl border border-border-light bg-surface-raised p-5 shadow-sm">
+        <h2 className="mb-3 flex items-center gap-2 text-base font-semibold text-text-primary">
+          <KeyRound size={17} className="text-accent-primary" />
+          Zmień hasło
+        </h2>
+        <form
+          onSubmit={passwordForm.handleSubmit(handleChangePassword)}
+          className="space-y-3"
+        >
+          <PasswordInput
+            placeholder="Obecne hasło"
+            {...passwordForm.register("currentPassword")}
+            className={inputClass}
+          />
+          <PasswordInput
+            placeholder="Nowe hasło"
+            {...passwordForm.register("newPassword")}
+            className={inputClass}
+          />
+          <button
+            type="submit"
+            disabled={changePasswordMutation.isPending}
+            className="rounded-md bg-accent-primary px-4 py-2 text-sm text-text-on-accent transition hover:bg-accent-hover disabled:opacity-50"
+          >
+            Zaktualizuj hasło
+          </button>
+        </form>
+      </section>
+        </div>
+
+        {/* PRAWA KOLUMNA */}
+        <div className="space-y-5">
       {/* WYGLĄD / MOTYW */}
-      <section className="rounded-xl border border-border-light bg-surface-raised p-6 shadow-sm">
-        <h2 className="mb-1 flex items-center gap-2 text-lg font-semibold text-text-primary">
-          <Palette size={18} className="text-accent-primary" />
+      <section className="rounded-xl border border-border-light bg-surface-raised p-5 shadow-sm">
+        <h2 className="mb-1 flex items-center gap-2 text-base font-semibold text-text-primary">
+          <Palette size={17} className="text-accent-primary" />
           Wygląd
         </h2>
         <p className="mb-4 text-sm text-text-secondary">
@@ -261,18 +297,18 @@ const Profile = () => {
       </section>
 
       {/* PROFIL PUBLICZNY */}
-      <section className="rounded-xl border border-border-light bg-surface-raised p-6 shadow-sm">
-        <h2 className="mb-1 flex items-center gap-2 text-lg font-semibold text-text-primary">
-          <Globe size={18} className="text-accent-primary" />
+      <section className="rounded-xl border border-border-light bg-surface-raised p-5 shadow-sm">
+        <h2 className="mb-1 flex items-center gap-2 text-base font-semibold text-text-primary">
+          <Globe size={17} className="text-accent-primary" />
           Profil publiczny
         </h2>
         <p className="mb-4 text-sm text-text-secondary">
           Bio i linki widoczne dla innych użytkowników na Twoim profilu.
         </p>
-        <form onSubmit={handleUpdatePublicProfile} className="space-y-4">
+        <form onSubmit={handleUpdatePublicProfile} className="space-y-3">
           <div>
             <textarea
-              rows={4}
+              rows={3}
               placeholder="Napisz coś o sobie..."
               value={bio}
               onChange={(e) => setBio(e.target.value)}
@@ -327,49 +363,17 @@ const Profile = () => {
           <button
             type="submit"
             disabled={updateProfileMutation.isPending}
-            className="rounded-md bg-accent-primary px-4 py-2 text-text-on-accent transition hover:bg-accent-hover disabled:opacity-50"
+            className="rounded-md bg-accent-primary px-4 py-2 text-sm text-text-on-accent transition hover:bg-accent-hover disabled:opacity-50"
           >
             Zapisz profil publiczny
           </button>
         </form>
       </section>
-
-      {/* ZMIANA HASŁA */}
-      <section className="rounded-xl border border-border-light bg-surface-raised p-6 shadow-sm">
-        <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-text-primary">
-          <KeyRound size={18} className="text-accent-primary" />
-          Zmień hasło
-        </h2>
-        <form
-          onSubmit={passwordForm.handleSubmit(handleChangePassword)}
-          className="space-y-4"
-        >
-          <div>
-            <PasswordInput
-              placeholder="Obecne hasło"
-              {...passwordForm.register("currentPassword")}
-              className={inputClass}
-            />
-          </div>
-          <div>
-            <PasswordInput
-              placeholder="Nowe hasło"
-              {...passwordForm.register("newPassword")}
-              className={inputClass}
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={changePasswordMutation.isPending}
-            className="rounded-md bg-accent-primary px-4 py-2 text-text-on-accent transition hover:bg-accent-hover disabled:opacity-50"
-          >
-            Zaktualizuj hasło
-          </button>
-        </form>
-      </section>
+        </div>
+      </div>
 
       {/* DANGER ZONE */}
-      <section className="rounded-xl border border-status-error bg-status-error-bg p-6">
+      <section className="rounded-xl border border-status-error bg-status-error-bg p-5">
         <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-status-error">
           <AlertTriangle size={18} />
           Strefa niebezpieczna
@@ -383,7 +387,7 @@ const Profile = () => {
             placeholder="Potwierdź hasłem"
             value={deletePass}
             onChange={(e) => setDeletePass(e.target.value)}
-            className="w-full rounded-md border border-status-error bg-bg-tertiary p-2 text-text-primary focus:outline-none focus:ring-2 focus:ring-status-error"
+            className="w-full rounded-md border border-status-error bg-bg-tertiary px-2.5 py-1.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-status-error"
           />
           <button
             onClick={handleDeleteAccount}

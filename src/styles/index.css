@@ -276,6 +276,19 @@
     animation: scroll-hint 1.4s ease-in-out infinite;
   }
 
+  /* ruchomy pasek-karuzela statusu wydarzenia (EventLiveBar) */
+  @keyframes marquee {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
+  .animate-marquee {
+    animation: marquee 14s linear infinite;
+  }
+
   /* dekoracyjna geometria ekranu logowania */
   @keyframes geo-spin {
     to {
@@ -305,6 +318,7 @@
     .animate-rise,
     .animate-fade-in,
     .animate-scroll-hint,
+    .animate-marquee,
     .animate-geo-spin,
     .animate-geo-spin-rev,
     .animate-geo-float {

@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   CalendarDays,
   MapPin,
@@ -6,7 +7,7 @@ import {
   Search,
   X,
   Loader2,
-  Check,
+  QrCode,
 } from "lucide-react";
 import {
   useAllEvents,
@@ -40,6 +41,7 @@ const inputClass =
   "w-full rounded-md border border-border-medium bg-bg-tertiary px-3 py-2 text-sm text-text-primary focus:border-accent-primary focus:outline-none focus:ring-1 focus:ring-accent-primary";
 
 const EventBrowser = () => {
+  const navigate = useNavigate();
   const { data: events, isLoading } = useAllEvents();
   const { data: tickets } = useMyTickets();
   const registerMutation = useRegisterForEvent();
@@ -65,6 +67,16 @@ const EventBrowser = () => {
   const [search, setSearch] = useState("");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
+
+  // Masz już bilet → przejdź do niego (kod QR). W przeciwnym razie zapisz się.
+  const goToTicketOrRegister = (event: PublicEvent) => {
+    const myTicket = ticketForEvent(event);
+    if (myTicket) {
+      navigate(`/student/tickets/${myTicket.id}`);
+      return;
+    }
+    handleRegister(event.id.toString());
+  };
 
   const handleRegister = (eventId: string) => {
     setPendingEventId(eventId);
@@ -226,22 +238,26 @@ const EventBrowser = () => {
                   </span>
                 </div>
                 <button
-                  onClick={() => handleRegister(event.id.toString())}
-                  disabled={isFull || isThisCardPending || hasTicket}
-                  aria-label={hasTicket ? "Masz już bilet" : "Pobierz bilet"}
+                  onClick={() => goToTicketOrRegister(event)}
+                  disabled={(isFull && !hasTicket) || isThisCardPending}
+                  aria-label={hasTicket ? "Pokaż bilet" : "Pobierz bilet"}
                   title={
-                    usedTicket
-                      ? "Bilet zużyty"
-                      : hasTicket
-                        ? "Masz już bilet"
-                        : "Pobierz bilet"
+                    hasTicket
+                      ? usedTicket
+                        ? "Pokaż bilet (zużyty)"
+                        : "Pokaż bilet"
+                      : "Pobierz bilet"
                   }
-                  className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-accent-primary text-text-on-accent transition hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
+                  className={`grid h-9 w-9 shrink-0 place-items-center rounded-md transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                    hasTicket
+                      ? "border border-accent-primary text-accent-primary hover:bg-accent-subtle"
+                      : "bg-accent-primary text-text-on-accent hover:bg-accent-hover"
+                  }`}
                 >
                   {isThisCardPending ? (
                     <Loader2 size={16} className="animate-spin" />
                   ) : hasTicket ? (
-                    <Check size={16} />
+                    <QrCode size={16} />
                   ) : (
                     <ArrowRight size={16} />
                   )}
@@ -313,22 +329,28 @@ const EventBrowser = () => {
 
               <div className="border-t border-border-light p-4">
                 <button
-                  onClick={() => handleRegister(event.id.toString())}
-                  disabled={isFull || isThisCardPending || hasTicket}
-                  className="flex w-full items-center justify-center gap-2 rounded-md bg-accent-primary py-2 font-medium text-text-on-accent transition hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
+                  onClick={() => goToTicketOrRegister(event)}
+                  disabled={(isFull && !hasTicket) || isThisCardPending}
+                  className={`flex w-full items-center justify-center gap-2 rounded-md py-2 font-medium transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                    hasTicket
+                      ? "border border-accent-primary text-accent-primary hover:bg-accent-subtle"
+                      : "bg-accent-primary text-text-on-accent hover:bg-accent-hover"
+                  }`}
                 >
                   {isThisCardPending
                     ? "Przetwarzanie..."
-                    : usedTicket
-                      ? "Bilet zużyty"
-                      : hasTicket
-                        ? "Masz już bilet"
-                        : isFull
-                          ? "Brak miejsc"
-                          : "Pobierz bilet"}
-                  {!isFull && !isThisCardPending && !hasTicket && (
+                    : hasTicket
+                      ? usedTicket
+                        ? "Pokaż bilet (zużyty)"
+                        : "Pokaż bilet"
+                      : isFull
+                        ? "Brak miejsc"
+                        : "Pobierz bilet"}
+                  {hasTicket ? (
+                    <QrCode size={15} />
+                  ) : !isFull && !isThisCardPending ? (
                     <ArrowRight size={15} />
-                  )}
+                  ) : null}
                 </button>
               </div>
             </div>

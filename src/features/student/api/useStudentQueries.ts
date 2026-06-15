@@ -1,5 +1,7 @@
+import { useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient, apiFetch } from "@/lib/apiClient";
+import type { EventDateLike } from "@/lib/eventDate";
 
 export interface PublicEvent {
   id: number;
@@ -22,7 +24,11 @@ export interface Ticket {
    *  Opcjonalne: gdy backend go nie zwraca, dopasowujemy po tytule. */
   eventId?: number;
   eventTitle: string;
+  /** Start wydarzenia (zachowane dla zgodności; równe `startDate`). */
   eventDate: string;
+  /** Zakres start/koniec — gdy backend zwraca od→do na bilecie. */
+  startDate?: string;
+  endDate?: string;
   location: string;
   qrCodeContent: string;
   isScanned: boolean;
@@ -76,4 +82,36 @@ export const useEventDetails = (id: string | undefined) => {
     queryFn: () => apiFetch<PublicEvent>(`/events/${id}`),
     enabled: !!id,
   });
+};
+
+/**
+ * @description Łączy bilet z pasującym wydarzeniem (po `eventId`, a w razie braku
+ * po tytule) i zwraca pola dat w formacie `EventDateLike`. Dzięki temu zakres
+ * start→koniec działa nawet gdy backend nie dołącza go bezpośrednio do biletu, a
+ * zna go z listy wydarzeń.
+ */
+export const ticketDateLike = (t: Ticket, evt?: PublicEvent): EventDateLike => ({
+  date: t.eventDate,
+  startDate: t.startDate ?? evt?.startDate ?? evt?.date,
+  endDate: t.endDate ?? evt?.endDate,
+});
+
+/**
+ * @description Zwraca funkcję dopasowującą wydarzenie do biletu na podstawie listy
+ * `/events`. Wydarzenia, które już się rozpoczęły, backend może z tej listy
+ * usuwać — wtedy dla biletu zostają jego własne pola (eventDate/startDate/endDate).
+ */
+export const useEventForTicket = () => {
+  const { data: events } = useAllEvents();
+  return useMemo(() => {
+    const byId = new Map<number, PublicEvent>();
+    const byTitle = new Map<string, PublicEvent>();
+    (events ?? []).forEach((e) => {
+      byId.set(e.id, e);
+      byTitle.set(e.title.trim().toLowerCase(), e);
+    });
+    return (t: Ticket): PublicEvent | undefined =>
+      (t.eventId != null ? byId.get(t.eventId) : undefined) ??
+      byTitle.get(t.eventTitle.trim().toLowerCase());
+  }, [events]);
 };

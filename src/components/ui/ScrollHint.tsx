@@ -41,26 +41,43 @@ const ScrollHint = () => {
   const showUp = !atTop;
   const showDown = !atBottom;
 
+  // Strzałki zostają zamontowane, a pojawianie/znikanie robimy przez przejście
+  // opacity (fade), więc nie „skaczą" — wewnętrzny element nadal pulsuje
+  // (animate-scroll-hint), a opakowanie steruje płynnym wygaszaniem.
   return (
     <div className="pointer-events-none fixed right-2.5 top-1/2 z-40 hidden -translate-y-1/2 flex-col items-center gap-4 sm:flex">
       {/* Powrót na samą górę — nad podpowiedziami, bez osobnego boksu */}
-      {showUp && (
-        <button
-          type="button"
-          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-          aria-label="Przewiń na samą górę"
-          title="Na samą górę"
-          className="pointer-events-auto text-text-secondary transition hover:text-accent-primary"
-        >
-          <ChevronsUp size={28} strokeWidth={2.25} />
-        </button>
-      )}
-      {showUp && (
+      <button
+        type="button"
+        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+        aria-label="Przewiń na samą górę"
+        title="Na samą górę"
+        aria-hidden={!showUp}
+        tabIndex={showUp ? 0 : -1}
+        className={`text-text-secondary transition-opacity duration-500 hover:text-accent-primary ${
+          showUp
+            ? "pointer-events-auto opacity-100"
+            : "pointer-events-none opacity-0"
+        }`}
+      >
+        <ChevronsUp size={28} strokeWidth={2.25} />
+      </button>
+      <span
+        aria-hidden="true"
+        className={`transition-opacity duration-500 ${
+          showUp ? "opacity-100" : "opacity-0"
+        }`}
+      >
         <ChevronUp size={24} className="animate-scroll-hint text-text-muted" />
-      )}
-      {showDown && (
+      </span>
+      <span
+        aria-hidden="true"
+        className={`transition-opacity duration-500 ${
+          showDown ? "opacity-100" : "opacity-0"
+        }`}
+      >
         <ChevronDown size={24} className="animate-scroll-hint text-text-muted" />
-      )}
+      </span>
     </div>
   );
 };

@@ -35,6 +35,40 @@ const timeFmt = new Intl.DateTimeFormat("pl-PL", {
 export const eventStart = (evt: EventDateLike): Date =>
   new Date(evt.startDate ?? evt.date);
 
+/** Data końca wydarzenia (endDate). `null`, gdy brak/niepoprawna. */
+export const eventEnd = (evt: EventDateLike): Date | null => {
+  if (!evt.endDate) return null;
+  const d = new Date(evt.endDate);
+  return Number.isNaN(d.getTime()) ? null : d;
+};
+
+/** Okno po starcie, w którym pokazujemy „właśnie się rozpoczęło”. */
+export const JUST_STARTED_MS = 5 * 60 * 1000;
+
+/**
+ * @description Faza życia wydarzenia względem chwili `now`:
+ * - `upcoming`  — jeszcze się nie zaczęło,
+ * - `starting`  — pierwsze 5 minut po starcie („właśnie się rozpoczęło”),
+ * - `live`      — trwa (po 5 min, przed końcem),
+ * - `ended`     — po `endDate` (gdy znamy koniec).
+ * Gdy nie znamy końca, po starcie zostaje `starting`/`live` (nie wygasa).
+ */
+export type EventPhase = "upcoming" | "starting" | "live" | "ended";
+
+export const getEventPhase = (
+  evt: EventDateLike,
+  now: number = Date.now(),
+): EventPhase => {
+  const start = eventStart(evt).getTime();
+  if (Number.isNaN(start)) return "upcoming";
+  if (now < start) return "upcoming";
+
+  const end = eventEnd(evt)?.getTime() ?? null;
+  if (end != null && now >= end) return "ended";
+  if (now < start + JUST_STARTED_MS) return "starting";
+  return "live";
+};
+
 /**
  * @description Zwraca tekst daty wydarzenia. Jeśli istnieje sensowny `endDate`,
  * renderuje zakres; przy tym samym dniu z czasem skraca koniec do samej godziny.

@@ -1,6 +1,17 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, CalendarDays, MapPin, Users, Ticket } from "lucide-react";
-import { useEventDetails, useRegisterForEvent } from "./api/useStudentQueries";
+import {
+  ArrowLeft,
+  CalendarDays,
+  MapPin,
+  Users,
+  Ticket,
+  QrCode,
+} from "lucide-react";
+import {
+  useEventDetails,
+  useRegisterForEvent,
+  useMyTickets,
+} from "./api/useStudentQueries";
 import { useToastStore } from "@/store/useToastStore";
 import { formatEventDate } from "@/lib/eventDate";
 
@@ -8,6 +19,7 @@ const EventDetailsStudent = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: event, isLoading, isError } = useEventDetails(id);
+  const { data: tickets } = useMyTickets();
   const registerMutation = useRegisterForEvent();
   const addToast = useToastStore((state) => state.addToast);
 
@@ -16,6 +28,13 @@ const EventDetailsStudent = () => {
     return (
       <div className="p-6 text-status-error">Nie znaleziono wydarzenia.</div>
     );
+
+  // Masz już bilet na to wydarzenie? Zamiast zapisu — link do kodu QR biletu.
+  const existingTicket = (tickets ?? []).find(
+    (t) =>
+      (t.eventId != null && t.eventId === event.id) ||
+      t.eventTitle.trim().toLowerCase() === event.title.trim().toLowerCase(),
+  );
 
   const handleRegister = () => {
     registerMutation.mutate(event.id.toString(), {
@@ -92,18 +111,28 @@ const EventDetailsStudent = () => {
           </p>
         </div>
 
-        <button
-          onClick={handleRegister}
-          disabled={isFull || registerMutation.isPending}
-          className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-accent-primary px-8 py-3 text-lg font-bold text-text-on-accent transition hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50 md:w-auto"
-        >
-          <Ticket size={18} />
-          {registerMutation.isPending
-            ? "Przetwarzanie..."
-            : isFull
-              ? "Brak miejsc"
-              : "Odbierz darmowy bilet"}
-        </button>
+        {existingTicket ? (
+          <Link
+            to={`/student/tickets/${existingTicket.id}`}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-accent-primary px-8 py-3 text-lg font-bold text-accent-primary transition hover:bg-accent-subtle md:w-auto"
+          >
+            <QrCode size={18} />
+            {existingTicket.isScanned ? "Pokaż bilet (zużyty)" : "Pokaż swój bilet"}
+          </Link>
+        ) : (
+          <button
+            onClick={handleRegister}
+            disabled={isFull || registerMutation.isPending}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-accent-primary px-8 py-3 text-lg font-bold text-text-on-accent transition hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50 md:w-auto"
+          >
+            <Ticket size={18} />
+            {registerMutation.isPending
+              ? "Przetwarzanie..."
+              : isFull
+                ? "Brak miejsc"
+                : "Odbierz darmowy bilet"}
+          </button>
+        )}
       </div>
     </div>
   );
