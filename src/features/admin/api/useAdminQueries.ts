@@ -25,11 +25,13 @@ export interface AdminEventDTO {
   id: number;
   title: string;
   organizerName: string;
+  organizerEmail: string;
   date: string;
-  /** Zakres start/koniec — backend dostosuje DTO; na razie `date` = start. */
+  /** Zakres start/koniec; `date` = start dla kompatybilności. */
   startDate?: string;
   endDate?: string;
   enrolledCount: number;
+  scannedCount: number;
   maxCapacity: number;
   status: string;
 }

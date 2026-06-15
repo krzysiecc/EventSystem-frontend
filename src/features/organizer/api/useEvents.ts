@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient, apiFetch } from "@/lib/apiClient";
+import { useAuthStore } from "@/store/useAuthStore";
 
 export interface OrganizerEvent {
   id: number;
@@ -51,11 +52,16 @@ export const useOrganizerEvents = () => {
  * @returns {OrganizerEvent}            detailed information about the event
  */
 export const useOrganizerEventDetails = (eventId: string | undefined) => {
+  const isAdmin = useAuthStore((state) => state.user?.role === "Admin");
   return useQuery({
     queryKey: ["organizer", "events", eventId],
     queryFn: async (): Promise<OrganizerEvent> => {
       if (!eventId) throw new Error("Brak ID");
-      return apiFetch<OrganizerEvent>(`/events/${eventId}`);
+      // Admin edytuje/ogląda cudze wydarzenia → adminowy endpoint
+      // (AdminEventDto jest supersetem OrganizerEvent — ma komplet pól do edycji).
+      return apiFetch<OrganizerEvent>(
+        isAdmin ? `/admin/events/${eventId}` : `/events/${eventId}`,
+      );
     },
     enabled: !!eventId,
   });
@@ -68,11 +74,17 @@ export const useOrganizerEventDetails = (eventId: string | undefined) => {
  * @returns {Attendee[]}                list of attendees for the event
  */
 export const useEventAttendees = (eventId: string | undefined) => {
+  const isAdmin = useAuthStore((state) => state.user?.role === "Admin");
   return useQuery({
     queryKey: ["organizer", "events", eventId, "attendees"],
     queryFn: async (): Promise<Attendee[]> => {
       if (!eventId) throw new Error("Brak ID");
-      return apiFetch<Attendee[]>(`/events/${eventId}/attendees`);
+      // Admin ogląda cudze wydarzenia → endpoint adminowy (bez sprawdzania właściciela)
+      return apiFetch<Attendee[]>(
+        isAdmin
+          ? `/admin/events/${eventId}/attendees`
+          : `/events/${eventId}/attendees`,
+      );
     },
     enabled: !!eventId,
   });
@@ -87,12 +99,17 @@ export const useEventAttendees = (eventId: string | undefined) => {
  */
 export const useManualCheckIn = (eventId: string | undefined) => {
   const queryClient = useQueryClient();
+  const isAdmin = useAuthStore((state) => state.user?.role === "Admin");
 
   return useMutation({
     mutationFn: async (scanToken: string) => {
-      const response = await apiClient(`/tickets/scan/${scanToken}`, {
-        method: "POST",
-      });
+      // Admin wpuszcza na dowolne wydarzenie → adminowy scan (bez checku właściciela)
+      const response = await apiClient(
+        isAdmin
+          ? `/admin/tickets/${scanToken}/scan`
+          : `/tickets/scan/${scanToken}`,
+        { method: "POST" },
+      );
       return response.json();
     },
     onSuccess: () => {
@@ -154,6 +171,7 @@ export const useDeleteTicket = (eventId: string | undefined) => {
  */
 export const useUpdateEvent = () => {
   const queryClient = useQueryClient();
+  const isAdmin = useAuthStore((state) => state.user?.role === "Admin");
   return useMutation({
     mutationFn: async ({
       id,
@@ -162,10 +180,13 @@ export const useUpdateEvent = () => {
       id: string;
       data: Partial<OrganizerEvent>;
     }) => {
-      const response = await apiClient(`/events/${id}`, {
-        method: "PUT",
-        body: JSON.stringify(data),
-      });
+      const response = await apiClient(
+        isAdmin ? `/admin/events/${id}` : `/events/${id}`,
+        {
+          method: "PUT",
+          body: JSON.stringify(data),
+        },
+      );
       return response.json();
     },
     onSuccess: (_, variables) => {
@@ -184,9 +205,13 @@ export const useUpdateEvent = () => {
  */
 export const useDeleteEvent = () => {
   const queryClient = useQueryClient();
+  const isAdmin = useAuthStore((state) => state.user?.role === "Admin");
   return useMutation({
     mutationFn: async (id: string) => {
-      const response = await apiClient(`/events/${id}`, { method: "DELETE" });
+      const response = await apiClient(
+        isAdmin ? `/admin/events/${id}` : `/events/${id}`,
+        { method: "DELETE" },
+      );
       return response.json();
     },
     onSuccess: () =>
@@ -201,15 +226,21 @@ export const useDeleteEvent = () => {
  */
 export const useUploadEventImage = () => {
   const queryClient = useQueryClient();
+  const isAdmin = useAuthStore((state) => state.user?.role === "Admin");
   return useMutation({
     mutationFn: async ({ id, file }: { id: string; file: File }) => {
       const formData = new FormData();
       formData.append("image", file);
 
-      const response = await apiClient(`/events/${id}/upload-image`, {
-        method: "POST",
-        body: formData,
-      });
+      const response = await apiClient(
+        isAdmin
+          ? `/admin/events/${id}/upload-image`
+          : `/events/${id}/upload-image`,
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
       return response.json();
     },
     onSuccess: (_, variables) => {

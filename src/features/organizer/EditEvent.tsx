@@ -12,6 +12,7 @@ import {
   useUploadEventImage,
 } from "./api/useEvents";
 import { useToastStore } from "@/store/useToastStore";
+import { useAuthStore } from "@/store/useAuthStore";
 import LocationPicker, {
   type LocationValue,
 } from "@/components/ui/LocationPicker";
@@ -53,6 +54,7 @@ const EditEvent = () => {
   const deleteMutation = useDeleteEvent();
   const uploadImageMutation = useUploadEventImage();
   const addToast = useToastStore((state) => state.addToast);
+  const isAdmin = useAuthStore((state) => state.user?.role === "Admin");
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [loc, setLoc] = useState<LocationValue>({
@@ -152,7 +154,7 @@ const EditEvent = () => {
       deleteMutation.mutate(id!, {
         onSuccess: () => {
           addToast("Usunięto wydarzenie", "success");
-          navigate("/organizer/events");
+          navigate(isAdmin ? "/admin/events" : "/organizer/events");
         },
         onError: (err: unknown) =>
           addToast(err instanceof Error ? err.message : "Błąd", "error"),
