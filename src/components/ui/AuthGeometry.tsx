@@ -107,82 +107,116 @@ const AuthGeometry = () => {
     const ctx = gsap.context(() => {
       const shapeEls = gsap.utils.toArray<HTMLElement>(".geo-shape");
 
-      shapeEls.forEach((shapeEl, idx) => {
+      const entries = shapeEls.map((shapeEl, idx) => {
         const spec = shapes[idx];
         const form = shapeEl.querySelector<HTMLElement>(".geo-form");
         const dust = gsap.utils.toArray<HTMLElement>(
           shapeEl.querySelectorAll(".geo-dust > span"),
         );
-        if (!form) return;
 
-        gsap.set(form, { rotation: spec.rotation, transformOrigin: "50% 50%" });
+        if (form) {
+          gsap.set(form, { rotation: spec.rotation, transformOrigin: "50% 50%" });
+          if (!reduce) {
+            // Spokojny ruch tła: unoszenie (yoyo) + powolny obrót w pętli.
+            gsap.to(form, {
+              yPercent: spec.floatDist,
+              duration: spec.floatDur,
+              ease: "sine.inOut",
+              repeat: -1,
+              yoyo: true,
+              delay: spec.delay,
+            });
+            gsap.to(form, {
+              rotation: `+=${spec.spinDir * 360}`,
+              duration: spec.spinDur,
+              ease: "none",
+              repeat: -1,
+            });
+          }
+        }
         gsap.set(dust, { opacity: 0, transformOrigin: "50% 50%" });
 
-        if (reduce) return;
+        return { shapeEl, form, dust, spec, busy: false, inside: false };
+      });
 
-        // Spokojny ruch tła: unoszenie (yoyo) + powolny obrót w pętli.
-        gsap.to(form, {
-          yPercent: spec.floatDist,
-          duration: spec.floatDur,
-          ease: "sine.inOut",
-          repeat: -1,
-          yoyo: true,
-          delay: spec.delay,
-        });
-        gsap.to(form, {
-          rotation: `+=${spec.spinDir * 360}`,
-          duration: spec.spinDur,
-          ease: "none",
-          repeat: -1,
-        });
+      if (reduce || !canHover) return;
 
-        if (!canHover) return;
+      const burst = (e: (typeof entries)[number]) => {
+        const form = e.form;
+        if (e.busy || !form) return;
+        e.busy = true;
+        const radius = e.spec.size * 1.3;
+        gsap
+          .timeline({ onComplete: () => (e.busy = false) })
+          // forma znika, w jej miejscu pojawia się pył
+          .to(form, { opacity: 0, scale: 0.4, duration: 0.22, ease: "power2.in" }, 0)
+          .set(e.dust, { opacity: 1, x: 0, y: 0, scale: 1, rotation: 0 }, 0.04)
+          // rozsypanie w drobny pył (losowo, więc za każdym razem inaczej)
+          .to(
+            e.dust,
+            {
+              x: () => gsap.utils.random(-radius, radius),
+              y: () => gsap.utils.random(-radius, radius),
+              rotation: () => gsap.utils.random(-120, 120),
+              scale: 0.5,
+              opacity: 0.2,
+              duration: 0.55,
+              ease: "power2.out",
+              stagger: { each: 0.006, from: "random" },
+            },
+            0.05,
+          )
+          // …i z wielką prędkością powrót do formy
+          .to(
+            e.dust,
+            {
+              x: 0,
+              y: 0,
+              rotation: 0,
+              scale: 1,
+              opacity: 1,
+              duration: 0.16,
+              ease: "power4.in",
+            },
+            ">-0.05",
+          )
+          .to(form, { opacity: 1, scale: 1, duration: 0.14, ease: "power2.out" }, ">-0.04")
+          .set(e.dust, { opacity: 0 });
+      };
 
-        const radius = spec.size * 1.3;
-        let busy = false;
-        const onEnter = () => {
-          if (busy) return;
-          busy = true;
-          gsap
-            .timeline({ onComplete: () => (busy = false) })
-            // forma znika, w jej miejscu pojawia się pył
-            .to(form, { opacity: 0, scale: 0.4, duration: 0.22, ease: "power2.in" }, 0)
-            .set(dust, { opacity: 1, x: 0, y: 0, scale: 1, rotation: 0 }, 0.04)
-            // rozsypanie w drobny pył (losowo, więc za każdym razem inaczej)
-            .to(
-              dust,
-              {
-                x: () => gsap.utils.random(-radius, radius),
-                y: () => gsap.utils.random(-radius, radius),
-                rotation: () => gsap.utils.random(-120, 120),
-                scale: 0.5,
-                opacity: 0.2,
-                duration: 0.55,
-                ease: "power2.out",
-                stagger: { each: 0.006, from: "random" },
-              },
-              0.05,
-            )
-            // …i z wielką prędkością powrót do formy
-            .to(
-              dust,
-              {
-                x: 0,
-                y: 0,
-                rotation: 0,
-                scale: 1,
-                opacity: 1,
-                duration: 0.16,
-                ease: "power4.in",
-              },
-              ">-0.05",
-            )
-            .to(form, { opacity: 1, scale: 1, duration: 0.14, ease: "power2.out" }, ">-0.04")
-            .set(dust, { opacity: 0 });
-        };
-
-        shapeEl.addEventListener("pointerenter", onEnter);
-        cleanups.push(() => shapeEl.removeEventListener("pointerenter", onEnter));
+      // Hover wykrywamy globalnie: geometria leży pod treścią strony (pełno-
+      // ekranowy kontener formularza przechwytywałby pointerenter), więc liczymy
+      // pozycję kursora względem prostokąta każdego kształtu i odpalamy efekt
+      // w momencie wejścia w jego obszar.
+      let raf = 0;
+      let last: { x: number; y: number } | null = null;
+      const PAD = 12;
+      const check = () => {
+        raf = 0;
+        if (!last) return;
+        for (const e of entries) {
+          const r = e.shapeEl.getBoundingClientRect();
+          const inside =
+            last.x >= r.left - PAD &&
+            last.x <= r.right + PAD &&
+            last.y >= r.top - PAD &&
+            last.y <= r.bottom + PAD;
+          if (inside && !e.inside) {
+            e.inside = true;
+            burst(e);
+          } else if (!inside && e.inside) {
+            e.inside = false;
+          }
+        }
+      };
+      const onMove = (ev: PointerEvent) => {
+        last = { x: ev.clientX, y: ev.clientY };
+        if (!raf) raf = requestAnimationFrame(check);
+      };
+      window.addEventListener("pointermove", onMove, { passive: true });
+      cleanups.push(() => {
+        window.removeEventListener("pointermove", onMove);
+        if (raf) cancelAnimationFrame(raf);
       });
     }, root);
 
@@ -196,12 +230,12 @@ const AuthGeometry = () => {
     <div
       ref={rootRef}
       aria-hidden="true"
-      className="absolute -right-15 top-1/2 -z-10 hidden h-[min(46vw,560px)] w-[min(46vw,560px)] -translate-y-1/2 sm:block"
+      className="pointer-events-none absolute -right-15 top-1/2 -z-10 hidden h-[min(46vw,560px)] w-[min(46vw,560px)] -translate-y-1/2 sm:block"
     >
       {shapes.map((s, i) => (
         <div
           key={i}
-          className="geo-shape pointer-events-auto absolute"
+          className="geo-shape absolute"
           style={{
             top: `${s.top}%`,
             left: `${s.left}%`,

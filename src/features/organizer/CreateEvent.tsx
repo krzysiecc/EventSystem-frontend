@@ -1,16 +1,23 @@
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useNavigate, Link } from "react-router-dom";
 import { ArrowLeft, Plus } from "lucide-react";
 import DOMPurify from "dompurify";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/apiClient";
 import { useToastStore } from "@/store/useToastStore";
 import LocationPicker, {
   type LocationValue,
 } from "@/components/ui/LocationPicker";
+import RecurrencePicker from "@/components/ui/RecurrencePicker";
+import {
+  DEFAULT_RECURRENCE,
+  expandOccurrences,
+  toLocalInput,
+  type Recurrence,
+} from "@/lib/recurrence";
 
 const createEventSchema = z
   .object({
@@ -30,7 +37,6 @@ const createEventSchema = z
 
 type CreateEventInputs = z.infer<typeof createEventSchema>;
 type CreateEventFormInputs = z.input<typeof createEventSchema>;
-type CreatePayload = CreateEventInputs & LocationValue;
 
 const labelClass =
   "mb-1.5 block font-mono text-xs uppercase tracking-wider text-text-muted";
@@ -57,45 +63,108 @@ const CreateEvent = () => {
     lng: null,
   });
   const [locError, setLocError] = useState<string | null>(null);
+  const [recurrence, setRecurrence] = useState<Recurrence>(DEFAULT_RECURRENCE);
+  const [submitting, setSubmitting] = useState(false);
+  // Postęp tworzenia serii (np. 3/12) — null dla pojedynczego wydarzenia.
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(
+    null,
+  );
 
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
   } = useForm<CreateEventFormInputs, unknown, CreateEventInputs>({
     resolver: zodResolver(createEventSchema),
   });
 
-  const createEventMutation = useMutation({
-    mutationFn: async (payload: CreatePayload) => {
-      const cleanDescription = DOMPurify.sanitize(payload.description);
-      const response = await apiClient("/events", {
-        method: "POST",
-        body: JSON.stringify({
-          ...payload,
-          description: cleanDescription,
-          date: payload.startDate, // kompatybilność ze starym backendem
-        }),
-      });
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["organizer", "events"] });
-      addToast("Wydarzenie zostało pomyślnie utworzone", "success");
-      navigate("/organizer");
-    },
-    onError: () => {
-      addToast("Wystąpił błąd podczas tworzenia wydarzenia.", "error");
-    },
-  });
+  // useWatch (zamiast watch()) — przyjazne dla React Compiler, odświeża podgląd
+  // cyklu przy zmianie dat startu/końca.
+  const startVal = useWatch({ control, name: "startDate" }) ?? "";
+  const endVal = useWatch({ control, name: "endDate" }) ?? "";
 
-  const onSubmit = (data: CreateEventInputs) => {
+  const onSubmit = async (data: CreateEventInputs) => {
     if (loc.location.trim().length < 2) {
       setLocError("Podaj lokalizację");
       return;
     }
     setLocError(null);
-    createEventMutation.mutate({ ...data, ...loc });
+
+    const { occurrences } = expandOccurrences(
+      data.startDate,
+      data.endDate,
+      recurrence,
+    );
+    if (occurrences.length === 0) {
+      addToast(
+        "Brak terminów do utworzenia — sprawdź ustawienia powtarzania.",
+        "error",
+      );
+      return;
+    }
+
+    const cleanDescription = DOMPurify.sanitize(data.description);
+    const postOne = (start: Date, end: Date) =>
+      apiClient("/events", {
+        method: "POST",
+        body: JSON.stringify({
+          title: data.title,
+          maxCapacity: data.maxCapacity,
+          description: cleanDescription,
+          ...loc,
+          startDate: toLocalInput(start),
+          endDate: toLocalInput(end),
+          date: toLocalInput(start), // kompatybilność ze starym backendem
+        }),
+      }).then((r) => r.json());
+
+    setSubmitting(true);
+
+    // Pojedyncze wydarzenie — bez paska postępu.
+    if (occurrences.length === 1) {
+      try {
+        await postOne(occurrences[0].start, occurrences[0].end);
+        queryClient.invalidateQueries({ queryKey: ["organizer", "events"] });
+        addToast("Wydarzenie zostało pomyślnie utworzone", "success");
+        navigate("/organizer");
+      } catch {
+        addToast("Wystąpił błąd podczas tworzenia wydarzenia.", "error");
+        setSubmitting(false);
+      }
+      return;
+    }
+
+    // Seria — tworzymy po kolei, zliczając sukcesy i porażki (częściowe
+    // niepowodzenie nie przerywa reszty terminów).
+    let ok = 0;
+    let failed = 0;
+    setProgress({ done: 0, total: occurrences.length });
+    for (let i = 0; i < occurrences.length; i++) {
+      try {
+        await postOne(occurrences[i].start, occurrences[i].end);
+        ok++;
+      } catch {
+        failed++;
+      }
+      setProgress({ done: i + 1, total: occurrences.length });
+    }
+    queryClient.invalidateQueries({ queryKey: ["organizer", "events"] });
+    setSubmitting(false);
+    setProgress(null);
+
+    if (failed === 0) {
+      addToast(`Utworzono serię: ${ok} terminów.`, "success");
+      navigate("/organizer");
+    } else if (ok > 0) {
+      addToast(
+        `Utworzono ${ok} z ${occurrences.length} terminów; ${failed} nie powiodło się.`,
+        "error",
+      );
+      navigate("/organizer");
+    } else {
+      addToast("Nie udało się utworzyć żadnego terminu.", "error");
+    }
   };
 
   return (
@@ -161,6 +230,16 @@ const CreateEvent = () => {
         </div>
 
         <div>
+          <label className={labelClass}>Cykliczność</label>
+          <RecurrencePicker
+            value={recurrence}
+            onChange={setRecurrence}
+            start={startVal}
+            end={endVal}
+          />
+        </div>
+
+        <div>
           <label className={labelClass}>Liczba miejsc (dostępnych)</label>
           <input
             type="number"
@@ -203,13 +282,17 @@ const CreateEvent = () => {
         <div className="border-t border-border-light pt-4">
           <button
             type="submit"
-            disabled={createEventMutation.isPending}
+            disabled={submitting}
             className="flex w-full items-center justify-center gap-2 rounded-md bg-accent-primary py-2.5 font-medium text-text-on-accent transition hover:bg-accent-hover disabled:opacity-50"
           >
             <Plus size={16} />
-            {createEventMutation.isPending
-              ? "Zapisywanie..."
-              : "Utwórz wydarzenie"}
+            {progress
+              ? `Tworzenie ${progress.done}/${progress.total}…`
+              : submitting
+                ? "Zapisywanie..."
+                : recurrence.freq !== "none"
+                  ? "Utwórz serię"
+                  : "Utwórz wydarzenie"}
           </button>
         </div>
       </form>
