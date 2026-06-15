@@ -5,25 +5,20 @@ import {
   isoWeekday,
   MAX_OCCURRENCES,
   type Recurrence,
-  type RecurrenceFreq,
+  type RecurrenceUnit,
 } from "@/lib/recurrence";
 
 /**
  * @description Prosty wybór cykliczności wydarzenia w stylu Kalendarza Google
- * (bez crona): lista „Powtarzanie", ewentualne dni tygodnia, koniec cyklu
- * (data LUB liczba terminów) oraz żywe podsumowanie z podglądem terminów. Sam
- * picker nic nie tworzy — zwraca regułę przez `onChange`; rozwijaniem zajmuje
- * się panel tworzenia wydarzenia.
+ * (bez crona): „Powtarzaj co N [dni/tygodni/miesięcy]", opcjonalne dni tygodnia
+ * (tylko dla tygodni), koniec cyklu (data LUB liczba terminów) oraz żywe
+ * podsumowanie z podglądem terminów. Sam picker nic nie tworzy — zwraca regułę
+ * przez `onChange`; rozwijaniem zajmuje się panel tworzenia wydarzenia.
  */
 
 const WEEKDAYS = ["Pn", "Wt", "Śr", "Cz", "Pt", "So", "Nd"];
 
-const FREQ_OPTIONS: Array<{ value: RecurrenceFreq; label: string }> = [
-  { value: "none", label: "Nie powtarzaj" },
-  { value: "daily", label: "Codziennie" },
-  { value: "weekly", label: "Co tydzień" },
-  { value: "monthly", label: "Co miesiąc" },
-];
+const UNIT_ORDER: RecurrenceUnit[] = ["day", "week", "month"];
 
 // Polska odmiana jednostki: [1, 2–4, 5+] (z grubsza, dla 12–14 forma „wiele").
 const plural = (n: number, forms: [string, string, string]): string => {
@@ -35,11 +30,13 @@ const plural = (n: number, forms: [string, string, string]): string => {
   return forms[2];
 };
 
-const UNIT: Record<Exclude<RecurrenceFreq, "none">, [string, string, string]> = {
-  daily: ["dzień", "dni", "dni"],
-  weekly: ["tydzień", "tygodnie", "tygodni"],
-  monthly: ["miesiąc", "miesiące", "miesięcy"],
+const UNIT: Record<RecurrenceUnit, [string, string, string]> = {
+  day: ["dzień", "dni", "dni"],
+  week: ["tydzień", "tygodnie", "tygodni"],
+  month: ["miesiąc", "miesiące", "miesięcy"],
 };
+
+const TERMINY: [string, string, string] = ["termin", "terminy", "terminów"];
 
 const dateFmt = new Intl.DateTimeFormat("pl-PL", {
   day: "numeric",
@@ -76,7 +73,7 @@ const defaultUntil = (start: string): string => {
 };
 
 const RecurrencePicker = ({ value, onChange, start, end }: Props) => {
-  const repeating = value.freq !== "none";
+  const repeating = value.repeat;
 
   const { occurrences, truncated } = useMemo(
     () => expandOccurrences(start, end, value),
@@ -85,18 +82,25 @@ const RecurrencePicker = ({ value, onChange, start, end }: Props) => {
 
   const set = (patch: Partial<Recurrence>) => onChange({ ...value, ...patch });
 
-  const handleFreq = (freq: RecurrenceFreq) => {
-    if (freq === "none") return set({ freq });
-    const startWeekday = start ? isoWeekday(new Date(start)) : 0;
-    set({
-      freq,
-      // przy pierwszym przejściu na „co tydzień" zaznacz dzień startu
-      weekdays:
-        freq === "weekly" && value.weekdays.length === 0
-          ? [Number.isNaN(startWeekday) ? 0 : startWeekday]
-          : value.weekdays,
-    });
+  // Dzień tygodnia daty startu (0=pn…6=nd), domyślny dla „co tydzień".
+  const startWeekday = (): number => {
+    const wd = start ? isoWeekday(new Date(start)) : 0;
+    return Number.isNaN(wd) ? 0 : wd;
   };
+
+  // Przy przejściu na tygodnie bez zaznaczonych dni — zaznacz dzień startu.
+  const weekdaysFor = (unit: RecurrenceUnit): number[] =>
+    unit === "week" && value.weekdays.length === 0
+      ? [startWeekday()]
+      : value.weekdays;
+
+  const handleRepeat = (repeat: boolean) => {
+    if (!repeat) return set({ repeat: false });
+    set({ repeat: true, weekdays: weekdaysFor(value.unit) });
+  };
+
+  const handleUnit = (unit: RecurrenceUnit) =>
+    set({ unit, weekdays: weekdaysFor(unit) });
 
   const toggleWeekday = (wd: number) => {
     const has = value.weekdays.includes(wd);
@@ -119,45 +123,37 @@ const RecurrencePicker = ({ value, onChange, start, end }: Props) => {
   const describe = (): string => {
     if (!repeating) return "Wydarzenie jednorazowe.";
     const i = Math.max(1, value.interval);
-    const unit = UNIT[value.freq as Exclude<RecurrenceFreq, "none">];
     const everyN = i === 1 ? "" : `${i} `;
-    if (value.freq === "weekly") {
+    const base = `Co ${everyN}${plural(i, UNIT[value.unit])}`;
+    if (value.unit === "week") {
       const days =
-        (value.weekdays.length ? value.weekdays : [0])
+        (value.weekdays.length ? value.weekdays : [startWeekday()])
           .map((d) => WEEKDAYS[d])
           .join(", ") || "—";
-      return i === 1
-        ? `Co tydzień w: ${days}`
-        : `Co ${i} ${plural(i, unit)} w: ${days}`;
+      return `${base} w: ${days}`;
     }
-    return i === 1
-      ? value.freq === "daily"
-        ? "Codziennie"
-        : "Co miesiąc"
-      : `Co ${everyN}${plural(i, unit)}`;
+    return base;
   };
 
   const preview = occurrences.slice(0, 3);
+  const intervalN = Math.max(1, value.interval);
 
   return (
     <div className="space-y-3 rounded-md border border-border-light bg-bg-secondary p-3">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-        <div className="sm:w-52">
+        <div className="sm:w-44">
           <label className={labelClass}>
             <span className="inline-flex items-center gap-1.5">
               <Repeat size={13} /> Powtarzanie
             </span>
           </label>
           <select
-            value={value.freq}
-            onChange={(e) => handleFreq(e.target.value as RecurrenceFreq)}
+            value={repeating ? "yes" : "no"}
+            onChange={(e) => handleRepeat(e.target.value === "yes")}
             className={`w-full ${fieldClass}`}
           >
-            {FREQ_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
+            <option value="no">Nie powtarzaj</option>
+            <option value="yes">Powtarzaj</option>
           </select>
         </div>
 
@@ -176,20 +172,28 @@ const RecurrencePicker = ({ value, onChange, start, end }: Props) => {
                 className={`w-16 ${fieldClass}`}
               />
             </div>
-            <span className="pb-1.5 text-sm text-text-secondary">
-              {plural(
-                Math.max(1, value.interval),
-                UNIT[value.freq as Exclude<RecurrenceFreq, "none">],
-              )}
-            </span>
+            <div>
+              <label className={labelClass}>Jednostka</label>
+              <select
+                value={value.unit}
+                onChange={(e) => handleUnit(e.target.value as RecurrenceUnit)}
+                className={fieldClass}
+              >
+                {UNIT_ORDER.map((u) => (
+                  <option key={u} value={u}>
+                    {plural(intervalN, UNIT[u])}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         )}
       </div>
 
-      {/* Dni tygodnia — tylko dla „co tydzień" */}
-      {repeating && value.freq === "weekly" && (
+      {/* Dni tygodnia — opcjonalne, tylko dla „tygodni" */}
+      {repeating && value.unit === "week" && (
         <div>
-          <label className={labelClass}>W dni</label>
+          <label className={labelClass}>W dni (opcjonalnie)</label>
           <div className="flex flex-wrap gap-1.5">
             {WEEKDAYS.map((d, wd) => {
               const active = value.weekdays.includes(wd);
@@ -268,7 +272,9 @@ const RecurrencePicker = ({ value, onChange, start, end }: Props) => {
                   }
                   className={`w-20 ${fieldClass}`}
                 />
-                <span className="text-sm text-text-secondary">terminów</span>
+                <span className="text-sm text-text-secondary">
+                  {plural(Math.max(1, value.end.count), TERMINY)}
+                </span>
               </div>
             )}
           </div>
@@ -288,7 +294,7 @@ const RecurrencePicker = ({ value, onChange, start, end }: Props) => {
           {occurrences.length > 0 ? (
             <p className="mt-1 text-text-secondary">
               <b className="text-text-primary">{occurrences.length}</b>{" "}
-              {plural(occurrences.length, ["termin", "terminy", "terminów"])}
+              {plural(occurrences.length, TERMINY)}
               {preview.length > 0 && (
                 <>
                   {" "}

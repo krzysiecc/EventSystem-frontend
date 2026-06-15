@@ -4,21 +4,29 @@
  * terminy, które panel tworzenia wysyła jako osobne wydarzenia (jedno na termin).
  * Trzymamy to z dala od UI, żeby dało się przetestować bez Reacta.
  *
+ * Model reguły: „Powtarzaj co N [dni / tygodni / miesięcy]" + ewentualnie
+ * (dla tygodni) wybrane dni tygodnia. Świadomie NIE używamy nazwanych
+ * częstotliwości (codziennie/co tydzień/co miesiąc) — łączenie ich z polem
+ * „co N" było mylące (np. „co 2 tygodnie" wyglądało jak „przez 2 tygodnie").
+ *
  * Konwencja dni tygodnia: 0 = poniedziałek … 6 = niedziela (jak w kalendarzu w
  * aplikacji), inna niż natywne `Date.getDay()` (0 = niedziela).
  */
 
-export type RecurrenceFreq = "none" | "daily" | "weekly" | "monthly";
+export type RecurrenceUnit = "day" | "week" | "month";
 
 export type RecurrenceEnd =
   | { type: "date"; date: string } // "YYYY-MM-DD"
   | { type: "count"; count: number };
 
 export interface Recurrence {
-  freq: RecurrenceFreq;
+  /** Czy wydarzenie się powtarza. `false` → jeden termin (sam start). */
+  repeat: boolean;
+  /** Jednostka powtarzania: dzień / tydzień / miesiąc. */
+  unit: RecurrenceUnit;
   /** Powtarzaj co N jednostek (≥ 1): co 2 tygodnie itd. */
   interval: number;
-  /** Dni tygodnia (0=pn…6=nd) dla freq=weekly. Pusto → dzień startu. */
+  /** Dni tygodnia (0=pn…6=nd) — tylko dla `unit="week"`. Pusto → dzień startu. */
   weekdays: number[];
   end: RecurrenceEnd;
 }
@@ -38,7 +46,8 @@ export interface ExpandResult {
 export const MAX_OCCURRENCES = 60;
 
 export const DEFAULT_RECURRENCE: Recurrence = {
-  freq: "none",
+  repeat: false,
+  unit: "week",
   interval: 1,
   weekdays: [],
   end: { type: "count", count: 10 },
@@ -89,7 +98,7 @@ export const expandOccurrences = (
     end: new Date(s.getTime() + durationMs),
   });
 
-  if (rec.freq === "none") {
+  if (!rec.repeat) {
     return { occurrences: [makeOcc(start)], truncated: false };
   }
 
@@ -108,16 +117,16 @@ export const expandOccurrences = (
   const startMonthIdx = start.getFullYear() * 12 + start.getMonth();
 
   const matches = (c: Date): boolean => {
-    if (rec.freq === "daily") {
+    if (rec.unit === "day") {
       const days = Math.round((dateOnly(c).getTime() - startDateOnly) / DAY_MS);
       return days % interval === 0;
     }
-    if (rec.freq === "weekly") {
+    if (rec.unit === "week") {
       if (!weekdays.includes(isoWeekday(c))) return false;
       const weekIdx = Math.round((mondayOf(c).getTime() - startMonday) / (7 * DAY_MS));
       return weekIdx % interval === 0;
     }
-    // monthly
+    // month
     if (c.getDate() !== start.getDate()) return false;
     const monthIdx = c.getFullYear() * 12 + c.getMonth();
     return (monthIdx - startMonthIdx) % interval === 0;

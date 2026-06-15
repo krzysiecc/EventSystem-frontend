@@ -16,6 +16,9 @@ export interface PublicEvent {
   maxCapacity: number;
   enrolledCount: number;
   description: string;
+  /** Kliknięcia w ostatnich 24h (popularność). Dostarcza backend — patrz
+   *  docs/api-contract.md. Brak → traktujemy jak 0 przy sortowaniu. */
+  clicks24h?: number;
 }
 
 export interface Ticket {
@@ -105,10 +108,19 @@ export const useEventForTicket = () => {
   const { data: events } = useAllEvents();
   return useMemo(() => {
     const byId = new Map<number, PublicEvent>();
-    const byTitle = new Map<string, PublicEvent>();
+    const titleCount = new Map<string, number>();
     (events ?? []).forEach((e) => {
       byId.set(e.id, e);
-      byTitle.set(e.title.trim().toLowerCase(), e);
+      const k = e.title.trim().toLowerCase();
+      titleCount.set(k, (titleCount.get(k) ?? 0) + 1);
+    });
+    // Po tytule dopasowujemy tylko unikalne tytuły — w serii cyklicznej terminy
+    // współdzielą tytuł, więc po tytule nie da się wskazać właściwego terminu
+    // (dopasowanie wtedy wyłącznie po `eventId`).
+    const byTitle = new Map<string, PublicEvent>();
+    (events ?? []).forEach((e) => {
+      const k = e.title.trim().toLowerCase();
+      if ((titleCount.get(k) ?? 0) === 1) byTitle.set(k, e);
     });
     return (t: Ticket): PublicEvent | undefined =>
       (t.eventId != null ? byId.get(t.eventId) : undefined) ??

@@ -34,6 +34,8 @@ export interface AdminEventDTO {
   scannedCount: number;
   maxCapacity: number;
   status: string;
+  /** Kliknięcia w ostatnich 24h (popularność) — opcjonalne, dostarcza backend. */
+  clicks24h?: number;
 }
 
 // --- QUERIES ---

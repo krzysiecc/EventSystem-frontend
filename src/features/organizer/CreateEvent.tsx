@@ -290,7 +290,7 @@ const CreateEvent = () => {
               ? `Tworzenie ${progress.done}/${progress.total}…`
               : submitting
                 ? "Zapisywanie..."
-                : recurrence.freq !== "none"
+                : recurrence.repeat
                   ? "Utwórz serię"
                   : "Utwórz wydarzenie"}
           </button>

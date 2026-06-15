@@ -8,6 +8,7 @@ import {
   X,
   Loader2,
   QrCode,
+  Flame,
 } from "lucide-react";
 import {
   useAllEvents,
@@ -18,7 +19,14 @@ import {
 } from "./api/useStudentQueries";
 import { useToastStore } from "@/store/useToastStore";
 import PageHeader from "@/components/ui/PageHeader";
+import SortSelect from "@/components/ui/SortSelect";
 import { formatEventDate, eventStart } from "@/lib/eventDate";
+import {
+  sortEvents,
+  DEFAULT_EVENT_SORT,
+  type EventSortKey,
+} from "@/lib/eventSort";
+import { isNearlyFull } from "@/lib/eventPopularity";
 
 /**
  * @description Returns the correct Polish grammatical form for "miejsce/miejsca/miejsc"
@@ -47,18 +55,33 @@ const EventBrowser = () => {
   const registerMutation = useRegisterForEvent();
   const addToast = useToastStore((state) => state.addToast);
 
-  // Mapowanie: czy student ma już bilet na dane wydarzenie (po ID, a w razie
-  // braku eventId — po tytule). Pozwala wyszarzyć „Pobierz bilet".
+  // Mapowanie: czy student ma już bilet na dane wydarzenie. Dopasowujemy po
+  // `eventId`. Dopasowanie po tytule służy tylko biletom bez `eventId` (legacy)
+  // i WYŁĄCZNIE dla unikalnych tytułów — w serii cyklicznej wszystkie terminy
+  // mają ten sam tytuł, więc dopasowanie po tytule błędnie „zaznaczałoby"
+  // wszystkie terminy jednym biletem (zob. fix.txt pkt 8).
   const ticketForEvent = useMemo(() => {
     const byId = new Map<number, Ticket>();
     const byTitle = new Map<string, Ticket>();
     (tickets ?? []).forEach((t) => {
       if (t.eventId != null) byId.set(t.eventId, t);
-      byTitle.set(t.eventTitle.trim().toLowerCase(), t);
+      else byTitle.set(t.eventTitle.trim().toLowerCase(), t);
     });
-    return (e: PublicEvent) =>
-      byId.get(e.id) ?? byTitle.get(e.title.trim().toLowerCase());
-  }, [tickets]);
+    // Tytuły powtarzające się na liście (serie) → dopasowanie po tytule jest
+    // niejednoznaczne, więc go pomijamy.
+    const titleCount = new Map<string, number>();
+    (events ?? []).forEach((e) => {
+      const k = e.title.trim().toLowerCase();
+      titleCount.set(k, (titleCount.get(k) ?? 0) + 1);
+    });
+    return (e: PublicEvent) => {
+      const byIdMatch = byId.get(e.id);
+      if (byIdMatch) return byIdMatch;
+      const k = e.title.trim().toLowerCase();
+      if ((titleCount.get(k) ?? 0) > 1) return undefined; // seria → tylko po ID
+      return byTitle.get(k);
+    };
+  }, [tickets, events]);
 
   // Track which event ID is currently being registered to show per-card loading
   const [pendingEventId, setPendingEventId] = useState<string | null>(null);
@@ -67,6 +90,7 @@ const EventBrowser = () => {
   const [search, setSearch] = useState("");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
+  const [sort, setSort] = useState<EventSortKey>(DEFAULT_EVENT_SORT);
 
   // Masz już bilet → przejdź do niego (kod QR). W przeciwnym razie zapisz się.
   const goToTicketOrRegister = (event: PublicEvent) => {
@@ -108,6 +132,8 @@ const EventBrowser = () => {
       return true;
     });
   }, [events, search, from, to]);
+
+  const visible = useMemo(() => sortEvents(filtered, sort), [filtered, sort]);
 
   const hasFilters = !!(search || from || to);
   const clearFilters = () => {
@@ -161,6 +187,7 @@ const EventBrowser = () => {
             className={inputClass}
           />
         </div>
+        <SortSelect value={sort} onChange={setSort} />
         {hasFilters && (
           <button
             type="button"
@@ -173,7 +200,7 @@ const EventBrowser = () => {
         )}
       </div>
 
-      {filtered.length === 0 && (
+      {visible.length === 0 && (
         <p className="py-8 text-center text-text-muted">
           {hasFilters
             ? "Brak wydarzeń pasujących do filtrów."
@@ -183,13 +210,14 @@ const EventBrowser = () => {
 
       {/* MOBILE — wąskie paski ze zmniejszonym tekstem */}
       <ul className="space-y-2.5 md:hidden">
-        {filtered.map((event, i) => {
+        {visible.map((event, i) => {
           const remainingSeats = event.maxCapacity - event.enrolledCount;
           const isFull = remainingSeats <= 0;
           const isThisCardPending = pendingEventId === event.id.toString();
           const myTicket = ticketForEvent(event);
           const hasTicket = !!myTicket;
           const usedTicket = myTicket?.isScanned ?? false;
+          const hot = !isFull && isNearlyFull(event.enrolledCount, event.maxCapacity);
 
           return (
             <li
@@ -217,24 +245,33 @@ const EventBrowser = () => {
                       </span>
                     </span>
                   </div>
-                  <span
-                    className={`mt-1 inline-block rounded px-1.5 py-0.5 font-mono text-[10px] font-medium ${
-                      usedTicket
-                        ? "bg-bg-tertiary text-text-muted"
+                  <span className="mt-1 flex items-center gap-1.5">
+                    <span
+                      className={`inline-block rounded px-1.5 py-0.5 font-mono text-[10px] font-medium ${
+                        usedTicket
+                          ? "bg-bg-tertiary text-text-muted"
+                          : hasTicket
+                            ? "bg-status-success-bg text-status-success"
+                            : isFull
+                              ? "bg-status-error-bg text-status-error"
+                              : "bg-accent-subtle text-accent-secondary"
+                      }`}
+                    >
+                      {usedTicket
+                        ? "Bilet zużyty"
                         : hasTicket
-                          ? "bg-status-success-bg text-status-success"
+                          ? "Masz bilet"
                           : isFull
-                            ? "bg-status-error-bg text-status-error"
-                            : "bg-accent-subtle text-accent-secondary"
-                    }`}
-                  >
-                    {usedTicket
-                      ? "Bilet zużyty"
-                      : hasTicket
-                        ? "Masz bilet"
-                        : isFull
-                          ? "Brak miejsc"
-                          : getRemainingSeatsLabel(remainingSeats)}
+                            ? "Brak miejsc"
+                            : getRemainingSeatsLabel(remainingSeats)}
+                    </span>
+                    {hot && (
+                      <Flame
+                        size={13}
+                        className="text-status-warning"
+                        aria-label="Popularne — zajęte ponad połowa miejsc"
+                      />
+                    )}
                   </span>
                 </div>
                 <button
@@ -270,13 +307,14 @@ const EventBrowser = () => {
 
       {/* DESKTOP — karty */}
       <div className="hidden gap-6 md:grid md:grid-cols-2 lg:grid-cols-3">
-        {filtered.map((event, i) => {
+        {visible.map((event, i) => {
           const remainingSeats = event.maxCapacity - event.enrolledCount;
           const isFull = remainingSeats <= 0;
           const isThisCardPending = pendingEventId === event.id.toString();
           const myTicket = ticketForEvent(event);
           const hasTicket = !!myTicket;
           const usedTicket = myTicket?.isScanned ?? false;
+          const hot = !isFull && isNearlyFull(event.enrolledCount, event.maxCapacity);
 
           return (
             <div
@@ -289,24 +327,35 @@ const EventBrowser = () => {
                   <span className="font-mono text-2xl font-extrabold leading-none text-text-primary opacity-15">
                     {String(i + 1).padStart(2, "0")}
                   </span>
-                  <span
-                    className={`rounded px-2 py-1 font-mono text-xs font-medium ${
-                      usedTicket
-                        ? "bg-bg-tertiary text-text-muted"
+                  <span className="flex items-center gap-1.5">
+                    {hot && (
+                      <span
+                        title="Popularne — zajęte ponad połowa miejsc"
+                        className="inline-flex items-center gap-1 rounded bg-status-warning-bg px-1.5 py-1 font-mono text-xs font-medium text-status-warning"
+                      >
+                        <Flame size={13} aria-hidden="true" />
+                        Hot
+                      </span>
+                    )}
+                    <span
+                      className={`rounded px-2 py-1 font-mono text-xs font-medium ${
+                        usedTicket
+                          ? "bg-bg-tertiary text-text-muted"
+                          : hasTicket
+                            ? "bg-status-success-bg text-status-success"
+                            : isFull
+                              ? "bg-status-error-bg text-status-error"
+                              : "bg-accent-subtle text-accent-secondary"
+                      }`}
+                    >
+                      {usedTicket
+                        ? "Bilet zużyty"
                         : hasTicket
-                          ? "bg-status-success-bg text-status-success"
+                          ? "Masz bilet"
                           : isFull
-                            ? "bg-status-error-bg text-status-error"
-                            : "bg-accent-subtle text-accent-secondary"
-                    }`}
-                  >
-                    {usedTicket
-                      ? "Bilet zużyty"
-                      : hasTicket
-                        ? "Masz bilet"
-                        : isFull
-                          ? "Brak miejsc"
-                          : getRemainingSeatsLabel(remainingSeats)}
+                            ? "Brak miejsc"
+                            : getRemainingSeatsLabel(remainingSeats)}
+                    </span>
                   </span>
                 </div>
                 <h3 className="mb-3 line-clamp-2 text-xl font-bold text-text-primary">

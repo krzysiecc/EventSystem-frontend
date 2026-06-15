@@ -21,6 +21,8 @@ export interface OrganizerEvent {
   maxCapacity: number;
   scannedCount?: number;
   imageUrl?: string | null;
+  /** Kliknięcia w ostatnich 24h (popularność) — opcjonalne, dostarcza backend. */
+  clicks24h?: number;
 }
 
 export interface Attendee {

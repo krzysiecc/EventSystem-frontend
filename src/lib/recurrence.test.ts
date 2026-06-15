@@ -12,7 +12,8 @@ const START = "2026-06-15T11:00";
 const END = "2026-06-15T13:00";
 
 const rec = (over: Partial<Recurrence>): Recurrence => ({
-  freq: "none",
+  repeat: true,
+  unit: "day",
   interval: 1,
   weekdays: [],
   end: { type: "count", count: 10 },
@@ -20,8 +21,12 @@ const rec = (over: Partial<Recurrence>): Recurrence => ({
 });
 
 describe("expandOccurrences", () => {
-  it("dla freq=none zwraca jeden termin równy startowi", () => {
-    const { occurrences, truncated } = expandOccurrences(START, END, rec({}));
+  it("dla repeat=false zwraca jeden termin równy startowi", () => {
+    const { occurrences, truncated } = expandOccurrences(
+      START,
+      END,
+      rec({ repeat: false }),
+    );
     expect(occurrences).toHaveLength(1);
     expect(toLocalInput(occurrences[0].start)).toBe(START);
     expect(toLocalInput(occurrences[0].end)).toBe(END);
@@ -32,7 +37,7 @@ describe("expandOccurrences", () => {
     const { occurrences } = expandOccurrences(
       START,
       END,
-      rec({ freq: "daily", end: { type: "count", count: 3 } }),
+      rec({ unit: "day", end: { type: "count", count: 3 } }),
     );
     expect(occurrences).toHaveLength(3);
     for (const o of occurrences) {
@@ -42,11 +47,11 @@ describe("expandOccurrences", () => {
     }
   });
 
-  it("codziennie z limitem liczby terminów daje kolejne dni", () => {
+  it("co dzień z limitem liczby terminów daje kolejne dni", () => {
     const { occurrences } = expandOccurrences(
       START,
       END,
-      rec({ freq: "daily", end: { type: "count", count: 4 } }),
+      rec({ unit: "day", end: { type: "count", count: 4 } }),
     );
     expect(occurrences.map((o) => o.start.getDate())).toEqual([15, 16, 17, 18]);
   });
@@ -55,7 +60,7 @@ describe("expandOccurrences", () => {
     const { occurrences } = expandOccurrences(
       START,
       END,
-      rec({ freq: "daily", interval: 2, end: { type: "count", count: 3 } }),
+      rec({ unit: "day", interval: 2, end: { type: "count", count: 3 } }),
     );
     expect(occurrences.map((o) => o.start.getDate())).toEqual([15, 17, 19]);
   });
@@ -66,7 +71,7 @@ describe("expandOccurrences", () => {
       START,
       END,
       rec({
-        freq: "weekly",
+        unit: "week",
         weekdays: [0, 2], // pn, śr
         end: { type: "date", date: "2026-06-28" },
       }),
@@ -78,12 +83,24 @@ describe("expandOccurrences", () => {
     );
   });
 
+  it("co tydzień bez wybranych dni używa dnia startu", () => {
+    // 15 cze to poniedziałek → kolejne poniedziałki.
+    const { occurrences } = expandOccurrences(
+      START,
+      END,
+      rec({ unit: "week", weekdays: [], end: { type: "count", count: 3 } }),
+    );
+    expect(
+      occurrences.map((o) => `${o.start.getDate()}.${o.start.getMonth() + 1}`),
+    ).toEqual(["15.6", "22.6", "29.6"]);
+  });
+
   it("co 2 tygodnie pomija tydzień pośredni", () => {
     const { occurrences } = expandOccurrences(
       START,
       END,
       rec({
-        freq: "weekly",
+        unit: "week",
         interval: 2,
         weekdays: [0],
         end: { type: "count", count: 3 },
@@ -99,7 +116,7 @@ describe("expandOccurrences", () => {
     const { occurrences } = expandOccurrences(
       START,
       END,
-      rec({ freq: "monthly", end: { type: "count", count: 3 } }),
+      rec({ unit: "month", end: { type: "count", count: 3 } }),
     );
     expect(
       occurrences.map((o) => `${o.start.getDate()}.${o.start.getMonth() + 1}`),
@@ -110,7 +127,7 @@ describe("expandOccurrences", () => {
     const { occurrences } = expandOccurrences(
       START,
       END,
-      rec({ freq: "daily", end: { type: "date", date: "2026-06-17" } }),
+      rec({ unit: "day", end: { type: "date", date: "2026-06-17" } }),
     );
     expect(occurrences.map((o) => o.start.getDate())).toEqual([15, 16, 17]);
   });
@@ -119,14 +136,14 @@ describe("expandOccurrences", () => {
     const { occurrences, truncated } = expandOccurrences(
       START,
       END,
-      rec({ freq: "daily", end: { type: "count", count: 500 } }),
+      rec({ unit: "day", end: { type: "count", count: 500 } }),
     );
     expect(occurrences).toHaveLength(MAX_OCCURRENCES);
     expect(truncated).toBe(true);
   });
 
   it("dla niepoprawnych dat zwraca pustą listę", () => {
-    const { occurrences } = expandOccurrences("", "", rec({ freq: "daily" }));
+    const { occurrences } = expandOccurrences("", "", rec({ unit: "day" }));
     expect(occurrences).toHaveLength(0);
   });
 });

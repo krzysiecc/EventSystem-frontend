@@ -1,11 +1,21 @@
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Eye, Pencil } from "lucide-react";
+import { Plus, Eye, Pencil, Flame } from "lucide-react";
 import { useOrganizerEvents } from "./api/useEvents";
 import PageHeader from "@/components/ui/PageHeader";
+import SortSelect from "@/components/ui/SortSelect";
 import { formatEventDate } from "@/lib/eventDate";
+import {
+  sortEvents,
+  DEFAULT_EVENT_SORT,
+  type EventSortKey,
+} from "@/lib/eventSort";
+import { isNearlyFull } from "@/lib/eventPopularity";
 
 const ManageEvents = () => {
   const { data: events, isLoading } = useOrganizerEvents();
+  const [sort, setSort] = useState<EventSortKey>(DEFAULT_EVENT_SORT);
+  const sorted = useMemo(() => sortEvents(events ?? [], sort), [events, sort]);
 
   if (isLoading)
     return <div className="p-6 text-text-muted">Ładowanie wydarzeń...</div>;
@@ -26,6 +36,10 @@ const ManageEvents = () => {
         }
       />
 
+      <div className="mb-4 flex justify-end">
+        <SortSelect value={sort} onChange={setSort} />
+      </div>
+
       <div className="overflow-x-auto rounded-xl border border-border-light bg-surface-raised shadow-sm">
         <table className="w-full border-collapse text-left">
           <thead>
@@ -38,14 +52,14 @@ const ManageEvents = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-border-light">
-            {events?.length === 0 ? (
+            {sorted.length === 0 ? (
               <tr>
                 <td colSpan={5} className="p-8 text-center text-text-muted">
                   Brak wydarzeń.
                 </td>
               </tr>
             ) : (
-              events?.map((event) => {
+              sorted.map((event) => {
                 const isUpcoming = new Date(event.date) >= new Date();
 
                 return (
@@ -60,7 +74,19 @@ const ManageEvents = () => {
                       {formatEventDate(event)}
                     </td>
                     <td className="p-4 font-mono text-sm text-text-secondary">
-                      {event.enrolledCount} / {event.maxCapacity}
+                      <span className="inline-flex items-center gap-1.5">
+                        {event.enrolledCount} / {event.maxCapacity}
+                        {isNearlyFull(
+                          event.enrolledCount,
+                          event.maxCapacity,
+                        ) && (
+                          <Flame
+                            size={13}
+                            className="text-status-warning"
+                            aria-label="Popularne — zajęte ponad połowa miejsc"
+                          />
+                        )}
+                      </span>
                     </td>
                     <td className="p-4">
                       <span

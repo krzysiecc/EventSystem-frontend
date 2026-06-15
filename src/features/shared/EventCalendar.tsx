@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import gsap from "gsap";
 import {
   ChevronLeft,
@@ -39,6 +40,12 @@ const keyOf = (d: Date) => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
  */
 const EventCalendar = () => {
   const { data: events, isLoading } = useCalendarEvents();
+  // Kalendarz jest współdzielony (student + organizator) — ścieżkę do szczegółów
+  // wybieramy po aktualnym adresie, żeby link prowadził do właściwego panelu.
+  const { pathname } = useLocation();
+  const detailsBase = pathname.startsWith("/organizer")
+    ? "/organizer/events"
+    : "/student/events";
   const init = useMemo(() => new Date(), []);
   const [year, setYear] = useState(init.getFullYear());
   const [month, setMonth] = useState(init.getMonth());
@@ -358,16 +365,36 @@ const EventCalendar = () => {
             </div>
             <ul className="max-h-[60vh] divide-y divide-border-light overflow-y-auto">
               {selected.events.map((e) => (
-                <li key={e.id} className="p-4">
-                  <p className="font-semibold text-text-primary">{e.title}</p>
-                  <p className="mt-1 flex items-center gap-1.5 text-sm text-text-secondary">
-                    <Clock size={13} className="text-accent-primary" />
-                    {formatEventDate(e, { time: true })}
-                  </p>
-                  <p className="mt-0.5 flex items-center gap-1.5 text-sm text-text-secondary">
-                    <MapPin size={13} className="text-accent-primary" />
-                    {e.locationName || e.location}
-                  </p>
+                <li key={e.id}>
+                  <Link
+                    to={`${detailsBase}/${e.id}`}
+                    onClick={() => setSelected(null)}
+                    className="flex items-start gap-3 p-4 transition hover:bg-bg-secondary"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold text-text-primary">
+                        {e.title}
+                      </p>
+                      <p className="mt-1 flex items-center gap-1.5 text-sm text-text-secondary">
+                        <Clock size={13} className="text-accent-primary" />
+                        {formatEventDate(e, { time: true })}
+                      </p>
+                      <p className="mt-0.5 flex items-center gap-1.5 text-sm text-text-secondary">
+                        <MapPin
+                          size={13}
+                          className="shrink-0 text-accent-primary"
+                        />
+                        <span className="truncate">
+                          {e.locationName || e.location}
+                        </span>
+                      </p>
+                    </div>
+                    <ChevronRight
+                      size={16}
+                      className="mt-0.5 shrink-0 text-text-muted"
+                      aria-hidden="true"
+                    />
+                  </Link>
                 </li>
               ))}
             </ul>
