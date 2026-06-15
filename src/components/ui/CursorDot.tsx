@@ -1,9 +1,11 @@
 import { useEffect, useRef } from "react";
 
 /**
- * @description Miękko podążająca kropka pod kursorem (tylko mysz/desktop, bez
- * reduced-motion). Używa mix-blend-difference, więc wizualnie „reaguje" na to,
- * co pod nią — w tym na animowane tło PixelBlast.
+ * @description Niestandardowy kursor: zastępuje natywny wskaźnik małym
+ * kwadracikiem z `mix-blend-difference`, więc „zmienia kolor" zależnie od tego,
+ * co jest pod nim — w tym od animowanego tła PixelBlast. W odróżnieniu od dawnej
+ * podążającej kropki śledzi kursor 1:1 (bez opóźnienia) i chowa natywny wskaźnik,
+ * żeby to on BYŁ kursorem. Tylko mysz/desktop, bez reduced-motion.
  */
 const CursorDot = () => {
   const dotRef = useRef<HTMLDivElement>(null);
@@ -16,16 +18,16 @@ const CursorDot = () => {
     const dot = dotRef.current;
     if (!dot) return;
 
-    let mouseX = window.innerWidth / 2;
-    let mouseY = window.innerHeight / 2;
-    let x = mouseX;
-    let y = mouseY;
-    let raf = 0;
-    let shown = false;
+    // Schowaj natywny kursor wszędzie — także na elementach z własnym `cursor`
+    // (przyciski, linki, pola). Dzięki temu widać tylko nasz, zmieniający kolor.
+    const style = document.createElement("style");
+    style.textContent = "* { cursor: none !important; }";
+    document.head.appendChild(style);
 
+    let shown = false;
     const onMove = (e: PointerEvent) => {
-      mouseX = e.clientX;
-      mouseY = e.clientY;
+      // Pozycja dokładnie pod kursorem (bez wygładzania — to ma być kursor).
+      dot.style.transform = `translate3d(${e.clientX}px, ${e.clientY}px, 0) translate(-50%, -50%)`;
       if (!shown) {
         shown = true;
         dot.style.opacity = "1";
@@ -36,20 +38,12 @@ const CursorDot = () => {
       dot.style.opacity = "0";
     };
 
-    const loop = () => {
-      x += (mouseX - x) * 0.4;
-      y += (mouseY - y) * 0.4;
-      dot.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%)`;
-      raf = requestAnimationFrame(loop);
-    };
-    raf = requestAnimationFrame(loop);
-
     window.addEventListener("pointermove", onMove, { passive: true });
     document.addEventListener("pointerleave", onLeave);
     return () => {
-      cancelAnimationFrame(raf);
       window.removeEventListener("pointermove", onMove);
       document.removeEventListener("pointerleave", onLeave);
+      style.remove();
     };
   }, []);
 
