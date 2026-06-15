@@ -86,9 +86,9 @@ const SiteBackground = () => {
           edgeFade={0.4}
           enableRipples={false}
           liquid
-          liquidStrength={0.1}
-          liquidRadius={1.2}
-          liquidWobbleSpeed={5}
+          liquidStrength={0.045}
+          liquidRadius={0.8}
+          liquidWobbleSpeed={4}
           transparent
           maxPixelRatio={1}
         />

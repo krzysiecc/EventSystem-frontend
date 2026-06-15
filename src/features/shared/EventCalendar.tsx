@@ -81,62 +81,45 @@ const EventCalendar = () => {
   const firstDow = (new Date(year, month, 1).getDay() + 6) % 7; // Pn = 0
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const totalCells = Math.ceil((firstDow + daysInMonth) / 7) * 7;
-  const rows = totalCells / 7;
   const todayKey = keyOf(init);
 
-  // Pochylenie kostek za kursorem (tylko mysz, bez reduced-motion).
+  // Delikatne przechylenie całej siatki względem środka kalendarza: kursor na
+  // środku = zero ruchu, im dalej od środka, tym mocniejsze (ale subtelne)
+  // pochylenie wszystkich kostek (tylko mysz, bez reduced-motion).
   useEffect(() => {
     const grid = gridRef.current;
     if (!grid) return;
     if (!window.matchMedia("(hover: hover)").matches) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-    const radius = 2.2;
-    const maxAngle = 32;
+    const maxAngle = 12;
     let raf = 0;
 
-    const tiltAt = (rowC: number, colC: number) => {
-      grid.querySelectorAll<HTMLElement>(".cal-cube").forEach((cube) => {
-        const r = Number(cube.dataset.row);
-        const c = Number(cube.dataset.col);
-        const dist = Math.hypot(r - rowC, c - colC);
-        if (dist <= radius) {
-          const pct = 1 - dist / radius;
-          gsap.to(cube, {
-            duration: 0.3,
-            ease: "power3.out",
-            overwrite: true,
-            rotateX: -pct * maxAngle,
-            rotateY: pct * maxAngle,
-          });
-        } else {
-          gsap.to(cube, {
-            duration: 0.6,
-            ease: "power3.out",
-            overwrite: true,
-            rotateX: 0,
-            rotateY: 0,
-          });
-        }
+    const tiltTo = (nx: number, ny: number) => {
+      gsap.to(grid.querySelectorAll<HTMLElement>(".cal-cube"), {
+        duration: 0.4,
+        ease: "power3.out",
+        overwrite: true,
+        rotateX: -ny * maxAngle,
+        rotateY: nx * maxAngle,
       });
     };
 
     const onMove = (e: PointerEvent) => {
       const rect = grid.getBoundingClientRect();
-      const colC = (e.clientX - rect.left) / (rect.width / 7);
-      const rowC = (e.clientY - rect.top) / (rect.height / rows);
+      // Przesunięcie kursora od środka, znormalizowane do ~[-1, 1].
+      const nx = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      const ny = ((e.clientY - rect.top) / rect.height) * 2 - 1;
       if (raf) cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => tiltAt(rowC, colC));
+      raf = requestAnimationFrame(() => tiltTo(nx, ny));
     };
     const reset = () => {
-      grid.querySelectorAll<HTMLElement>(".cal-cube").forEach((cube) =>
-        gsap.to(cube, {
-          duration: 0.6,
-          ease: "power3.out",
-          rotateX: 0,
-          rotateY: 0,
-        }),
-      );
+      gsap.to(grid.querySelectorAll<HTMLElement>(".cal-cube"), {
+        duration: 0.6,
+        ease: "power3.out",
+        rotateX: 0,
+        rotateY: 0,
+      });
     };
 
     grid.addEventListener("pointermove", onMove);
@@ -147,7 +130,7 @@ const EventCalendar = () => {
       if (raf) cancelAnimationFrame(raf);
       gsap.killTweensOf(grid.querySelectorAll(".cal-cube"));
     };
-  }, [rows, year, month]);
+  }, [year, month]);
 
   // Animacja wejścia popupu.
   useEffect(() => {
@@ -190,7 +173,7 @@ const EventCalendar = () => {
   const years = Array.from({ length: 7 }, (_, i) => init.getFullYear() - 2 + i);
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="mx-auto max-w-2xl">
       <PageHeader
         kicker="Kalendarz"
         title="Wydarzenia"

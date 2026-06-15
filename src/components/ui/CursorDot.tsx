@@ -37,8 +37,8 @@ const CursorDot = () => {
     };
 
     const loop = () => {
-      x += (mouseX - x) * 0.18;
-      y += (mouseY - y) * 0.18;
+      x += (mouseX - x) * 0.4;
+      y += (mouseY - y) * 0.4;
       dot.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%)`;
       raf = requestAnimationFrame(loop);
     };
@@ -58,7 +58,7 @@ const CursorDot = () => {
       ref={dotRef}
       aria-hidden="true"
       style={{ willChange: "transform", opacity: 0 }}
-      className="pointer-events-none fixed left-0 top-0 z-[60] hidden h-4 w-4 rounded-full bg-white mix-blend-difference transition-opacity duration-300 md:block"
+      className="pointer-events-none fixed left-0 top-0 z-[60] hidden h-3 w-3 rounded-[2px] bg-white mix-blend-difference transition-opacity duration-300 md:block"
     />
   );
 };

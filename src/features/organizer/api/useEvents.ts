@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient, apiFetch } from "@/lib/apiClient";
 import { useAuthStore } from "@/store/useAuthStore";
+import type { AdminEventDTO } from "@/features/admin/api/useAdminQueries";
 
 export interface OrganizerEvent {
   id: number;
@@ -32,15 +33,48 @@ export interface Attendee {
 }
 
 /**
- * @description Custom hook to fetch events created by the logged-in organizer.
+ * @description Mapuje adminowy DTO listy wydarzeń na kształt `OrganizerEvent`
+ * używany przez panel. Lista admina (`/admin/events`) nie zwraca pól
+ * lokalizacji / opisu / obrazka, więc uzupełniamy je bezpiecznymi wartościami —
+ * panel ich w tej tabeli/kartach nie pokazuje.
+ */
+const adminEventToOrganizerEvent = (e: AdminEventDTO): OrganizerEvent => ({
+  id: e.id,
+  title: e.title,
+  description: "",
+  date: e.date,
+  startDate: e.startDate,
+  endDate: e.endDate,
+  location: "",
+  locationName: null,
+  lat: null,
+  lng: null,
+  enrolledCount: e.enrolledCount,
+  maxCapacity: e.maxCapacity,
+  scannedCount: e.scannedCount,
+  imageUrl: null,
+});
+
+/**
+ * @description Custom hook to fetch events for the events panel. Branches by
+ * role: Organizer → `/events/my` (own events), Admin → `/admin/events` (all
+ * events). For an admin `/events/my` would return an empty list because the
+ * backend filters by `OrganizerId == userId`, so the admin must hit the admin
+ * endpoint and we map its different DTO (`AdminEventDTO`) onto `OrganizerEvent`.
  *
- * @param none
  * @returns {OrganizerEvent[]}      list of events with basic info for dashboard display
  */
 export const useOrganizerEvents = () => {
+  const isAdmin = useAuthStore((state) => state.user?.role === "Admin");
   return useQuery({
-    queryKey: ["organizer", "events"],
-    queryFn: () => apiFetch<OrganizerEvent[]>("/events/my"),
+    queryKey: ["organizer", "events", { admin: isAdmin }],
+    queryFn: async (): Promise<OrganizerEvent[]> => {
+      if (isAdmin) {
+        const events = await apiFetch<AdminEventDTO[]>("/admin/events");
+        return events.map(adminEventToOrganizerEvent);
+      }
+      return apiFetch<OrganizerEvent[]>("/events/my");
+    },
   });
 };
 
