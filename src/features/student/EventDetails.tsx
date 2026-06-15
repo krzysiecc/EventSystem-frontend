@@ -6,6 +6,8 @@ import {
   Users,
   Ticket,
   QrCode,
+  Eye,
+  Clock,
 } from "lucide-react";
 import {
   useEventDetails,
@@ -14,6 +16,10 @@ import {
 } from "./api/useStudentQueries";
 import { useToastStore } from "@/store/useToastStore";
 import { formatEventDate } from "@/lib/eventDate";
+import { registrationStatus } from "@/lib/eventRegistration";
+
+const formatDateTime = (d: Date) =>
+  d.toLocaleString("pl-PL", { dateStyle: "long", timeStyle: "short" });
 
 const EventDetailsStudent = () => {
   const { id } = useParams<{ id: string }>();
@@ -51,6 +57,7 @@ const EventDetailsStudent = () => {
   };
 
   const isFull = event.maxCapacity <= event.enrolledCount;
+  const reg = registrationStatus(event);
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -63,9 +70,16 @@ const EventDetailsStudent = () => {
       </Link>
 
       <div className="rounded-xl border border-border-light bg-surface-raised p-6 shadow-sm md:p-10">
-        <h1 className="mb-6 text-3xl font-extrabold tracking-tight text-text-primary md:text-4xl">
+        <h1 className="mb-3 text-3xl font-extrabold tracking-tight text-text-primary md:text-4xl">
           {event.title}
         </h1>
+
+        {event.clicks24h != null && (
+          <p className="mb-6 flex items-center gap-1.5 text-sm text-text-muted">
+            <Eye size={15} className="text-accent-primary" />
+            Odwiedziny (24h): {event.clicks24h}
+          </p>
+        )}
 
         <div className="mb-8 grid grid-cols-1 gap-4 rounded-xl bg-bg-secondary p-4 sm:grid-cols-3">
           <div>
@@ -111,6 +125,18 @@ const EventDetailsStudent = () => {
           </p>
         </div>
 
+        {/* Informacja o harmonogramie zapisów (gdy ustawione okna rejestracji). */}
+        {reg.phase !== "open" && (
+          <p className="mb-3 flex items-center gap-2 text-sm text-text-secondary">
+            <Clock size={15} className="text-accent-primary" />
+            {reg.phase === "presave"
+              ? `Trwa pre-rejestracja. Pełna rejestracja otwiera się ${formatDateTime(reg.opensAt!)}.`
+              : reg.presaveAt
+                ? `Pre-rejestracja od ${formatDateTime(reg.presaveAt)}, pełna rejestracja od ${formatDateTime(reg.opensAt!)}.`
+                : `Rejestracja otwiera się ${formatDateTime(reg.opensAt!)}.`}
+          </p>
+        )}
+
         {existingTicket ? (
           <Link
             to={`/student/tickets/${existingTicket.id}`}
@@ -119,6 +145,14 @@ const EventDetailsStudent = () => {
             <QrCode size={18} />
             {existingTicket.isScanned ? "Pokaż bilet (zużyty)" : "Pokaż swój bilet"}
           </Link>
+        ) : reg.phase === "closed" ? (
+          <button
+            disabled
+            className="inline-flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-lg bg-accent-primary px-8 py-3 text-lg font-bold text-text-on-accent opacity-50 md:w-auto"
+          >
+            <Clock size={18} />
+            Zapisy jeszcze niedostępne
+          </button>
         ) : (
           <button
             onClick={handleRegister}
@@ -130,7 +164,9 @@ const EventDetailsStudent = () => {
               ? "Przetwarzanie..."
               : isFull
                 ? "Brak miejsc"
-                : "Odbierz darmowy bilet"}
+                : reg.phase === "presave"
+                  ? "Pre-rejestracja — odbierz bilet"
+                  : "Odbierz darmowy bilet"}
           </button>
         )}
       </div>

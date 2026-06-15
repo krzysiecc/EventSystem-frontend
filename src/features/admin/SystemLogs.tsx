@@ -1,4 +1,13 @@
-import { Activity, HeartPulse, Copy, Share2 } from "lucide-react";
+import { useMemo, useState } from "react";
+import {
+  Activity,
+  HeartPulse,
+  Copy,
+  Share2,
+  Search,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { useSystemLogs, type AuditLog } from "./api/useAdminQueries";
 import { useToastStore } from "@/store/useToastStore";
 import PageHeader from "@/components/ui/PageHeader";
@@ -15,9 +24,39 @@ const actionBadgeClass = (action: string): string => {
   return "bg-status-info text-text-on-accent";
 };
 
+const PAGE_SIZES = [20, 50, 100] as const;
+
+const inputClass =
+  "rounded-md border border-border-medium bg-bg-tertiary px-2.5 py-2 text-sm text-text-primary focus:border-accent-primary focus:outline-none focus:ring-1 focus:ring-accent-primary";
+
+/** Lokalna data (yyyy-mm-dd) z timestampu — do filtra po dniu. */
+const localDay = (ts: string | null | undefined): string => {
+  if (!ts) return "";
+  const d = new Date(ts);
+  if (isNaN(d.getTime())) return "";
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+    d.getDate(),
+  ).padStart(2, "0")}`;
+};
+
 const SystemLogs = () => {
   const { data: logs, isLoading } = useSystemLogs();
   const addToast = useToastStore((state) => state.addToast);
+
+  // --- Filtry + paginacja (po stronie klienta) ---
+  const [query, setQuery] = useState("");
+  const [actionFilter, setActionFilter] = useState("");
+  const [dateFilter, setDateFilter] = useState("");
+  const [pageSize, setPageSize] = useState<number>(PAGE_SIZES[0]);
+  const [page, setPage] = useState(1);
+
+  // Każda zmiana filtra wraca na pierwszą stronę.
+  const resetting =
+    <T,>(setter: (v: T) => void) =>
+    (v: T) => {
+      setter(v);
+      setPage(1);
+    };
 
   const formatTimestamp = (ts: string | null | undefined) => {
     if (!ts) return "Brak daty";
@@ -53,6 +92,33 @@ const SystemLogs = () => {
       /* użytkownik anulował udostępnianie — ignorujemy */
     }
   };
+
+  // Lista typów akcji do filtra (unikalne, posortowane alfabetycznie).
+  const actionTypes = useMemo(() => {
+    const set = new Set<string>();
+    (logs ?? []).forEach((l) => set.add(l.action));
+    return Array.from(set).sort((a, b) => a.localeCompare(b, "pl"));
+  }, [logs]);
+
+  // Filtrowanie: po nazwie (e-mail / szczegóły / encja), dacie i typie akcji.
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return (logs ?? []).filter((log) => {
+      if (actionFilter && log.action !== actionFilter) return false;
+      if (dateFilter && localDay(log.createdAt) !== dateFilter) return false;
+      if (q) {
+        const haystack =
+          `${log.userEmail} ${log.details ?? ""} ${log.entityType} ${log.action}`.toLowerCase();
+        if (!haystack.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [logs, query, actionFilter, dateFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const pageStart = (currentPage - 1) * pageSize;
+  const pageItems = filtered.slice(pageStart, pageStart + pageSize);
 
   if (isLoading)
     return <div className="p-6 text-text-muted">Ładowanie logów...</div>;
@@ -99,6 +165,64 @@ const SystemLogs = () => {
         </div>
       </div>
 
+      {/* Pasek filtrów: szukaj po nazwie, typie akcji, dacie + rozmiar strony */}
+      <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-border-light bg-surface-raised p-3 shadow-sm">
+        <div className="relative min-w-50 flex-1">
+          <Search
+            size={15}
+            className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted"
+          />
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => resetting(setQuery)(e.target.value)}
+            placeholder="Szukaj po e-mailu lub szczegółach…"
+            className={`${inputClass} w-full pl-8`}
+          />
+        </div>
+
+        <label className="flex items-center gap-2 text-xs text-text-muted">
+          Typ akcji
+          <select
+            value={actionFilter}
+            onChange={(e) => resetting(setActionFilter)(e.target.value)}
+            className={inputClass}
+          >
+            <option value="">Wszystkie</option>
+            {actionTypes.map((a) => (
+              <option key={a} value={a}>
+                {a}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="flex items-center gap-2 text-xs text-text-muted">
+          Data
+          <input
+            type="date"
+            value={dateFilter}
+            onChange={(e) => resetting(setDateFilter)(e.target.value)}
+            className={inputClass}
+          />
+        </label>
+
+        <label className="flex items-center gap-2 text-xs text-text-muted">
+          Na stronie
+          <select
+            value={pageSize}
+            onChange={(e) => resetting(setPageSize)(Number(e.target.value))}
+            className={inputClass}
+          >
+            {PAGE_SIZES.map((n) => (
+              <option key={n} value={n}>
+                {n}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
       {/* Tabela logów */}
       <div className="overflow-x-auto rounded-xl border border-border-light bg-surface-raised shadow-sm">
         <table className="w-full border-collapse text-left">
@@ -112,14 +236,16 @@ const SystemLogs = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-border-light">
-            {logs?.length === 0 && (
+            {pageItems.length === 0 && (
               <tr>
                 <td colSpan={5} className="p-6 text-center text-text-muted">
-                  Brak logów w systemie.
+                  {filtered.length === 0 && (logs?.length ?? 0) > 0
+                    ? "Brak logów spełniających kryteria."
+                    : "Brak logów w systemie."}
                 </td>
               </tr>
             )}
-            {logs?.map((log) => (
+            {pageItems.map((log) => (
               <tr
                 key={log.id}
                 className="align-top transition-colors hover:bg-bg-secondary"
@@ -129,7 +255,7 @@ const SystemLogs = () => {
                 </td>
                 <td className="p-3">
                   <span
-                    className={`rounded px-2 py-0.5 font-mono text-xs font-bold uppercase ${actionBadgeClass(log.action)}`}
+                    className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${actionBadgeClass(log.action)}`}
                   >
                     {log.action}
                   </span>
@@ -166,6 +292,37 @@ const SystemLogs = () => {
           </tbody>
         </table>
       </div>
+
+      {/* Paginacja + licznik wyników */}
+      {filtered.length > 0 && (
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm text-text-muted">
+          <span>
+            {pageStart + 1}–{Math.min(pageStart + pageSize, filtered.length)} z{" "}
+            {filtered.length}
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage <= 1}
+              className="flex items-center gap-1 rounded-md border border-border-medium px-2.5 py-1.5 text-text-primary transition hover:bg-bg-secondary disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <ChevronLeft size={15} />
+              Poprzednia
+            </button>
+            <span className="font-mono text-xs">
+              Strona {currentPage} z {totalPages}
+            </span>
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage >= totalPages}
+              className="flex items-center gap-1 rounded-md border border-border-medium px-2.5 py-1.5 text-text-primary transition hover:bg-bg-secondary disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Następna
+              <ChevronRight size={15} />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

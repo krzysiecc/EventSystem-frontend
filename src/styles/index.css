@@ -228,6 +228,66 @@
     height: 0;
     display: none;
   }
+
+  /* =================================================================
+     KURSOR — reaktywny, natywny (zamiast dawnej kropki JS)
+     Zwykły wskaźnik systemowy malowany własną grafiką SVG: zmienia
+     KOLOR zależnie od kontekstu (neutralny → fiolet nad klikalnym →
+     żółty przy wciśnięciu). Rysuje go system, więc jest ZAWSZE na
+     wierzchu (też nad modalami) i nie kosztuje CPU/GPU ani RAM-u —
+     w przeciwieństwie do elementu z mix-blend nad canvasem WebGL.
+     `cursor` jest dziedziczony, więc dzieci przycisków też go dostają.
+     ================================================================= */
+  :root {
+    cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cpolygon points='2,2 2,19 6,15 9,22 12,21 9,14 16,14' fill='%23ffffff' stroke='%23000000' stroke-width='1.5' stroke-linejoin='round'/%3E%3C/svg%3E")
+        2 2,
+      default;
+  }
+
+  /* Nad elementami klikalnymi — wskaźnik robi się fioletowy (akcent). */
+  a,
+  button,
+  summary,
+  label[for],
+  select,
+  [role="button"],
+  [role="link"],
+  [role="tab"],
+  input[type="checkbox"],
+  input[type="radio"],
+  input[type="submit"],
+  input[type="button"],
+  input[type="file"],
+  .cursor-pointer {
+    cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cpolygon points='2,2 2,19 6,15 9,22 12,21 9,14 16,14' fill='%237a2bf5' stroke='%23ffffff' stroke-width='1.5' stroke-linejoin='round'/%3E%3C/svg%3E")
+        2 2,
+      pointer;
+  }
+
+  /* Wciśnięcie (klik) — błysk żółtym (signal), żeby było widać reakcję. */
+  a:active,
+  button:active,
+  summary:active,
+  [role="button"]:active,
+  .cursor-pointer:active {
+    cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Cpolygon points='2,2 2,19 6,15 9,22 12,21 9,14 16,14' fill='%23ffc21a' stroke='%23000000' stroke-width='1.5' stroke-linejoin='round'/%3E%3C/svg%3E")
+        2 2,
+      pointer;
+  }
+
+  /* Pola tekstowe — natywna belka tekstu; nieaktywne — „zakaz”. */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not(
+      [type="button"]
+    ):not([type="file"]):not([type="range"]),
+  textarea,
+  [contenteditable="true"] {
+    cursor: text;
+  }
+  button:disabled,
+  [aria-disabled="true"],
+  .cursor-not-allowed {
+    cursor: not-allowed;
+  }
 }
 
 @layer utilities {

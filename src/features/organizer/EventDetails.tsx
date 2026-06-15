@@ -1,7 +1,22 @@
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, CalendarDays, MapPin, Camera, Users } from "lucide-react";
+import {
+  ArrowLeft,
+  CalendarDays,
+  MapPin,
+  Camera,
+  Users,
+  Eye,
+  Clock,
+} from "lucide-react";
 import { useOrganizerEventDetails } from "./api/useEvents";
 import { formatEventDate } from "@/lib/eventDate";
+
+const formatDateTime = (iso: string) => {
+  const d = new Date(iso);
+  return isNaN(d.getTime())
+    ? "—"
+    : d.toLocaleString("pl-PL", { dateStyle: "medium", timeStyle: "short" });
+};
 
 const EventDetailsOrg = () => {
   const { id } = useParams<{ id: string }>();
@@ -80,6 +95,37 @@ const EventDetailsOrg = () => {
               className="h-2.5 rounded-full bg-accent-primary"
               style={{ width: `${Math.min(progress, 100)}%` }}
             ></div>
+          </div>
+        </div>
+
+        {/* Statystyki: odwiedziny 24h + skonfigurowany harmonogram zapisów */}
+        <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className="rounded-lg bg-bg-secondary p-4">
+            <span className="mb-1 flex items-center gap-1.5 font-mono text-xs uppercase tracking-wider text-text-muted">
+              <Eye size={13} className="text-accent-primary" /> Odwiedziny (24h)
+            </span>
+            <span className="text-lg font-semibold text-text-primary">
+              {event.clicks24h ?? 0}
+            </span>
+          </div>
+          <div className="rounded-lg bg-bg-secondary p-4">
+            <span className="mb-1 flex items-center gap-1.5 font-mono text-xs uppercase tracking-wider text-text-muted">
+              <Clock size={13} className="text-accent-primary" /> Pre-rejestracja
+            </span>
+            <span className="text-sm font-medium text-text-primary">
+              {event.presaveOpensAt ? formatDateTime(event.presaveOpensAt) : "—"}
+            </span>
+          </div>
+          <div className="rounded-lg bg-bg-secondary p-4">
+            <span className="mb-1 flex items-center gap-1.5 font-mono text-xs uppercase tracking-wider text-text-muted">
+              <Clock size={13} className="text-accent-primary" /> Otwarcie
+              rejestracji
+            </span>
+            <span className="text-sm font-medium text-text-primary">
+              {event.registrationOpensAt
+                ? formatDateTime(event.registrationOpensAt)
+                : "Od razu"}
+            </span>
           </div>
         </div>
 

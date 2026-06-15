@@ -3,7 +3,6 @@ import ToastContainer from "@/components/ui/ToastContainer";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import ScrollHint from "@/components/ui/ScrollHint";
 import SiteBackground from "@/components/ui/SiteBackground";
-import CursorDot from "@/components/ui/CursorDot";
 
 const RootLayout = () => {
   return (
@@ -13,7 +12,6 @@ const RootLayout = () => {
       <ToastContainer />
       <ConfirmDialog />
       <ScrollHint />
-      <CursorDot />
     </div>
   );
 };

@@ -19,6 +19,10 @@ export interface PublicEvent {
   /** Kliknięcia w ostatnich 24h (popularność). Dostarcza backend — patrz
    *  docs/api-contract.md. Brak → traktujemy jak 0 przy sortowaniu. */
   clicks24h?: number;
+  /** ISO: kiedy otwiera się właściwa rejestracja. Brak → rejestracja zawsze otwarta. */
+  registrationOpensAt?: string | null;
+  /** ISO: kiedy otwiera się pre-rejestracja („presave") — okno przed rejestracją. */
+  presaveOpensAt?: string | null;
 }
 
 export interface Ticket {

@@ -23,6 +23,10 @@ export interface OrganizerEvent {
   imageUrl?: string | null;
   /** Kliknięcia w ostatnich 24h (popularność) — opcjonalne, dostarcza backend. */
   clicks24h?: number;
+  /** ISO: kiedy otwiera się właściwa rejestracja. Brak → rejestracja zawsze otwarta. */
+  registrationOpensAt?: string | null;
+  /** ISO: kiedy otwiera się pre-rejestracja („presave") — okno przed rejestracją. */
+  presaveOpensAt?: string | null;
 }
 
 export interface Attendee {
@@ -55,6 +59,9 @@ const adminEventToOrganizerEvent = (e: AdminEventDTO): OrganizerEvent => ({
   maxCapacity: e.maxCapacity,
   scannedCount: e.scannedCount,
   imageUrl: null,
+  clicks24h: e.clicks24h,
+  registrationOpensAt: e.registrationOpensAt,
+  presaveOpensAt: e.presaveOpensAt,
 });
 
 /**
@@ -250,8 +257,17 @@ export const useDeleteEvent = () => {
       );
       return response.json();
     },
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ["organizer", "events"] }),
+    // Po usunięciu odświeżamy w tle WSZYSTKIE widoki, na których wydarzenie
+    // mogło być widoczne — nie tylko panel org/admina, ale też listy i kalendarz
+    // studenta/publiczne, żeby usunięte wydarzenie od razu zniknęło użytkownikom.
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["organizer", "events"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "events"] });
+      queryClient.invalidateQueries({ queryKey: ["student", "events"] });
+      queryClient.invalidateQueries({
+        queryKey: ["events", "public", "calendar"],
+      });
+    },
   });
 };
 

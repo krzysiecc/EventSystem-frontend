@@ -28,11 +28,33 @@ const editEventSchema = z
     endDate: z.string().min(1, "Data końca jest wymagana"),
     maxCapacity: z.number().min(1, "Pojemność musi wynosić minimum 1"),
     description: z.string().min(10, "Opis musi mieć min. 10 znaków"),
+    // Okna zapisów (opcjonalne). Puste = rejestracja otwarta od razu.
+    registrationOpensAt: z.string().optional(),
+    presaveOpensAt: z.string().optional(),
   })
   .refine((d) => new Date(d.endDate) >= new Date(d.startDate), {
     message: "Koniec nie może być wcześniej niż start",
     path: ["endDate"],
-  });
+  })
+  .refine(
+    (d) =>
+      !d.registrationOpensAt ||
+      new Date(d.registrationOpensAt) <= new Date(d.startDate),
+    {
+      message: "Rejestracja musi otwierać się najpóźniej w momencie startu",
+      path: ["registrationOpensAt"],
+    },
+  )
+  .refine(
+    (d) =>
+      !d.presaveOpensAt ||
+      !d.registrationOpensAt ||
+      new Date(d.presaveOpensAt) <= new Date(d.registrationOpensAt),
+    {
+      message: "Pre-rejestracja nie może być później niż otwarcie rejestracji",
+      path: ["presaveOpensAt"],
+    },
+  );
 
 type EditEventFormInputs = z.infer<typeof editEventSchema>;
 
@@ -85,6 +107,12 @@ const EditEvent = () => {
         startDate: toLocalInput(event.startDate ?? event.date),
         endDate: toLocalInput(event.endDate ?? event.date),
         maxCapacity: event.maxCapacity,
+        registrationOpensAt: event.registrationOpensAt
+          ? toLocalInput(event.registrationOpensAt)
+          : "",
+        presaveOpensAt: event.presaveOpensAt
+          ? toLocalInput(event.presaveOpensAt)
+          : "",
       });
     }
   }, [event, reset, isDirty]);
@@ -121,6 +149,8 @@ const EditEvent = () => {
           lng: loc.lng,
           date: data.startDate, // kompatybilność ze starym backendem
           description: cleanDescription,
+          registrationOpensAt: data.registrationOpensAt || null,
+          presaveOpensAt: data.presaveOpensAt || null,
         },
       },
       {
@@ -254,6 +284,45 @@ const EditEvent = () => {
               {errors.maxCapacity.message}
             </p>
           )}
+        </div>
+        <div>
+          <label className={labelClass}>Otwarcie zapisów (opcjonalne)</label>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <span className="mb-1 block text-xs text-text-muted">
+                Pre-rejestracja (presave)
+              </span>
+              <input
+                type="datetime-local"
+                {...register("presaveOpensAt")}
+                className={inputClass}
+              />
+              {errors.presaveOpensAt && (
+                <p className="mt-1 text-sm text-status-error">
+                  {errors.presaveOpensAt.message}
+                </p>
+              )}
+            </div>
+            <div>
+              <span className="mb-1 block text-xs text-text-muted">
+                Otwarcie rejestracji
+              </span>
+              <input
+                type="datetime-local"
+                {...register("registrationOpensAt")}
+                className={inputClass}
+              />
+              {errors.registrationOpensAt && (
+                <p className="mt-1 text-sm text-status-error">
+                  {errors.registrationOpensAt.message}
+                </p>
+              )}
+            </div>
+          </div>
+          <p className="mt-1.5 text-xs text-text-muted">
+            Puste = rejestracja otwarta od razu. „Presave" to wcześniejsze okno
+            zapisów, zanim ruszy właściwa rejestracja.
+          </p>
         </div>
         <div>
           <label className={labelClass}>Lokalizacja</label>

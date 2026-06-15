@@ -29,11 +29,33 @@ const createEventSchema = z
     endDate: z.string().min(1, "Data końca jest wymagana"),
     maxCapacity: z.coerce.number().min(1, "Pojemność musi wynosić minimum 1"),
     description: z.string().min(10, "Opis musi mieć min. 10 znaków"),
+    // Okna zapisów (opcjonalne). Puste = rejestracja otwarta od razu.
+    registrationOpensAt: z.string().optional(),
+    presaveOpensAt: z.string().optional(),
   })
   .refine((d) => new Date(d.endDate) >= new Date(d.startDate), {
     message: "Koniec nie może być wcześniej niż start",
     path: ["endDate"],
-  });
+  })
+  .refine(
+    (d) =>
+      !d.registrationOpensAt ||
+      new Date(d.registrationOpensAt) <= new Date(d.startDate),
+    {
+      message: "Rejestracja musi otwierać się najpóźniej w momencie startu",
+      path: ["registrationOpensAt"],
+    },
+  )
+  .refine(
+    (d) =>
+      !d.presaveOpensAt ||
+      !d.registrationOpensAt ||
+      new Date(d.presaveOpensAt) <= new Date(d.registrationOpensAt),
+    {
+      message: "Pre-rejestracja nie może być później niż otwarcie rejestracji",
+      path: ["presaveOpensAt"],
+    },
+  );
 
 type CreateEventInputs = z.infer<typeof createEventSchema>;
 type CreateEventFormInputs = z.input<typeof createEventSchema>;
@@ -116,6 +138,8 @@ const CreateEvent = () => {
           startDate: toLocalInput(start),
           endDate: toLocalInput(end),
           date: toLocalInput(start), // kompatybilność ze starym backendem
+          registrationOpensAt: data.registrationOpensAt || null,
+          presaveOpensAt: data.presaveOpensAt || null,
         }),
       }).then((r) => r.json());
 
@@ -237,6 +261,46 @@ const CreateEvent = () => {
             start={startVal}
             end={endVal}
           />
+        </div>
+
+        <div>
+          <label className={labelClass}>Otwarcie zapisów (opcjonalne)</label>
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+            <div>
+              <span className="mb-1 block text-xs text-text-muted">
+                Pre-rejestracja (presave)
+              </span>
+              <input
+                type="datetime-local"
+                {...register("presaveOpensAt")}
+                className={inputClass}
+              />
+              {errors.presaveOpensAt && (
+                <p className="mt-1 text-sm text-status-error">
+                  {errors.presaveOpensAt.message}
+                </p>
+              )}
+            </div>
+            <div>
+              <span className="mb-1 block text-xs text-text-muted">
+                Otwarcie rejestracji
+              </span>
+              <input
+                type="datetime-local"
+                {...register("registrationOpensAt")}
+                className={inputClass}
+              />
+              {errors.registrationOpensAt && (
+                <p className="mt-1 text-sm text-status-error">
+                  {errors.registrationOpensAt.message}
+                </p>
+              )}
+            </div>
+          </div>
+          <p className="mt-1.5 text-xs text-text-muted">
+            Puste = rejestracja otwarta od razu. „Presave" to wcześniejsze okno
+            zapisów, zanim ruszy właściwa rejestracja.
+          </p>
         </div>
 
         <div>

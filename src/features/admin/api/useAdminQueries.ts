@@ -36,6 +36,10 @@ export interface AdminEventDTO {
   status: string;
   /** Kliknięcia w ostatnich 24h (popularność) — opcjonalne, dostarcza backend. */
   clicks24h?: number;
+  /** ISO: kiedy otwiera się właściwa rejestracja. Brak → rejestracja zawsze otwarta. */
+  registrationOpensAt?: string | null;
+  /** ISO: kiedy otwiera się pre-rejestracja („presave") — okno przed rejestracją. */
+  presaveOpensAt?: string | null;
 }
 
 // --- QUERIES ---
