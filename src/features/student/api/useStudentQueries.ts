@@ -40,6 +40,9 @@ export interface Ticket {
   qrCodeContent: string;
   isScanned: boolean;
   studentId: number;
+  /** Wydarzenie już się zakończyło → bilet przedawniony (wygasły). Wyznacza
+   *  backend; frontend dolicza go też „na żywo" przez {@link isEventEnded}. */
+  isExpired?: boolean;
 }
 
 /**

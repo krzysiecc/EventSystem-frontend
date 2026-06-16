@@ -70,6 +70,19 @@ export const getEventPhase = (
 };
 
 /**
+ * @description Czy wydarzenie już się zakończyło — wtedy bilet przedawnia się
+ * (wygasa). Domyślnie liczone po `endDate`; gdy go brak, traktujemy za koniec
+ * sam start (spójnie z backendem: `EndDate ?? Date`).
+ */
+export const isEventEnded = (
+  evt: EventDateLike,
+  now: number = Date.now(),
+): boolean => {
+  const expiry = (eventEnd(evt) ?? eventStart(evt)).getTime();
+  return !Number.isNaN(expiry) && now > expiry;
+};
+
+/**
  * @description Zwraca tekst daty wydarzenia. Jeśli istnieje sensowny `endDate`,
  * renderuje zakres; przy tym samym dniu z czasem skraca koniec do samej godziny.
  * @param evt        obiekt z polami date/startDate/endDate

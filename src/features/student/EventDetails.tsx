@@ -36,10 +36,14 @@ const EventDetailsStudent = () => {
     );
 
   // Masz już bilet na to wydarzenie? Zamiast zapisu — link do kodu QR biletu.
-  const existingTicket = (tickets ?? []).find(
-    (t) =>
-      (t.eventId != null && t.eventId === event.id) ||
-      t.eventTitle.trim().toLowerCase() === event.title.trim().toLowerCase(),
+  // Dopasowujemy PRZEDE WSZYSTKIM po `eventId`. Dopasowanie po tytule jest tylko
+  // awaryjne — dla biletów bez `eventId` (legacy). W serii cyklicznej wszystkie
+  // terminy mają ten sam tytuł, więc łączenie po tytule wskazywałoby na inny
+  // termin (np. bilet z 15 czerwca otwierany ze strony terminu z 29 czerwca).
+  const existingTicket = (tickets ?? []).find((t) =>
+    t.eventId != null
+      ? t.eventId === event.id
+      : t.eventTitle.trim().toLowerCase() === event.title.trim().toLowerCase(),
   );
 
   const handleRegister = () => {

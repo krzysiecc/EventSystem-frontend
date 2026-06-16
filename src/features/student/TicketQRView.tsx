@@ -6,8 +6,9 @@ import {
   useEventForTicket,
   ticketDateLike,
 } from "./api/useStudentQueries";
-import { formatEventDate } from "@/lib/eventDate";
+import { formatEventDate, isEventEnded } from "@/lib/eventDate";
 import EventLiveBar from "@/components/ui/EventLiveBar";
+import { useNow } from "@/lib/useNow";
 
 // react-qr-code only publishes a CommonJS build; in the production bundle the
 // default import can resolve to the module namespace object instead of the
@@ -19,6 +20,7 @@ const TicketQRView = () => {
   const { id } = useParams<{ id: string }>();
   const { data: tickets, isLoading } = useMyTickets();
   const eventForTicket = useEventForTicket();
+  const now = useNow();
 
   const ticket = tickets?.find((t) => String(t.id) === id);
 
@@ -36,6 +38,9 @@ const TicketQRView = () => {
   const qrUrl = `${window.location.origin}/users/${ticket.studentId}?ticket=${ticket.qrCodeContent}`;
   // Zakres od→do (godziny bez sekund) — łączymy bilet z danymi wydarzenia.
   const dateLike = ticketDateLike(ticket, eventForTicket(ticket));
+  // Po zakończeniu wydarzenia bilet jest przedawniony (źródło: backend +
+  // dobicie „na żywo"). Zeskanowanie ma pierwszeństwo nad wygaśnięciem.
+  const expired = !!ticket.isExpired || isEventEnded(dateLike, now);
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col items-center pt-2">
@@ -100,10 +105,16 @@ const TicketQRView = () => {
                 className={`inline-block rounded-full px-3 py-1 font-mono text-sm font-medium ${
                   ticket.isScanned
                     ? "bg-status-error-bg text-status-error"
-                    : "bg-status-success-bg text-status-success"
+                    : expired
+                      ? "bg-bg-tertiary text-text-muted"
+                      : "bg-status-success-bg text-status-success"
                 }`}
               >
-                {ticket.isScanned ? "UŻYTY" : "WAŻNY BILET"}
+                {ticket.isScanned
+                  ? "UŻYTY"
+                  : expired
+                    ? "BILET WYGASŁY"
+                    : "WAŻNY BILET"}
               </span>
             </div>
 
