@@ -17,7 +17,6 @@
     "dompurify": "^3.4.2",
     "gsap": "^3.15.0",
     "html5-qrcode": "^2.3.8",
-    "jwt-decode": "^4.0.0",
     "leaflet": "^1.9.4",
     "lucide-react": "^1.18.0",
     "postprocessing": "^6.39.1",
