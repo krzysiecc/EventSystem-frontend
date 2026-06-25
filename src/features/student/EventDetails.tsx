@@ -256,13 +256,20 @@ const EventDetailsStudent = () => {
             {existingTicket.isScanned ? "Pokaż bilet (zużyty)" : "Pokaż swój bilet"}
           </Link>
         ) : hasEnded || hasStarted ? (
-          <button
-            disabled
-            className="inline-flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-lg bg-bg-tertiary px-8 py-3 text-lg font-bold text-text-muted md:w-auto"
-          >
-            <Clock size={18} />
-            {hasEnded ? "Wydarzenie zakończone" : "Wydarzenie już trwa"}
-          </button>
+          <div className="space-y-1.5">
+            <button
+              disabled
+              className="inline-flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-lg bg-bg-tertiary px-8 py-3 text-lg font-bold text-text-muted md:w-auto"
+            >
+              <Clock size={18} />
+              {hasEnded ? "Wydarzenie zakończone" : "Wydarzenie w toku"}
+            </button>
+            <p className="text-xs text-text-muted">
+              {hasEnded
+                ? "To wydarzenie już się odbyło."
+                : "Zapisy zamykają się w chwili rozpoczęcia wydarzenia."}
+            </p>
+          </div>
         ) : reg.phase === "closed" ? (
           <button
             disabled
