@@ -227,7 +227,10 @@ const LocationPicker = ({
         )}
       </div>
 
-      <div className="h-56 overflow-hidden rounded-md border border-border-light">
+      {/* `isolate` zamyka wewnętrzne z-index Leafletu (panes/kontrolki sięgają
+          400–1000) w osobnym kontekście stackingu, więc mapa nie przykrywa
+          pływającego doku nawigacji (z-50). */}
+      <div className="isolate h-56 overflow-hidden rounded-md border border-border-light">
         <MapContainer
           center={center}
           zoom={value.lat != null ? 14 : 11}

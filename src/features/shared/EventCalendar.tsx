@@ -107,8 +107,10 @@ const EventCalendar = () => {
     const cubes = Array.from(grid.querySelectorAll<HTMLElement>(".cal-cube"));
     const setters = cubes.map((el) => ({
       el,
-      rx: gsap.quickTo(el, "rotateX", { duration: 0.5, ease: "power3.out" }),
-      ry: gsap.quickTo(el, "rotateY", { duration: 0.5, ease: "power3.out" }),
+      // GSAP używa własnych nazw transformacji: `rotationX`/`rotationY`
+      // (CSS-owe `rotateX`/`rotateY` wywołują ostrzeżenie „not eligible for reset").
+      rx: gsap.quickTo(el, "rotationX", { duration: 0.5, ease: "power3.out" }),
+      ry: gsap.quickTo(el, "rotationY", { duration: 0.5, ease: "power3.out" }),
     }));
 
     let raf = 0;

@@ -14,7 +14,9 @@ import {
   useRegisterForEvent,
   useMyTickets,
 } from "./api/useStudentQueries";
+import { useQueryClient } from "@tanstack/react-query";
 import { useToastStore } from "@/store/useToastStore";
+import { ApiError } from "@/lib/apiClient";
 import { formatEventDate } from "@/lib/eventDate";
 import { registrationStatus } from "@/lib/eventRegistration";
 
@@ -28,6 +30,7 @@ const EventDetailsStudent = () => {
   const { data: tickets } = useMyTickets();
   const registerMutation = useRegisterForEvent();
   const addToast = useToastStore((state) => state.addToast);
+  const queryClient = useQueryClient();
 
   if (isLoading) return <div className="p-6">Ładowanie szczegółów...</div>;
   if (isError || !event)
@@ -46,22 +49,51 @@ const EventDetailsStudent = () => {
       : t.eventTitle.trim().toLowerCase() === event.title.trim().toLowerCase(),
   );
 
+  const isFull = event.maxCapacity <= event.enrolledCount;
+  const reg = registrationStatus(event);
+  const isPresave = reg.phase === "presave";
+
   const handleRegister = () => {
     registerMutation.mutate(event.id.toString(), {
       onSuccess: () => {
         addToast(
-          "Zapisano pomyślnie! Bilet znajduje się w Twoim panelu.",
+          isPresave
+            ? "Pre-rejestracja udana! Bilet znajduje się w Twoim panelu."
+            : "Zapisano pomyślnie! Bilet znajduje się w Twoim panelu.",
           "success",
         );
         navigate("/student/tickets");
       },
-      onError: () =>
-        addToast("Błąd podczas rejestracji na wydarzenie.", "error"),
+      onError: (err) => {
+        if (err instanceof ApiError) {
+          // 409 = backend twardo blokuje zapis przed `registrationOpensAt`
+          // (kod „registration_not_open", w ciele jest `opensAt`). Backend nie
+          // zna pre-rejestracji — odrzuca KAŻDY zapis przed tą datą.
+          if (err.status === 409) {
+            const opensAt = (err.body as { opensAt?: string })?.opensAt;
+            addToast(
+              opensAt
+                ? `Rejestracja otwiera się ${formatDateTime(new Date(opensAt))}.`
+                : "Rejestracja nie jest jeszcze otwarta.",
+              "warning",
+            );
+            queryClient.invalidateQueries({
+              queryKey: ["student", "events", id],
+            });
+            return;
+          }
+          // 400 „Masz już bilet…" — masz już zapis; odśwież bilety, żeby widok
+          // przełączył się na „Pokaż swój bilet".
+          if (/bilet/i.test(err.message)) {
+            addToast(err.message, "info");
+            queryClient.invalidateQueries({ queryKey: ["student", "tickets"] });
+            return;
+          }
+        }
+        addToast("Błąd podczas rejestracji na wydarzenie.", "error");
+      },
     });
   };
-
-  const isFull = event.maxCapacity <= event.enrolledCount;
-  const reg = registrationStatus(event);
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -77,6 +109,29 @@ const EventDetailsStudent = () => {
         <h1 className="mb-3 text-3xl font-extrabold tracking-tight text-text-primary md:text-4xl">
           {event.title}
         </h1>
+
+        {/* Wyraźny znacznik fazy zapisów — odróżnia pre-rejestrację od pełnej
+            rejestracji i stanu zamkniętego (zanim trafi się na przycisk niżej). */}
+        <span
+          className={`mb-6 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${
+            reg.phase === "closed"
+              ? "bg-bg-tertiary text-text-muted"
+              : isPresave
+                ? "bg-accent-subtle text-accent-primary"
+                : isFull
+                  ? "bg-status-error/15 text-status-error"
+                  : "bg-status-success/15 text-status-success"
+          }`}
+        >
+          <Clock size={13} />
+          {reg.phase === "closed"
+            ? "Zapisy jeszcze zamknięte"
+            : isPresave
+              ? "Trwa pre-rejestracja"
+              : isFull
+                ? "Brak wolnych miejsc"
+                : "Rejestracja otwarta"}
+        </span>
 
         {event.clicks24h != null && (
           <p className="mb-6 flex items-center gap-1.5 text-sm text-text-muted">

@@ -1,5 +1,20 @@
 import { useAuthStore } from "@/store/useAuthStore";
 
+/** Błąd HTTP z zachowanym kodem statusu i surowym ciałem odpowiedzi — pozwala
+ *  rozróżnić przypadki (np. 409 „registration_not_open" z polem `opensAt`) bez
+ *  zgadywania na podstawie treści komunikatu. */
+export class ApiError extends Error {
+  status: number;
+  /** Sparsowane ciało błędu (gdy JSON), np. `{ error, opensAt }`. */
+  body: unknown;
+  constructor(status: number, message: string, body?: unknown) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+    this.body = body;
+  }
+}
+
 const API_BASE_URL =
   import.meta.env.VITE_API_URL || "http://localhost:5064/api";
 
@@ -84,8 +99,10 @@ export const apiClient = async (
   if (!response.ok) {
     const errorData = await response.json().catch(() => null);
     const errorMessage =
-      errorData?.message || `HTTP error : ${response.status}`;
-    return Promise.reject(new Error(errorMessage));
+      errorData?.message || errorData?.error || `HTTP error : ${response.status}`;
+    return Promise.reject(
+      new ApiError(response.status, errorMessage, errorData),
+    );
   }
 
   return response;
