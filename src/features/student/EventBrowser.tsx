@@ -27,6 +27,7 @@ import {
   type EventSortKey,
 } from "@/lib/eventSort";
 import { isNearlyFull } from "@/lib/eventPopularity";
+import { registrationStatus } from "@/lib/eventRegistration";
 
 /**
  * @description Returns the correct Polish grammatical form for "miejsce/miejsca/miejsc"
@@ -41,6 +42,35 @@ const getRemainingSeatsLabel = (count: number): string => {
   // 2, 3, 4 use "miejsca"
   if (lastOne >= 2 && lastOne <= 4) return `${count} miejsca`;
   return `${count} miejsc`;
+};
+
+/** Wspólny status karty (pill + ton koloru) dla obu układów listy. Uwzględnia
+ *  fazę zapisów, więc lista odróżnia pre-rejestrację i „wkrótce" od liczby miejsc. */
+type PillTone = "muted" | "success" | "error" | "accent";
+const PILL_TONE: Record<PillTone, string> = {
+  muted: "bg-bg-tertiary text-text-muted",
+  success: "bg-status-success-bg text-status-success",
+  error: "bg-status-error-bg text-status-error",
+  accent: "bg-accent-subtle text-accent-secondary",
+};
+
+const cardStatus = (
+  event: PublicEvent,
+  hasTicket: boolean,
+  usedTicket: boolean,
+): { label: string; tone: PillTone } => {
+  if (usedTicket) return { label: "Bilet zużyty", tone: "muted" };
+  if (hasTicket) return { label: "Masz bilet", tone: "success" };
+  const phase = registrationStatus(event).phase;
+  if (phase === "presave")
+    return {
+      label: event.hasPresaved ? "Powiadomienie ✓" : "Powiadomienie",
+      tone: "accent",
+    };
+  if (phase === "closed") return { label: "Wkrótce", tone: "muted" };
+  const remainingSeats = event.maxCapacity - event.enrolledCount;
+  if (remainingSeats <= 0) return { label: "Brak miejsc", tone: "error" };
+  return { label: getRemainingSeatsLabel(remainingSeats), tone: "accent" };
 };
 
 const labelClass =
@@ -93,10 +123,17 @@ const EventBrowser = () => {
   const [sort, setSort] = useState<EventSortKey>(DEFAULT_EVENT_SORT);
 
   // Masz już bilet → przejdź do niego (kod QR). W przeciwnym razie zapisz się.
+  // Gdy rejestracja nie jest jeszcze otwarta (pre-rejestracja lub zamknięte) —
+  // backend i tak odrzuciłby `/tickets/enroll` (409), więc kierujemy na stronę
+  // szczegółów, gdzie jest właściwa akcja pre-rejestracji.
   const goToTicketOrRegister = (event: PublicEvent) => {
     const myTicket = ticketForEvent(event);
     if (myTicket) {
       navigate(`/student/tickets/${myTicket.id}`);
+      return;
+    }
+    if (registrationStatus(event).phase !== "open") {
+      navigate(`/student/events/${event.id}`);
       return;
     }
     handleRegister(event.id.toString());
@@ -218,6 +255,7 @@ const EventBrowser = () => {
           const hasTicket = !!myTicket;
           const usedTicket = myTicket?.isScanned ?? false;
           const hot = !isFull && isNearlyFull(event.enrolledCount, event.maxCapacity);
+          const status = cardStatus(event, hasTicket, usedTicket);
 
           return (
             <li
@@ -247,23 +285,9 @@ const EventBrowser = () => {
                   </div>
                   <span className="mt-1 flex items-center gap-1.5">
                     <span
-                      className={`inline-block rounded px-1.5 py-0.5 font-mono text-[10px] font-medium ${
-                        usedTicket
-                          ? "bg-bg-tertiary text-text-muted"
-                          : hasTicket
-                            ? "bg-status-success-bg text-status-success"
-                            : isFull
-                              ? "bg-status-error-bg text-status-error"
-                              : "bg-accent-subtle text-accent-secondary"
-                      }`}
+                      className={`inline-block rounded px-1.5 py-0.5 font-mono text-[10px] font-medium ${PILL_TONE[status.tone]}`}
                     >
-                      {usedTicket
-                        ? "Bilet zużyty"
-                        : hasTicket
-                          ? "Masz bilet"
-                          : isFull
-                            ? "Brak miejsc"
-                            : getRemainingSeatsLabel(remainingSeats)}
+                      {status.label}
                     </span>
                     {hot && (
                       <Flame
@@ -315,6 +339,7 @@ const EventBrowser = () => {
           const hasTicket = !!myTicket;
           const usedTicket = myTicket?.isScanned ?? false;
           const hot = !isFull && isNearlyFull(event.enrolledCount, event.maxCapacity);
+          const status = cardStatus(event, hasTicket, usedTicket);
 
           return (
             <div
@@ -338,23 +363,9 @@ const EventBrowser = () => {
                       </span>
                     )}
                     <span
-                      className={`rounded px-2 py-1 font-mono text-xs font-medium ${
-                        usedTicket
-                          ? "bg-bg-tertiary text-text-muted"
-                          : hasTicket
-                            ? "bg-status-success-bg text-status-success"
-                            : isFull
-                              ? "bg-status-error-bg text-status-error"
-                              : "bg-accent-subtle text-accent-secondary"
-                      }`}
+                      className={`rounded px-2 py-1 font-mono text-xs font-medium ${PILL_TONE[status.tone]}`}
                     >
-                      {usedTicket
-                        ? "Bilet zużyty"
-                        : hasTicket
-                          ? "Masz bilet"
-                          : isFull
-                            ? "Brak miejsc"
-                            : getRemainingSeatsLabel(remainingSeats)}
+                      {status.label}
                     </span>
                   </span>
                 </div>
@@ -392,9 +403,13 @@ const EventBrowser = () => {
                       ? usedTicket
                         ? "Pokaż bilet (zużyty)"
                         : "Pokaż bilet"
-                      : isFull
-                        ? "Brak miejsc"
-                        : "Pobierz bilet"}
+                      : status.label.startsWith("Powiadomienie")
+                        ? "Powiadom mnie"
+                        : status.label === "Wkrótce"
+                          ? "Szczegóły"
+                          : isFull
+                            ? "Brak miejsc"
+                            : "Pobierz bilet"}
                   {hasTicket ? (
                     <QrCode size={15} />
                   ) : !isFull && !isThisCardPending ? (

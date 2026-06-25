@@ -53,6 +53,12 @@ export const registrationStatus = (
   return { phase: "closed", opensAt, presaveAt };
 };
 
-/** Czy w danej fazie wolno się zapisać (pełna rejestracja lub pre-rejestracja). */
-export const canEnroll = (phase: RegistrationPhase): boolean =>
-  phase === "open" || phase === "presave";
+/** Czy w danej fazie wolno odebrać BILET (tylko pełna rejestracja). Backend
+ *  twardo blokuje `/tickets/enroll` przed `registrationOpensAt` (409), więc
+ *  pre-rejestracja NIE jest zapisem na bilet — patrz {@link canPresave}. */
+export const canEnroll = (phase: RegistrationPhase): boolean => phase === "open";
+
+/** Czy w danej fazie wolno się PRE-rejestrować (zapis chęci przez osobny
+ *  endpoint `/events/{id}/presave`, bez tworzenia biletu). */
+export const canPresave = (phase: RegistrationPhase): boolean =>
+  phase === "presave";

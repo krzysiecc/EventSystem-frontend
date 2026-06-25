@@ -8,11 +8,15 @@ import {
   QrCode,
   Eye,
   Clock,
+  Check,
+  BellRing,
 } from "lucide-react";
 import {
   useEventDetails,
   useRegisterForEvent,
   useMyTickets,
+  usePresaveEvent,
+  useCancelPresave,
 } from "./api/useStudentQueries";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToastStore } from "@/store/useToastStore";
@@ -29,6 +33,8 @@ const EventDetailsStudent = () => {
   const { data: event, isLoading, isError } = useEventDetails(id);
   const { data: tickets } = useMyTickets();
   const registerMutation = useRegisterForEvent();
+  const presaveMutation = usePresaveEvent();
+  const cancelPresaveMutation = useCancelPresave();
   const addToast = useToastStore((state) => state.addToast);
   const queryClient = useQueryClient();
 
@@ -53,13 +59,41 @@ const EventDetailsStudent = () => {
   const reg = registrationStatus(event);
   const isPresave = reg.phase === "presave";
 
+  // Pre-rejestracja = zapis na POWIADOMIENIE mailowe o starcie właściwej
+  // rejestracji. Osobny stan niż bilet — nie wywołujemy `/tickets/enroll`
+  // (backend zwróciłby 409), tylko dedykowany endpoint presave. Bilet odbiera
+  // się dopiero w fazie „open", gdy student dostanie maila.
+  const handlePresave = () => {
+    presaveMutation.mutate(event.id.toString(), {
+      onSuccess: () =>
+        addToast(
+          `Damy znać mailem, gdy ruszy rejestracja (${formatDateTime(reg.opensAt!)}).`,
+          "success",
+        ),
+      onError: (err) => {
+        // 409 = już zapisany na powiadomienie: odśwież szczegóły, by UI pokazał stan.
+        if (err instanceof ApiError && err.status === 409) {
+          queryClient.invalidateQueries({ queryKey: ["student", "events", id] });
+          addToast("Już czekasz na powiadomienie o tym wydarzeniu.", "info");
+          return;
+        }
+        addToast("Nie udało się zapisać na powiadomienie.", "error");
+      },
+    });
+  };
+
+  const handleCancelPresave = () => {
+    cancelPresaveMutation.mutate(event.id.toString(), {
+      onSuccess: () => addToast("Powiadomienie odwołane.", "info"),
+      onError: () => addToast("Nie udało się odwołać powiadomienia.", "error"),
+    });
+  };
+
   const handleRegister = () => {
     registerMutation.mutate(event.id.toString(), {
       onSuccess: () => {
         addToast(
-          isPresave
-            ? "Pre-rejestracja udana! Bilet znajduje się w Twoim panelu."
-            : "Zapisano pomyślnie! Bilet znajduje się w Twoim panelu.",
+          "Zapisano pomyślnie! Bilet znajduje się w Twoim panelu.",
           "success",
         );
         navigate("/student/tickets");
@@ -123,11 +157,17 @@ const EventDetailsStudent = () => {
                   : "bg-status-success/15 text-status-success"
           }`}
         >
-          <Clock size={13} />
+          {isPresave && event.hasPresaved ? (
+            <Check size={13} />
+          ) : (
+            <Clock size={13} />
+          )}
           {reg.phase === "closed"
             ? "Zapisy jeszcze zamknięte"
             : isPresave
-              ? "Trwa pre-rejestracja"
+              ? event.hasPresaved
+                ? "Powiadomienie włączone"
+                : "Wkrótce rejestracja"
               : isFull
                 ? "Brak wolnych miejsc"
                 : "Rejestracja otwarta"}
@@ -189,7 +229,7 @@ const EventDetailsStudent = () => {
           <p className="mb-3 flex items-center gap-2 text-sm text-text-secondary">
             <Clock size={15} className="text-accent-primary" />
             {reg.phase === "presave"
-              ? `Trwa pre-rejestracja. Pełna rejestracja otwiera się ${formatDateTime(reg.opensAt!)}.`
+              ? `Rejestracja otwiera się ${formatDateTime(reg.opensAt!)} — zapisz się na powiadomienie, a wyślemy Ci maila, gdy ruszy.`
               : reg.presaveAt
                 ? `Pre-rejestracja od ${formatDateTime(reg.presaveAt)}, pełna rejestracja od ${formatDateTime(reg.opensAt!)}.`
                 : `Rejestracja otwiera się ${formatDateTime(reg.opensAt!)}.`}
@@ -212,6 +252,38 @@ const EventDetailsStudent = () => {
             <Clock size={18} />
             Zapisy jeszcze niedostępne
           </button>
+        ) : isPresave ? (
+          // Faza pre-rejestracji: zapis na POWIADOMIENIE mailowe (nie bilet). Po
+          // zapisie student widzi potwierdzenie + może odwołać; bilet odbierze,
+          // gdy ruszy „open" i dostanie maila.
+          event.hasPresaved ? (
+            <div className="space-y-2">
+              <div className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-accent-primary bg-accent-subtle px-8 py-3 text-lg font-bold text-accent-primary md:w-auto">
+                <Check size={18} />
+                Powiadomimy Cię mailem
+              </div>
+              <button
+                onClick={handleCancelPresave}
+                disabled={cancelPresaveMutation.isPending}
+                className="block text-sm text-text-muted underline hover:text-text-secondary disabled:opacity-50"
+              >
+                {cancelPresaveMutation.isPending
+                  ? "Odwoływanie..."
+                  : "Odwołaj powiadomienie"}
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={handlePresave}
+              disabled={presaveMutation.isPending}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-accent-primary px-8 py-3 text-lg font-bold text-text-on-accent transition hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50 md:w-auto"
+            >
+              <BellRing size={18} />
+              {presaveMutation.isPending
+                ? "Przetwarzanie..."
+                : "Powiadom mnie, gdy ruszy rejestracja"}
+            </button>
+          )
         ) : (
           <button
             onClick={handleRegister}
@@ -223,9 +295,7 @@ const EventDetailsStudent = () => {
               ? "Przetwarzanie..."
               : isFull
                 ? "Brak miejsc"
-                : reg.phase === "presave"
-                  ? "Pre-rejestracja — odbierz bilet"
-                  : "Odbierz darmowy bilet"}
+                : "Odbierz darmowy bilet"}
           </button>
         )}
       </div>

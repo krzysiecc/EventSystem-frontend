@@ -23,6 +23,8 @@ export interface PublicEvent {
   registrationOpensAt?: string | null;
   /** ISO: kiedy otwiera się pre-rejestracja („presave") — okno przed rejestracją. */
   presaveOpensAt?: string | null;
+  /** Czy zalogowany student już pre-savnął to wydarzenie (backend: `HasPresaved`). */
+  hasPresaved?: boolean;
 }
 
 export interface Ticket {
@@ -82,6 +84,47 @@ export const useRegisterForEvent = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["student", "events"] });
       queryClient.invalidateQueries({ queryKey: ["student", "tickets"] });
+    },
+  });
+};
+
+/**
+ * @description Pre-rejestracja („presave"): zapis CHĘCI przed otwarciem właściwej
+ * rejestracji. To osobny stan niż bilet (backend liczy je oddzielnie:
+ * `PresaveCount` vs `EnrolledCount`) — nie tworzy biletu, tylko ustawia
+ * `HasPresaved`. Gdy ruszy pełna rejestracja, student zapisuje się normalnie
+ * przez {@link useRegisterForEvent}.
+ *
+ * Kontrakt API: `POST /events/{id}/presave` (zapis), `DELETE …` (anulowanie).
+ */
+export const usePresaveEvent = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (eventId: string) => {
+      const response = await apiClient(`/events/${eventId}/presave`, {
+        method: "POST",
+      });
+      return response.json();
+    },
+    onSuccess: (_data, eventId) => {
+      queryClient.invalidateQueries({ queryKey: ["student", "events"] });
+      queryClient.invalidateQueries({ queryKey: ["student", "events", eventId] });
+    },
+  });
+};
+
+export const useCancelPresave = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (eventId: string) => {
+      const response = await apiClient(`/events/${eventId}/presave`, {
+        method: "DELETE",
+      });
+      return response.json();
+    },
+    onSuccess: (_data, eventId) => {
+      queryClient.invalidateQueries({ queryKey: ["student", "events"] });
+      queryClient.invalidateQueries({ queryKey: ["student", "events", eventId] });
     },
   });
 };
