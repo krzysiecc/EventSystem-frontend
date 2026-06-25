@@ -21,7 +21,7 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { useToastStore } from "@/store/useToastStore";
 import { ApiError } from "@/lib/apiClient";
-import { formatEventDate } from "@/lib/eventDate";
+import { formatEventDate, getEventPhase } from "@/lib/eventDate";
 import { registrationStatus } from "@/lib/eventRegistration";
 
 const formatDateTime = (d: Date) =>
@@ -58,6 +58,13 @@ const EventDetailsStudent = () => {
   const isFull = event.maxCapacity <= event.enrolledCount;
   const reg = registrationStatus(event);
   const isPresave = reg.phase === "presave";
+  // Backend blokuje zapis, gdy wydarzenie już się rozpoczęło (`Date < now`),
+  // a po `endDate` jest zakończone. Odzwierciedlamy to w UI, zamiast pokazywać
+  // przycisk zapisu, który i tak zwróci błąd. (Czas czytany w libie, nie w
+  // renderze — zgodnie z regułą czystości komponentów.)
+  const phase = getEventPhase(event);
+  const hasEnded = phase === "ended";
+  const hasStarted = phase !== "upcoming";
 
   // Pre-rejestracja = zapis na POWIADOMIENIE mailowe o starcie właściwej
   // rejestracji. Osobny stan niż bilet — nie wywołujemy `/tickets/enroll`
@@ -148,7 +155,7 @@ const EventDetailsStudent = () => {
             rejestracji i stanu zamkniętego (zanim trafi się na przycisk niżej). */}
         <span
           className={`mb-6 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${
-            reg.phase === "closed"
+            hasEnded || hasStarted || reg.phase === "closed"
               ? "bg-bg-tertiary text-text-muted"
               : isPresave
                 ? "bg-accent-subtle text-accent-primary"
@@ -162,15 +169,19 @@ const EventDetailsStudent = () => {
           ) : (
             <Clock size={13} />
           )}
-          {reg.phase === "closed"
-            ? "Zapisy jeszcze zamknięte"
-            : isPresave
-              ? event.hasPresaved
-                ? "Powiadomienie włączone"
-                : "Wkrótce rejestracja"
-              : isFull
-                ? "Brak wolnych miejsc"
-                : "Rejestracja otwarta"}
+          {hasEnded
+            ? "Wydarzenie zakończone"
+            : hasStarted
+              ? "Wydarzenie w toku"
+              : reg.phase === "closed"
+                ? "Zapisy jeszcze zamknięte"
+                : isPresave
+                  ? event.hasPresaved
+                    ? "Powiadomienie włączone"
+                    : "Wkrótce rejestracja"
+                  : isFull
+                    ? "Brak wolnych miejsc"
+                    : "Rejestracja otwarta"}
         </span>
 
         {event.clicks24h != null && (
@@ -244,6 +255,14 @@ const EventDetailsStudent = () => {
             <QrCode size={18} />
             {existingTicket.isScanned ? "Pokaż bilet (zużyty)" : "Pokaż swój bilet"}
           </Link>
+        ) : hasEnded || hasStarted ? (
+          <button
+            disabled
+            className="inline-flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-lg bg-bg-tertiary px-8 py-3 text-lg font-bold text-text-muted md:w-auto"
+          >
+            <Clock size={18} />
+            {hasEnded ? "Wydarzenie zakończone" : "Wydarzenie już trwa"}
+          </button>
         ) : reg.phase === "closed" ? (
           <button
             disabled

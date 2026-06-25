@@ -20,7 +20,7 @@ import {
 import { useToastStore } from "@/store/useToastStore";
 import PageHeader from "@/components/ui/PageHeader";
 import SortSelect from "@/components/ui/SortSelect";
-import { formatEventDate, eventStart } from "@/lib/eventDate";
+import { formatEventDate, eventStart, getEventPhase } from "@/lib/eventDate";
 import {
   sortEvents,
   DEFAULT_EVENT_SORT,
@@ -123,16 +123,19 @@ const EventBrowser = () => {
   const [sort, setSort] = useState<EventSortKey>(DEFAULT_EVENT_SORT);
 
   // Masz już bilet → przejdź do niego (kod QR). W przeciwnym razie zapisz się.
-  // Gdy rejestracja nie jest jeszcze otwarta (pre-rejestracja lub zamknięte) —
-  // backend i tak odrzuciłby `/tickets/enroll` (409), więc kierujemy na stronę
-  // szczegółów, gdzie jest właściwa akcja pre-rejestracji.
+  // Gdy zapis i tak by się nie udał — rejestracja jeszcze nieotwarta (presave/
+  // zamknięte → 409) albo wydarzenie już się rozpoczęło/zakończyło (→ 400) —
+  // kierujemy na stronę szczegółów, gdzie jest właściwy stan i akcja.
   const goToTicketOrRegister = (event: PublicEvent) => {
     const myTicket = ticketForEvent(event);
     if (myTicket) {
       navigate(`/student/tickets/${myTicket.id}`);
       return;
     }
-    if (registrationStatus(event).phase !== "open") {
+    const canEnrollNow =
+      registrationStatus(event).phase === "open" &&
+      getEventPhase(event) === "upcoming";
+    if (!canEnrollNow) {
       navigate(`/student/events/${event.id}`);
       return;
     }
@@ -375,7 +378,7 @@ const EventBrowser = () => {
                 <div className="mb-4 space-y-1.5 text-sm text-text-secondary">
                   <p className="flex items-center gap-2">
                     <CalendarDays size={15} className="text-accent-primary" />
-                    {formatEventDate(event)}
+                    {formatEventDate(event, { time: true })}
                   </p>
                   <p className="flex items-center gap-2">
                     <MapPin size={15} className="text-accent-primary" />

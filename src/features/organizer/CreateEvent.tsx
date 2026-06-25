@@ -63,6 +63,16 @@ const createEventSchema = z
       message: "Pre-rejestracja nie może być później niż otwarcie rejestracji",
       path: ["presaveOpensAt"],
     },
+  )
+  // Domknięcie łańcucha: presave ≤ start także gdy nie ustawiono rejestracji.
+  .refine(
+    (d) =>
+      !d.presaveOpensAt ||
+      new Date(d.presaveOpensAt) <= new Date(d.startDate),
+    {
+      message: "Pre-rejestracja musi zaczynać się najpóźniej w momencie startu",
+      path: ["presaveOpensAt"],
+    },
   );
 
 type CreateEventInputs = z.infer<typeof createEventSchema>;
@@ -79,6 +89,10 @@ const minDateTime = () => {
   d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
   return d.toISOString().slice(0, 16);
 };
+
+// Górny limit dla `datetime-local` — bez niego przeglądarka pozwala wpisać rok
+// 6-cyfrowy. Ogranicza pole roku do 4 cyfr (9999).
+const MAX_DATETIME = "9999-12-31T23:59";
 
 const CreateEvent = () => {
   const navigate = useNavigate();
@@ -236,6 +250,7 @@ const CreateEvent = () => {
             <input
               type="datetime-local"
               min={min}
+              max={MAX_DATETIME}
               {...register("startDate")}
               className={inputClass}
             />
@@ -250,6 +265,7 @@ const CreateEvent = () => {
             <input
               type="datetime-local"
               min={min}
+              max={MAX_DATETIME}
               {...register("endDate")}
               className={inputClass}
             />
@@ -280,6 +296,8 @@ const CreateEvent = () => {
               </span>
               <input
                 type="datetime-local"
+                min={min}
+                max={MAX_DATETIME}
                 {...register("presaveOpensAt")}
                 className={inputClass}
               />
@@ -295,6 +313,8 @@ const CreateEvent = () => {
               </span>
               <input
                 type="datetime-local"
+                min={min}
+                max={MAX_DATETIME}
                 {...register("registrationOpensAt")}
                 className={inputClass}
               />
