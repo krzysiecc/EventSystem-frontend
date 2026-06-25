@@ -24,14 +24,14 @@ const Home = () => {
       <div className="max-w-3xl space-y-8">
         <h1 className="font-extrabold tracking-tight text-text-primary">
           <span className="block text-2xl text-text-secondary sm:text-3xl">
-            System zarządzania
+            System Zarządzania
           </span>
-          <span className="block text-5xl text-accent-primary sm:text-7xl">
-            wydarzeniami studenckimi
+          <span className="block text-4xl text-accent-primary sm:text-7xl">
+            Wydarzeniami Studenckimi
           </span>
         </h1>
         <p className="text-lg leading-relaxed text-text-secondary sm:text-xl">
-          Odkrywaj wydarzenia na kampusie, zarządzaj biletami i organizuj
+          Odkrywaj wydarzenia na kampusie, zarządzaj biletami <br />i organizuj
           niezapomniane imprezy.
         </p>
 
