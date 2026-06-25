@@ -271,7 +271,7 @@ const EventBrowser = () => {
                   <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-text-secondary">
                     <span className="flex items-center gap-1">
                       <CalendarDays size={12} className="text-accent-primary" />
-                      {formatEventDate(event)}
+                      {formatEventDate(event, { time: true })}
                     </span>
                     <span className="flex min-w-0 items-center gap-1">
                       <MapPin

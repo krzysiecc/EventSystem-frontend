@@ -63,10 +63,18 @@ const labelClass =
 const inputClass =
   "w-full rounded-md border border-border-medium bg-bg-tertiary p-2 text-text-primary focus:border-accent-primary focus:outline-none focus:ring-1 focus:ring-accent-primary";
 
+// Backend ISO (UTC) → wartość dla `datetime-local` w czasie LOKALNYM.
 const toLocalInput = (iso: string) => {
   const d = new Date(iso);
   d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
   return d.toISOString().slice(0, 16);
+};
+
+// Lokalny czas z formularza → ISO w UTC (z „Z") wysyłane do backendu.
+const toUtcIso = (v: string | null | undefined): string | null => {
+  if (!v) return null;
+  const d = new Date(v);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
 };
 
 const EditEvent = () => {
@@ -147,10 +155,15 @@ const EditEvent = () => {
           locationName: loc.locationName,
           lat: loc.lat,
           lng: loc.lng,
-          date: data.startDate, // kompatybilność ze starym backendem
+          // Czas z formularza (lokalny) → UTC z „Z". Backend traktuje drut jako
+          // UTC, więc bez tego zapisany czas przesuwa się o offset przy odczycie.
+          // startDate/endDate są wymagane przez schemat → zawsze poprawne.
+          startDate: new Date(data.startDate).toISOString(),
+          endDate: new Date(data.endDate).toISOString(),
+          date: new Date(data.startDate).toISOString(), // kompatybilność ze starym backendem
           description: cleanDescription,
-          registrationOpensAt: data.registrationOpensAt || null,
-          presaveOpensAt: data.presaveOpensAt || null,
+          registrationOpensAt: toUtcIso(data.registrationOpensAt),
+          presaveOpensAt: toUtcIso(data.presaveOpensAt),
         },
       },
       {

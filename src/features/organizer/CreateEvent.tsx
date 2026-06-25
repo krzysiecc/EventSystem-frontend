@@ -15,9 +15,17 @@ import RecurrencePicker from "@/components/ui/RecurrencePicker";
 import {
   DEFAULT_RECURRENCE,
   expandOccurrences,
-  toLocalInput,
   type Recurrence,
 } from "@/lib/recurrence";
+
+/** Lokalna data z formularza (lub Date) → ISO w UTC (z „Z"). Backend traktuje
+ *  czas na drucie jako UTC, więc wysyłamy go jawnie — inaczej zapisany czas
+ *  „przesuwa się" o offset strefy przy odczycie (np. +2h latem w PL). */
+const toUtcIso = (v: Date | string | null | undefined): string | null => {
+  if (!v) return null;
+  const d = v instanceof Date ? v : new Date(v);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
+};
 
 const createEventSchema = z
   .object({
@@ -135,11 +143,11 @@ const CreateEvent = () => {
           maxCapacity: data.maxCapacity,
           description: cleanDescription,
           ...loc,
-          startDate: toLocalInput(start),
-          endDate: toLocalInput(end),
-          date: toLocalInput(start), // kompatybilność ze starym backendem
-          registrationOpensAt: data.registrationOpensAt || null,
-          presaveOpensAt: data.presaveOpensAt || null,
+          startDate: toUtcIso(start),
+          endDate: toUtcIso(end),
+          date: toUtcIso(start), // kompatybilność ze starym backendem
+          registrationOpensAt: toUtcIso(data.registrationOpensAt),
+          presaveOpensAt: toUtcIso(data.presaveOpensAt),
         }),
       }).then((r) => r.json());
 
