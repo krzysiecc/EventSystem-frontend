@@ -13,8 +13,8 @@ export default defineConfig({
       registerType: "autoUpdate",
       includeAssets: ["favicon.svg"],
       manifest: {
-        name: "Student Event Manager",
-        short_name: "EventMgr",
+        name: "EventHub",
+        short_name: "EventHub",
         description: "System zarządzania wydarzeniami i biletami studenckimi",
         theme_color: "#f1dac4", // --bg-primary light mode
         background_color: "#0d0c1d", // --bg-primary dark mode

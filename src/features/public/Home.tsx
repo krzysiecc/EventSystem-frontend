@@ -1,4 +1,5 @@
 import { Link, Navigate } from "react-router-dom";
+import { Zap } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 
 const Home = () => {
@@ -9,10 +10,25 @@ const Home = () => {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-bg-primary p-6 text-center">
+    <div className="relative flex min-h-screen flex-col items-center justify-center bg-bg-primary p-6 text-center">
+      {/* Logo marki w lewym górnym rogu */}
+      <div className="absolute left-6 top-6 flex items-center gap-2">
+        <div className="grid h-9 w-9 place-items-center rounded bg-accent-primary text-text-on-accent">
+          <Zap size={18} />
+        </div>
+        <span className="text-lg font-extrabold tracking-tight text-text-primary">
+          EventHub
+        </span>
+      </div>
+
       <div className="max-w-3xl space-y-8">
-        <h1 className="text-5xl font-extrabold tracking-tight text-text-primary sm:text-6xl">
-          Student Event <span className="text-accent-primary">Manager</span>
+        <h1 className="font-extrabold tracking-tight text-text-primary">
+          <span className="block text-2xl text-text-secondary sm:text-3xl">
+            System zarządzania
+          </span>
+          <span className="block text-5xl text-accent-primary sm:text-7xl">
+            wydarzeniami studenckimi
+          </span>
         </h1>
         <p className="text-lg leading-relaxed text-text-secondary sm:text-xl">
           Odkrywaj wydarzenia na kampusie, zarządzaj biletami i organizuj

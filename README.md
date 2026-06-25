@@ -1,4 +1,4 @@
-# Student Event Manager — Frontend
+# EventHub — Frontend
 
 > A role-based web app for discovering, organizing, and checking in to student events — with QR-code tickets, an interactive calendar, recurring events, and an admin control panel.
 
@@ -84,7 +84,7 @@ The app has three roles, each with its own dashboard and navigation. Authenticat
 
 ```bash
 git clone <repo-url>
-cd EventSystem-frontend
+cd eventhub-frontend
 npm install
 ```
 
@@ -126,7 +126,7 @@ npm run dev       # start the dev server at http://localhost:3000
 ## 🗂️ Project Structure
 
 ```
-EventSystem-frontend/
+eventhub-frontend/
 ├── public/                  # Static assets (favicon, icons, PWA service worker output)
 ├── index.html               # App shell + anti-FOUC theme script + web fonts
 ├── src/
